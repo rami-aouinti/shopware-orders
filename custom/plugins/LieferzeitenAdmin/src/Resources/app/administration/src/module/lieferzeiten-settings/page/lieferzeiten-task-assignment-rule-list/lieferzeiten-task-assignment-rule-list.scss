@@ -51,6 +51,9 @@
         border: 1px solid #d8dde6;
         border-radius: 12px;
         padding: 16px;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
     }
 
     .lza-rules-toolbar,
@@ -73,6 +76,9 @@
     .lza-rule-table {
         display: grid;
         gap: 10px;
+        max-height: 62vh;
+        overflow: auto;
+        padding-right: 4px;
     }
 
     .lza-rule-header,
@@ -87,7 +93,12 @@
         font-size: 12px;
         font-weight: 700;
         color: #52667a;
-        padding: 0 4px;
+        padding: 8px 4px;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #fff;
+        border-bottom: 1px solid #d8dde6;
     }
 
     .lza-rule-row {
