@@ -2,6 +2,7 @@ import './page/lieferzeiten-channel-settings-list';
 import './page/lieferzeiten-task-assignment-rule-list';
 import './page/lieferzeiten-notification-toggle-list';
 import './page/lieferzeiten-sync-settings';
+import './page/lieferzeiten-statistics-settings';
 
 const { Module } = Shopware;
 
@@ -47,7 +48,7 @@ Module.register('lieferzeiten-settings', {
             },
         },
         statistics: {
-            component: 'lieferzeiten-statistics',
+            component: 'lieferzeiten-statistics-settings',
             path: 'statistics',
             meta: {
                 privilege: 'admin',
