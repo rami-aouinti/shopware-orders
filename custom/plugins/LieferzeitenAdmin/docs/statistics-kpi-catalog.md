@@ -40,3 +40,17 @@ Chaque activité retournée dans `activitiesData` suit le schéma:
 - Inclus en **timeline**: toutes les sources ci-dessus (vision volumétrique globale).
 - Inclus en **activitiesData**: mêmes sources, triées par `eventAt` décroissant.
 - Les événements sans `orderNumber` restent visibles (ex: certains dead-letter/audit) pour l’observabilité.
+
+
+## Fenêtres temporelles API (`period`, `from`, `to`)
+
+L’endpoint statistiques (`/api/_action/lieferzeiten/statistics` et `/v1/statistics`) conserve la compatibilité des paramètres existants:
+
+- `period`: entier positif (jours) avec support élargi (ex. `7`, `30`, `90`, `180`, `365`, etc.),
+- `from` et `to`: bornes ISO/date parsables côté serveur.
+
+Règles de priorité:
+
+1. Si `from` et/ou `to` sont fournis, la fenêtre est résolue en mode **custom** et ces bornes priment sur `period` (avec fallback contrôlé si une seule borne est fournie).
+2. Si `from`/`to` sont absents, le mode **period** est utilisé avec `period` (borné côté service).
+3. Les clients legacy envoyant uniquement `period` restent compatibles sans changement.
