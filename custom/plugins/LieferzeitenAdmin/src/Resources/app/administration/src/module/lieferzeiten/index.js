@@ -1,5 +1,10 @@
-import './page/lieferzeiten-delivery-management';
-import './page/lieferzeiten-external-orders';
+import './component/lieferzeiten-domain-selection';
+import './component/lieferzeiten-order-table';
+
+import './page/lieferzeiten-index';
+import './page/lieferzeiten-all';
+import './page/lieferzeiten-open';
+import './page/lieferzeiten-statistics';
 
 const { Module } = Shopware;
 
@@ -11,19 +16,49 @@ Module.register('lieferzeiten', {
     color: '#2B8CBF',
     icon: 'regular-clock',
 
+    privileges: {
+        viewer: {
+            permissions: ['admin'],
+            dependencies: [],
+        },
+        editor: {
+            permissions: ['admin'],
+            dependencies: ['viewer'],
+        },
+    },
+
     routes: {
         index: {
-            component: 'lieferzeiten-external-orders',
+            component: 'lieferzeiten-index',
             path: 'index',
-            meta: {
-                privilege: 'admin',
+            redirect: {
+                name: 'lieferzeiten.index.all',
             },
-        },
-        deliveryManagement: {
-            component: 'lieferzeiten-delivery-management',
-            path: 'delivery-management',
-            meta: {
-                privilege: 'admin',
+            children: {
+                all: {
+                    component: 'lieferzeiten-all',
+                    path: 'all',
+                    meta: {
+                        parentPath: 'lieferzeiten.index',
+                        privilege: 'admin',
+                    },
+                },
+                open: {
+                    component: 'lieferzeiten-open',
+                    path: 'open',
+                    meta: {
+                        parentPath: 'lieferzeiten.index',
+                        privilege: 'admin',
+                    },
+                },
+                statistics: {
+                    component: 'lieferzeiten-statistics',
+                    path: 'statistics',
+                    meta: {
+                        parentPath: 'lieferzeiten.index',
+                        privilege: 'admin',
+                    },
+                },
             },
         },
     },
@@ -33,7 +68,7 @@ Module.register('lieferzeiten', {
             id: 'lieferzeiten-menu-entry',
             label: 'Lieferzeiten',
             color: '#2B8CBF',
-            path: 'lieferzeiten.index',
+            path: 'lieferzeiten.index.all',
             icon: 'regular-clock',
             parent: 'sw-order',
             position: 46,
