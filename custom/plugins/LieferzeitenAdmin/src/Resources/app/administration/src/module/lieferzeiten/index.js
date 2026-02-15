@@ -3,17 +3,17 @@ import './page/lieferzeiten-external-orders';
 
 const { Module } = Shopware;
 
-Module.register('lieferzeiten-delivery-management', {
+Module.register('lieferzeiten', {
     type: 'plugin',
     name: 'lieferzeiten',
-    title: 'lieferzeiten.general.mainMenuItemParent',
+    title: 'Lieferzeiten',
     description: 'lieferzeiten.general.description',
     color: '#2B8CBF',
     icon: 'regular-clock',
 
     routes: {
         index: {
-            component: 'lieferzeiten-delivery-management',
+            component: 'lieferzeiten-external-orders',
             path: 'index',
             meta: {
                 privilege: 'admin',
@@ -26,28 +26,14 @@ Module.register('lieferzeiten-delivery-management', {
                 privilege: 'admin',
             },
         },
-        externalOrders: {
-            component: 'lieferzeiten-external-orders',
-            path: 'external-orders',
-            meta: {
-                privilege: 'admin',
-            },
-        },
-        externalOrdersLike: {
-            component: 'lieferzeiten-external-orders',
-            path: 'lieferzeiten',
-            meta: {
-                privilege: 'admin',
-            },
-        },
     },
 
     navigation: [
         {
-            id: 'lieferzeiten-delivery-management',
-            label: 'lieferzeiten.general.mainMenuItemGeneral',
+            id: 'lieferzeiten',
+            label: 'Lieferzeiten',
             color: '#2B8CBF',
-            path: 'lieferzeiten.externalOrdersLike',
+            path: 'lieferzeiten.index',
             icon: 'regular-clock',
             parent: 'sw-order',
             position: 46,
