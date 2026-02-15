@@ -260,6 +260,9 @@
       "save": "Save status",
       "saved": "Status updated and queued for push.",
       "invalidSelection": "Please select status 7 or 8."
+    },
+    "settingsNavigation": {
+      "deliveryTime": "Lieferzeit"
     }
   }
 }

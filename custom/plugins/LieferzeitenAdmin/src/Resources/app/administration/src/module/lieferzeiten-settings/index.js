@@ -46,11 +46,11 @@ Module.register('lieferzeiten-settings', {
     navigation: [
         {
             id: 'lieferzeiten-settings',
-            label: 'lieferzeiten.lms.general.mainMenuItem',
+            label: 'lieferzeiten.settingsNavigation.deliveryTime',
             color: '#009ee3',
             path: 'lieferzeiten.settings.index',
             icon: 'regular-cog',
-            parent: 'sw-settings',
+            parent: 'bestellungen-lieferzeiten-settings',
             position: 90,
         },
         {
