@@ -1,42 +1,30 @@
-import './page/external-orders-settings-index';
-
-import deDE from './snippet/de-DE.json';
-import enGB from './snippet/en-GB.json';
+import './page/external-orders-settings';
 
 const { Module } = Shopware;
 
 Module.register('external-orders-settings', {
     type: 'plugin',
     name: 'external-orders-settings',
-    title: 'external-orders-settings.navigation.section',
-    description: 'external-orders-settings.navigation.section',
+    title: 'Externe orders',
+    description: 'Einstellungen für Externe orders',
     color: '#009ee3',
-    icon: 'regular-cog',
-
-    snippets: {
-        'de-DE': deDE,
-        'en-GB': enGB,
-    },
+    icon: 'regular-shopping-cart',
 
     routes: {
         index: {
-            component: 'external-orders-settings-index',
-            path: '',
+            component: 'external-orders-settings',
+            path: 'index',
             meta: {
+                parentPath: 'sw.settings.index.bestellungLiefezeit',
                 privilege: 'admin',
             },
         },
     },
 
-    navigation: [
-        {
-            id: 'external-orders-settings',
-            label: 'external-orders-settings.navigation.section',
-            color: '#009ee3',
-            path: 'external.orders.settings.index',
-            icon: 'regular-cog',
-            parent: 'sw-settings',
-            position: 85,
-        },
-    ],
+    settingsItem: {
+        group: 'bestellungLiefezeit',
+        to: 'external.orders.settings.index',
+        icon: 'regular-shopping-cart',
+        privilege: 'admin',
+    },
 });
