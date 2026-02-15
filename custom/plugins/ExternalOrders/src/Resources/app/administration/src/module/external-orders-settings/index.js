@@ -1,27 +1,19 @@
-import './page/external-orders-settings-index';
-
-import deDE from './snippet/de-DE.json';
-import enGB from './snippet/en-GB.json';
+import './page/external-orders-settings';
 
 const { Module } = Shopware;
 
 Module.register('external-orders-settings', {
     type: 'plugin',
     name: 'external-orders-settings',
-    title: 'external-orders-settings.navigation.section',
-    description: 'external-orders-settings.navigation.section',
+    title: 'Externe Bestellung',
+    description: 'Einstellungen für Externe Bestellung',
     color: '#009ee3',
-    icon: 'regular-cog',
-
-    snippets: {
-        'de-DE': deDE,
-        'en-GB': enGB,
-    },
+    icon: 'regular-shopping-cart',
 
     routes: {
         index: {
-            component: 'external-orders-settings-index',
-            path: '',
+            component: 'external-orders-settings',
+            path: 'index',
             meta: {
                 privilege: 'admin',
             },
@@ -31,12 +23,13 @@ Module.register('external-orders-settings', {
     navigation: [
         {
             id: 'external-orders-settings',
-            label: 'external-orders-settings.navigation.section',
+            label: 'Externe Bestellung',
             color: '#009ee3',
             path: 'external.orders.settings.index',
-            icon: 'regular-cog',
+            icon: 'regular-shopping-cart',
             parent: 'sw-settings',
-            position: 85,
+            position: 90,
+            privilege: 'admin',
         },
     ],
 });

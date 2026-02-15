@@ -38,7 +38,7 @@ Component.register('external-orders-list', {
         return {
             isLoading: false,
             isSeedingTestData: false,
-            pageTitle: 'Bestellübersichten',
+            pageTitle: 'Externe Bestellung',
             orders: [],
             summary: {
                 orderCount: 0,
@@ -117,7 +117,7 @@ Component.register('external-orders-list', {
                 end: null,
             },
             page: 1,
-            limit: 10,
+            limit: 25,
             limitOptions: [10, 25, 50, 100],
             sortBy: 'date',
             sortDirection: 'DESC',
@@ -325,11 +325,6 @@ Component.register('external-orders-list', {
             try {
                 const config = await this.systemConfigApiService.getValues('ExternalOrders');
                 const getConfigValue = (key) => config?.[`ExternalOrders.config.${key}`] ?? '';
-                const locale = Shopware.Store.get('session')?.currentLocale ?? '';
-                const isGermanLocale = locale.toLowerCase().startsWith('de');
-                const pageNameDe = getConfigValue('pageNameDe');
-                const pageNameEn = getConfigValue('pageNameEn');
-                const defaultColumnsPerPage = Number.parseInt(getConfigValue('defaultColumnsPerPage'), 10);
 
                 this.channelSources = {
                     all: 'Alle External Orders',
@@ -342,15 +337,6 @@ Component.register('external-orders-list', {
                     bezb: getConfigValue('externalOrdersApiUrlBezb'),
                 };
 
-                this.pageTitle = (isGermanLocale ? pageNameDe : pageNameEn) || this.pageTitle;
-
-                if (Number.isFinite(defaultColumnsPerPage) && defaultColumnsPerPage > 0) {
-                    this.limit = defaultColumnsPerPage;
-                    if (!this.limitOptions.includes(defaultColumnsPerPage)) {
-                        this.limitOptions = [...this.limitOptions, defaultColumnsPerPage]
-                            .sort((left, right) => left - right);
-                    }
-                }
             } catch (error) {
                 this.channelSources = {};
                 this.createNotificationWarning({
