@@ -1,6 +1,6 @@
 <sw-page class="lieferzeiten-notification-toggle-list">
     <template #smart-bar-header>
-        <h2>{{ $tc('lieferzeiten.lms.navigation.notificationToggles') }}</h2>
+        <h2>{{ $t('lieferzeiten.lms.navigation.notificationToggles') }}</h2>
     </template>
 
     <template #content>
@@ -11,35 +11,35 @@
             <sw-tabs-item :route="{ name: 'lieferzeiten.settings.syncConfiguration' }" title="Sync settings">
                 Sync settings
             </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.taskAssignmentRules' }" :title="$tc('lieferzeiten.lms.navigation.taskAssignmentRules')">
-                {{ $tc('lieferzeiten.lms.navigation.taskAssignmentRules') }}
+            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.taskAssignmentRules' }" :title="$t('lieferzeiten.lms.navigation.taskAssignmentRules')">
+                {{ $t('lieferzeiten.lms.navigation.taskAssignmentRules') }}
             </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.notificationToggles' }" :title="$tc('lieferzeiten.lms.navigation.notificationToggles')">
-                {{ $tc('lieferzeiten.lms.navigation.notificationToggles') }}
+            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.notificationToggles' }" :title="$t('lieferzeiten.lms.navigation.notificationToggles')">
+                {{ $t('lieferzeiten.lms.navigation.notificationToggles') }}
             </sw-tabs-item>
             <sw-tabs-item :route="{ name: 'lieferzeiten.settings.statistics' }" title="Statistiken">
                 Statistiken
             </sw-tabs-item>
         </sw-tabs>
-        <sw-card :isLoading="isLoading" :title="$tc('lieferzeiten.lms.notificationMatrix.title')">
+        <sw-card :isLoading="isLoading" :title="$t('lieferzeiten.lms.notificationMatrix.title')">
             <sw-alert variant="info" appearance="default" :showIcon="true">
-                {{ $tc('lieferzeiten.lms.notificationMatrix.source') }}
+                {{ $t('lieferzeiten.lms.notificationMatrix.source') }}
                 <code>(triggerKey, channel, salesChannelId)</code>.
             </sw-alert>
 
             <sw-alert variant="info" appearance="default" :showIcon="true">
-                {{ $tc('lieferzeiten.lms.notificationMatrix.emailOnlyHint') }}
+                {{ $t('lieferzeiten.lms.notificationMatrix.emailOnlyHint') }}
             </sw-alert>
 
             <sw-alert v-if="invalidEntries.length" variant="warning" appearance="default" :showIcon="true">
-                {{ $tc('lieferzeiten.lms.notificationMatrix.invalidEntries', invalidEntries.length, { count: invalidEntries.length }) }}
+                {{ $t('lieferzeiten.lms.notificationMatrix.invalidEntries', { count: invalidEntries.length }) }}
             </sw-alert>
 
             <div class="sw-data-grid sw-data-grid--compact">
                 <table class="sw-data-grid__table">
                     <thead class="sw-data-grid__header">
                         <tr class="sw-data-grid__row">
-                            <th class="sw-data-grid__cell">{{ $tc('lieferzeiten.lms.notificationMatrix.notificationType') }}</th>
+                            <th class="sw-data-grid__cell">{{ $t('lieferzeiten.lms.notificationMatrix.notificationType') }}</th>
                             <th
                                 v-for="scope in salesChannelColumns"
                                 :key="scope.id"

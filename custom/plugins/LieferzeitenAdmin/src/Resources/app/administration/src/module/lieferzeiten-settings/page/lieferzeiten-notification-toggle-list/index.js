@@ -94,7 +94,7 @@ Component.register('lieferzeiten-notification-toggle-list', {
             return error?.response?.data?.errors?.[0]?.detail
                 || error?.response?.data?.message
                 || error?.message
-                || this.$tc('global.default.error');
+                || this.$t('global.default.error');
         },
 
         notifyRequestError(error, fallbackTitle) {
@@ -125,7 +125,7 @@ Component.register('lieferzeiten-notification-toggle-list', {
                 this.salesChannels = [...salesChannelResult];
                 this.invalidEntries = this.items.filter((item) => !this.isValidToggle(item));
             } catch (error) {
-                this.notifyRequestError(error, this.$tc('lieferzeiten.lms.general.mainMenuItem'));
+                this.notifyRequestError(error, this.$t('lieferzeiten.lms.general.mainMenuItem'));
             } finally {
                 this.isLoading = false;
             }
@@ -153,7 +153,8 @@ Component.register('lieferzeiten-notification-toggle-list', {
             ].filter((locale, index, locales) => typeof locale === 'string' && locales.indexOf(locale) === index);
 
             for (const locale of localeOrder) {
-                const translatedLabel = this.$i18n?.messages?.[locale]?.lieferzeiten?.lms?.notificationMatrix?.triggers?.[triggerKey];
+                const triggerTranslations = this.$tm('lieferzeiten.lms.notificationMatrix.triggers', locale);
+                const translatedLabel = triggerTranslations?.[triggerKey];
 
                 if (translatedLabel) {
                     return translatedLabel;
@@ -232,7 +233,7 @@ Component.register('lieferzeiten-notification-toggle-list', {
                 await this.repository.save(entity, Shopware.Context.api);
                 await this.loadData();
             } catch (error) {
-                this.notifyRequestError(error, this.$tc('lieferzeiten.lms.general.mainMenuItem'));
+                this.notifyRequestError(error, this.$t('lieferzeiten.lms.general.mainMenuItem'));
             } finally {
                 this.isLoading = false;
             }
