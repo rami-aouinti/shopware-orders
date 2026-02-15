@@ -1,4 +1,5 @@
 import template from './lieferzeiten-channel-settings-list.html.twig';
+import './lieferzeiten-channel-settings-list.scss';
 import { DOMAIN_GROUPS, normalizeDomainKey } from '../../../lieferzeiten/utils/domain-source-mapping';
 import {
     isLmsTargetChannel,
