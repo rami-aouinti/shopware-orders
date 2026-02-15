@@ -94,7 +94,7 @@ Component.register('lieferzeiten-notification-toggle-list', {
             return error?.response?.data?.errors?.[0]?.detail
                 || error?.response?.data?.message
                 || error?.message
-                || this.$tc('global.default.error');
+                || this.$t('global.default.error');
         },
 
         notifyRequestError(error, fallbackTitle) {
@@ -125,7 +125,7 @@ Component.register('lieferzeiten-notification-toggle-list', {
                 this.salesChannels = [...salesChannelResult];
                 this.invalidEntries = this.items.filter((item) => !this.isValidToggle(item));
             } catch (error) {
-                this.notifyRequestError(error, this.$tc('lieferzeiten.lms.general.mainMenuItem'));
+                this.notifyRequestError(error, this.$t('lieferzeiten.lms.general.mainMenuItem'));
             } finally {
                 this.isLoading = false;
             }
@@ -144,13 +144,24 @@ Component.register('lieferzeiten-notification-toggle-list', {
         },
 
         getTriggerLabel(triggerKey) {
-            const escapedTriggerKey = triggerKey.replace(/\./g, '\\.');
-            const translationKey = `lieferzeiten.lms.notificationMatrix.triggers.${escapedTriggerKey}`;
-            const translatedLabel = this.$te(translationKey)
-                ? this.$tc(translationKey)
-                : '';
+            const fallbackLocales = this.$root?.$i18n?.fallbackLocale;
+            const localeOrder = [
+                this.$i18n?.locale,
+                ...(Array.isArray(fallbackLocales) ? fallbackLocales : [fallbackLocales]),
+                'en-GB',
+                'de-DE',
+            ].filter((locale, index, locales) => typeof locale === 'string' && locales.indexOf(locale) === index);
 
-            return translatedLabel || triggerKey;
+            for (const locale of localeOrder) {
+                const triggerTranslations = this.$tm('lieferzeiten.lms.notificationMatrix.triggers', locale);
+                const translatedLabel = triggerTranslations?.[triggerKey];
+
+                if (translatedLabel) {
+                    return translatedLabel;
+                }
+            }
+
+            return triggerKey;
         },
 
         isValidToggle(item) {
@@ -222,7 +233,7 @@ Component.register('lieferzeiten-notification-toggle-list', {
                 await this.repository.save(entity, Shopware.Context.api);
                 await this.loadData();
             } catch (error) {
-                this.notifyRequestError(error, this.$tc('lieferzeiten.lms.general.mainMenuItem'));
+                this.notifyRequestError(error, this.$t('lieferzeiten.lms.general.mainMenuItem'));
             } finally {
                 this.isLoading = false;
             }
