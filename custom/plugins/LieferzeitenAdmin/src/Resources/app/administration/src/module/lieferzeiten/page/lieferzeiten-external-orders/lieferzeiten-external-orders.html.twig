@@ -657,98 +657,98 @@
                                             <h4>Kundendetails (Shopware)</h4>
                                             <dl>
                                                 <dt>Kundenname - Shopware</dt>
-                                                <dd>{{ selectedOrder.customer.firstName }} {{ selectedOrder.customer.lastName }}</dd>
+                                                <dd>{{ detailOrder.customer.firstName }} {{ detailOrder.customer.lastName }}</dd>
                                                 <dt>Kundennummer</dt>
-                                                <dd>{{ selectedOrder.customer.number }}</dd>
+                                                <dd>{{ detailOrder.customer.number }}</dd>
                                                 <dt>Vorname</dt>
-                                                <dd>{{ selectedOrder.customer.firstName }}</dd>
+                                                <dd>{{ detailOrder.customer.firstName }}</dd>
                                                 <dt>Nachname</dt>
-                                                <dd>{{ selectedOrder.customer.lastName }}</dd>
+                                                <dd>{{ detailOrder.customer.lastName }}</dd>
                                                 <dt>Kunden-Mail-Adresse - Shopware</dt>
-                                                <dd>{{ selectedOrder.customer.email }}</dd>
+                                                <dd>{{ detailOrder.customer.email }}</dd>
                                                 <dt>Kundengruppe - Shopware</dt>
-                                                <dd>{{ selectedOrder.customer.group }}</dd>
+                                                <dd>{{ detailOrder.customer.group }}</dd>
                                             </dl>
                                         </div>
                                         <div class="lieferzeiten-external-orders__detail-section">
                                             <h4>Zahlungsdetails</h4>
                                             <dl>
                                                 <dt>Zahlungsmethode</dt>
-                                                <dd>{{ selectedOrder.payment.method }}</dd>
+                                                <dd>{{ detailOrder.payment.method }}</dd>
                                                 <dt>Zahlungscode</dt>
-                                                <dd>{{ selectedOrder.payment.code }}</dd>
+                                                <dd>{{ detailOrder.payment.code }}</dd>
                                                 <dt>Fälligkeitsdatum</dt>
-                                                <dd>{{ selectedOrder.payment.dueDate }}</dd>
+                                                <dd>{{ detailOrder.payment.dueDate }}</dd>
                                                 <dt>Ausstehender Betrag</dt>
-                                                <dd>{{ selectedOrder.payment.outstanding }}</dd>
+                                                <dd>{{ detailOrder.payment.outstanding }}</dd>
                                                 <dt>Abgerechnet</dt>
-                                                <dd>{{ selectedOrder.payment.settled }}</dd>
+                                                <dd>{{ detailOrder.payment.settled }}</dd>
                                                 <dt>Zusatzinfo</dt>
-                                                <dd>{{ selectedOrder.payment.extra }}</dd>
+                                                <dd>{{ detailOrder.payment.extra }}</dd>
                                             </dl>
                                         </div>
                                         <div class="lieferzeiten-external-orders__detail-section">
                                             <h4>Rechnungsanschrift (mit Land) - Shopware</h4>
                                             <dl>
                                                 <dt>Straße</dt>
-                                                <dd>{{ selectedOrder.billingAddress.street }}</dd>
+                                                <dd>{{ detailOrder.billingAddress.street }}</dd>
                                                 <dt>PLZ</dt>
-                                                <dd>{{ selectedOrder.billingAddress.zip }}</dd>
+                                                <dd>{{ detailOrder.billingAddress.zip }}</dd>
                                                 <dt>Stadt</dt>
-                                                <dd>{{ selectedOrder.billingAddress.city }}</dd>
+                                                <dd>{{ detailOrder.billingAddress.city }}</dd>
                                                 <dt>Land</dt>
-                                                <dd>{{ selectedOrder.billingAddress.country }}</dd>
+                                                <dd>{{ detailOrder.billingAddress.country }}</dd>
                                             </dl>
                                         </div>
                                         <div class="lieferzeiten-external-orders__detail-section">
                                             <h4>Lieferanschrift - Shopware</h4>
                                             <dl>
                                                 <dt>Lieferadresse</dt>
-                                                <dd>{{ selectedOrder.shippingAddress.name }}</dd>
+                                                <dd>{{ detailOrder.shippingAddress.name }}</dd>
                                                 <dt>Lieferstraße</dt>
-                                                <dd>{{ selectedOrder.shippingAddress.street }}</dd>
+                                                <dd>{{ detailOrder.shippingAddress.street }}</dd>
                                                 <dt>Postleitzahl/Stadt</dt>
-                                                <dd>{{ selectedOrder.shippingAddress.zipCity }}</dd>
+                                                <dd>{{ detailOrder.shippingAddress.zipCity }}</dd>
                                                 <dt>Land</dt>
-                                                <dd>{{ selectedOrder.shippingAddress.country }}</dd>
+                                                <dd>{{ detailOrder.shippingAddress.country }}</dd>
                                             </dl>
                                         </div>
                                         <div class="lieferzeiten-external-orders__detail-section">
                                             <h4>Weitere Details</h4>
                                             <dl>
                                                 <dt>Bestelldatum</dt>
-                                                <dd>{{ selectedOrder.additional.orderDate }}</dd>
+                                                <dd>{{ detailOrder.additional.orderDate }}</dd>
                                                 <dt>Status</dt>
-                                                <dd>{{ selectedOrder.additional.status }}</dd>
+                                                <dd>{{ detailOrder.additional.status }}</dd>
                                                 <dt>Bestelltyp</dt>
-                                                <dd>{{ selectedOrder.additional.orderType }}</dd>
+                                                <dd>{{ detailOrder.additional.orderType }}</dd>
                                                 <dt>Notizen</dt>
-                                                <dd>{{ selectedOrder.additional.notes }}</dd>
+                                                <dd>{{ detailOrder.additional.notes }}</dd>
                                                 <dt>Fachberater - San6 (ERP)</dt>
-                                                <dd>{{ selectedOrder.additional.consultant }}</dd>
+                                                <dd>{{ detailOrder.additional.consultant }}</dd>
                                                 <dt>Mandant</dt>
-                                                <dd>{{ selectedOrder.additional.tenant }}</dd>
+                                                <dd>{{ detailOrder.additional.tenant }}</dd>
                                                 <dt>San6 Auftragsnummer - San6 (ERP)</dt>
-                                                <dd>{{ selectedOrder.additional.san6OrderNumber }}</dd>
+                                                <dd>{{ detailOrder.additional.san6OrderNumber }}</dd>
                                             </dl>
                                         </div>
                                         <div class="lieferzeiten-external-orders__detail-section">
                                             <h4>Erweiterte Bestelldaten</h4>
                                             <dl>
                                                 <dt>Versanddienstleister</dt>
-                                                <dd>{{ selectedOrder.shipping.carrier }}</dd>
+                                                <dd>{{ detailOrder.shipping.carrier }}</dd>
                                                 <dt>Versanddienstleister Trackingnummer(n) - San6 (ERP)</dt>
-                                                <dd>{{ selectedOrder.shipping.carrier }}: {{ selectedOrder.shipping.trackingNumbers.join(', ') }}</dd>
+                                                <dd>{{ detailOrder.shipping.carrier }}: {{ detailOrder.shipping.trackingNumbers.join(', ') }}</dd>
                                                 <dt>Einträge in Orgas San6 - San6 (ERP)</dt>
-                                                <dd>{{ selectedOrder.additional.orgaEntries.join(', ') }}</dd>
+                                                <dd>{{ detailOrder.additional.orgaEntries.join(', ') }}</dd>
                                                 <dt>Dokumente aus Bildarchiv San6 - San6 (ERP)</dt>
-                                                <dd>{{ selectedOrder.additional.documents.join(', ') }}</dd>
+                                                <dd>{{ detailOrder.additional.documents.join(', ') }}</dd>
                                                 <dt>PDMS ID + Variante - Shopware</dt>
-                                                <dd>{{ selectedOrder.additional.pdmsId }} / {{ selectedOrder.additional.pdmsVariant }}</dd>
+                                                <dd>{{ detailOrder.additional.pdmsId }} / {{ detailOrder.additional.pdmsVariant }}</dd>
                                                 <dt>TopM Artikelnummer + Ausführung - San6 (ERP)</dt>
-                                                <dd>{{ selectedOrder.additional.topmArticleNumber }} / {{ selectedOrder.additional.topmExecution }}</dd>
+                                                <dd>{{ detailOrder.additional.topmArticleNumber }} / {{ detailOrder.additional.topmExecution }}</dd>
                                                 <dt>Bestellstatushistorie Gambio/Shopware - Shopware</dt>
-                                                <dd>{{ selectedOrder.additional.statusHistorySource }}</dd>
+                                                <dd>{{ detailOrder.additional.statusHistorySource }}</dd>
                                             </dl>
                                         </div>
                                     </div>
@@ -775,10 +775,10 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <tr v-for="(item, index) in selectedOrder.items" :key="`detail-item-${index}`">
+                                                <tr v-for="(item, index) in detailOrder.items" :key="`detail-item-${index}`">
                                                     <td>{{ item.name }}</td>
                                                     <td>{{ item.orderedQuantity ?? item.quantity }}</td>
-                                                    <td>{{ itemDisplayStatus(item, selectedOrder.items) }}</td>
+                                                    <td>{{ itemDisplayStatus(item, detailOrder.items) }}</td>
                                                     <td>{{ itemShipmentRatio(item) }}</td>
                                                     <td>{{ formatCurrency(item.netPrice) }}</td>
                                                     <td>{{ item.taxRate }}%</td>
@@ -806,7 +806,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <tr v-for="(entry, index) in selectedOrder.statusHistory" :key="`detail-status-${index}`">
+                                                <tr v-for="(entry, index) in detailOrder.statusHistory" :key="`detail-status-${index}`">
                                                     <td>
                                                         <span class="lieferzeiten-external-orders__status-pill" :class="statusClassFromLabel(entry.status)">
                                                             {{ entry.status }}
@@ -829,23 +829,23 @@
                                     <div class="lieferzeiten-external-orders__totals">
                                         <div class="lieferzeiten-external-orders__totals-row">
                                             <span>Warenwert</span>
-                                            <span>{{ formatCurrency(selectedOrder.totals.items) }}</span>
+                                            <span>{{ formatCurrency(detailOrder.totals.items) }}</span>
                                         </div>
                                         <div class="lieferzeiten-external-orders__totals-row">
                                             <span>Versandkosten</span>
-                                            <span>{{ formatCurrency(selectedOrder.totals.shipping) }}</span>
+                                            <span>{{ formatCurrency(detailOrder.totals.shipping) }}</span>
                                         </div>
                                         <div class="lieferzeiten-external-orders__totals-row">
                                             <span>Summe</span>
-                                            <span>{{ formatCurrency(selectedOrder.totals.sum) }}</span>
+                                            <span>{{ formatCurrency(detailOrder.totals.sum) }}</span>
                                         </div>
                                         <div class="lieferzeiten-external-orders__totals-row">
                                             <span>inkl. MwSt.</span>
-                                            <span>{{ formatCurrency(selectedOrder.totals.tax) }}</span>
+                                            <span>{{ formatCurrency(detailOrder.totals.tax) }}</span>
                                         </div>
                                         <div class="lieferzeiten-external-orders__totals-row">
                                             <span>Summe netto</span>
-                                            <span>{{ formatCurrency(selectedOrder.totals.net) }}</span>
+                                            <span>{{ formatCurrency(detailOrder.totals.net) }}</span>
                                         </div>
                                     </div>
                                 </div>
