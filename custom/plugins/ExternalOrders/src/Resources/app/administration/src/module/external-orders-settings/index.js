@@ -5,8 +5,8 @@ const { Module } = Shopware;
 Module.register('external-orders-settings', {
     type: 'plugin',
     name: 'external-orders-settings',
-    title: 'Externe Bestellung',
-    description: 'Einstellungen für Externe Bestellung',
+    title: 'Externe orders',
+    description: 'Einstellungen für Externe orders',
     color: '#009ee3',
     icon: 'regular-shopping-cart',
 
@@ -15,21 +15,16 @@ Module.register('external-orders-settings', {
             component: 'external-orders-settings',
             path: 'index',
             meta: {
+                parentPath: 'sw.settings.index.bestellungLiefezeit',
                 privilege: 'admin',
             },
         },
     },
 
-    navigation: [
-        {
-            id: 'external-orders-settings',
-            label: 'Externe Bestellung',
-            color: '#009ee3',
-            path: 'external.orders.settings.index',
-            icon: 'regular-shopping-cart',
-            parent: 'sw-settings',
-            position: 90,
-            privilege: 'admin',
-        },
-    ],
+    settingsItem: {
+        group: 'bestellungLiefezeit',
+        to: 'external.orders.settings.index',
+        icon: 'regular-shopping-cart',
+        privilege: 'admin',
+    },
 });

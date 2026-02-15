@@ -8,8 +8,8 @@ const { Module } = Shopware;
 Module.register('lieferzeiten-settings', {
     type: 'plugin',
     name: 'lieferzeiten-settings',
-    title: 'lieferzeiten.lms.general.mainMenuItem',
-    description: 'lieferzeiten.lms.general.description',
+    title: 'Lieferzeit',
+    description: 'Einstellungen für Lieferzeit',
     color: '#009ee3',
     icon: 'regular-cog',
 
@@ -18,6 +18,7 @@ Module.register('lieferzeiten-settings', {
             component: 'lieferzeiten-sync-settings',
             path: '',
             meta: {
+                parentPath: 'sw.settings.index.bestellungLiefezeit',
                 privilege: 'admin',
             },
         },
@@ -51,16 +52,10 @@ Module.register('lieferzeiten-settings', {
         },
     },
 
-    navigation: [
-        {
-            id: 'lieferzeiten-settings',
-            label: 'Liefezeit',
-            color: '#009ee3',
-            path: 'lieferzeiten.settings.index',
-            icon: 'regular-clock',
-            parent: 'sw-settings',
-            position: 91,
-            privilege: 'admin',
-        },
-    ],
+    settingsItem: {
+        group: 'bestellungLiefezeit',
+        to: 'lieferzeiten.settings.index',
+        icon: 'regular-clock',
+        privilege: 'admin',
+    },
 });
