@@ -1,31 +1,14 @@
-import './page/lieferzeiten-index';
-import './page/lieferzeiten-all';
-import './page/lieferzeiten-open';
-import './page/lieferzeiten-statistics';
 import './page/lieferzeiten-delivery-management';
-import './component/lieferzeiten-domain-selection';
-import './component/lieferzeiten-order-table';
 
 const { Module } = Shopware;
 
 Module.register('lieferzeiten', {
     type: 'plugin',
     name: 'lieferzeiten',
-    title: 'lieferzeiten.general.mainMenuItemGeneral',
+    title: 'lieferzeiten.general.mainMenuItemDeliveryManagement',
     description: 'lieferzeiten.general.description',
     color: '#2B8CBF',
     icon: 'regular-clock',
-
-    privileges: {
-        viewer: {
-            permissions: ['admin'],
-            dependencies: [],
-        },
-        editor: {
-            permissions: ['admin'],
-            dependencies: ['viewer'],
-        },
-    },
 
     routes: {
         index: {
@@ -39,7 +22,7 @@ Module.register('lieferzeiten', {
 
     navigation: [
         {
-            id: 'lieferzeiten',
+            id: 'lieferzeiten-delivery-management',
             label: 'lieferzeiten.general.mainMenuItemDeliveryManagement',
             color: '#2B8CBF',
             path: 'lieferzeiten.index',
