@@ -2,6 +2,7 @@ import './page/lieferzeiten-index';
 import './page/lieferzeiten-all';
 import './page/lieferzeiten-open';
 import './page/lieferzeiten-statistics';
+import './page/lieferzeiten-delivery-management';
 import './component/lieferzeiten-domain-selection';
 import './component/lieferzeiten-order-table';
 
@@ -30,8 +31,16 @@ Module.register('lieferzeiten', {
         index: {
             component: 'lieferzeiten-index',
             path: 'index',
-            redirect: { name: 'lieferzeiten.index.all' },
+            redirect: { name: 'lieferzeiten.index.deliveryManagement' },
             children: {
+                deliveryManagement: {
+                    component: 'lieferzeiten-delivery-management',
+                    path: 'delivery-management',
+                    meta: {
+                        parentPath: 'lieferzeiten.index',
+                        privilege: 'admin',
+                    },
+                },
                 all: {
                     component: 'lieferzeiten-all',
                     path: 'all',
@@ -63,9 +72,9 @@ Module.register('lieferzeiten', {
     navigation: [
         {
             id: 'lieferzeiten',
-            label: 'lieferzeiten.general.mainMenuItemGeneral',
+            label: 'lieferzeiten.general.mainMenuItemDeliveryManagement',
             color: '#2B8CBF',
-            path: 'lieferzeiten.index.all',
+            path: 'lieferzeiten.index.deliveryManagement',
             icon: 'regular-clock',
             parent: 'sw-order',
             position: 46,
