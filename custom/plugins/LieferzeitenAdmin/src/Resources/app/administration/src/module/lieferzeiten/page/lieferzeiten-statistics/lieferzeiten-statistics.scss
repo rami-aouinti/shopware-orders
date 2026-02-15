@@ -1,35 +1,72 @@
 .lieferzeiten-statistics {
     display: grid;
-    gap: 16px;
+    gap: 24px;
+    padding: 8px 0 24px;
+
+    &__filters {
+        align-items: end;
+
+        .sw-field {
+            margin-bottom: 0;
+        }
+
+        .sw-button {
+            min-width: 140px;
+            min-height: 64px;
+            font-weight: 600;
+        }
+    }
+
+    &__metrics {
+        .sw-card {
+            min-height: 190px;
+        }
+
+        .sw-card__title {
+            font-size: 28px;
+            font-weight: 700;
+        }
+    }
 
     &__metric {
-        font-size: 28px;
+        font-size: 56px;
         font-weight: 700;
+        line-height: 1;
+        color: #111827;
+        padding-top: 10px;
+    }
+
+    &__chart-card,
+    &__timeline-card {
+        max-width: 1060px;
+        width: 100%;
+        margin: 0 auto;
     }
 
     &__chart {
         display: grid;
-        gap: 8px;
+        gap: 12px;
     }
 
     &__chart-row {
         display: grid;
-        grid-template-columns: 180px 1fr 32px;
+        grid-template-columns: 240px 1fr 32px;
         align-items: center;
-        gap: 12px;
+        gap: 16px;
+        font-size: 16px;
     }
 
     &__bar-wrap {
-        background: #eef2f7;
-        border-radius: 6px;
+        background: #dce2e9;
+        border-radius: 999px;
         overflow: hidden;
-        height: 12px;
+        height: 20px;
     }
 
     &__bar {
         height: 100%;
-        background: #189eff;
-        border-radius: 6px;
+        background: #1e9bf0;
+        border-radius: 999px;
     }
 
     &__timeline-chart {
