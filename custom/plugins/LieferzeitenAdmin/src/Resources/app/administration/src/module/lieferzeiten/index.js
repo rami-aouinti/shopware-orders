@@ -1,4 +1,5 @@
 import './page/lieferzeiten-delivery-management';
+import './page/lieferzeiten-external-orders';
 
 const { Module } = Shopware;
 
@@ -21,6 +22,13 @@ Module.register('lieferzeiten-delivery-management', {
         deliveryManagement: {
             component: 'lieferzeiten-delivery-management',
             path: 'delivery-management',
+            meta: {
+                privilege: 'admin',
+            },
+        },
+        externalOrders: {
+            component: 'lieferzeiten-external-orders',
+            path: 'external-orders',
             meta: {
                 privilege: 'admin',
             },

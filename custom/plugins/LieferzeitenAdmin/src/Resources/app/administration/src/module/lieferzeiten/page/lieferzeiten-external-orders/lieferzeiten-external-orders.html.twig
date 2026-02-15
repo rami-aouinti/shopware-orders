@@ -1,0 +1,930 @@
+<div class="lieferzeiten-external-orders">
+    <header class="lieferzeiten-external-orders__header">
+        <div class="lieferzeiten-external-orders__header-content">
+            <h2>{{ pageTitle }}</h2>
+            <div class="lieferzeiten-external-orders__summary lieferzeiten-external-orders__summary--header">
+                <div class="lieferzeiten-external-orders__summary-metrics">
+                    <div class="lieferzeiten-external-orders__summary-item">
+                        <span class="lieferzeiten-external-orders__summary-label">Bestellungen</span>
+                        <span class="lieferzeiten-external-orders__summary-value">{{ summary.orderCount }}</span>
+                    </div>
+                    <div class="lieferzeiten-external-orders__summary-item">
+                        <span class="lieferzeiten-external-orders__summary-label">Gesamtumsatz</span>
+                        <span class="lieferzeiten-external-orders__summary-value">{{ formatCurrency(summary.totalRevenue) }}</span>
+                    </div>
+                    <div class="lieferzeiten-external-orders__summary-item">
+                        <span class="lieferzeiten-external-orders__summary-label">Stück</span>
+                        <span class="lieferzeiten-external-orders__summary-value">{{ summary.totalItems }}</span>
+                    </div>
+                </div>
+                <div class="lieferzeiten-external-orders__summary-actions">
+                    <button
+                        class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary"
+                        type="button"
+                        @click="exportSelectedOrdersPdf"
+                    >
+                        <sw-icon name="regular-file-text" size="16" class="lieferzeiten-external-orders__download-icon"></sw-icon>
+                        PDF herunterladen ({{ selectedOrders.length > 0 ? selectedOrders.length : filteredOrders.length }})
+                    </button>
+                    <button
+                        class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--secondary"
+                        type="button"
+                        @click="exportSelectedOrdersExcel"
+                    >
+                        <sw-icon name="regular-file" size="16" class="lieferzeiten-external-orders__download-icon"></sw-icon>
+                        Excel herunterladen ({{ selectedOrders.length > 0 ? selectedOrders.length : filteredOrders.length }})
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main id="main" class="sw-page__main-content" tabindex="-1">
+        <div class="lieferzeiten-external-orders__page">
+            <sw-card class="lieferzeiten-external-orders__channels" style="max-width: none; width: 100%;">
+                <div class="lieferzeiten-external-orders__channel-tabs">
+                    <button
+                        v-for="channel in channels"
+                        :key="channel.id"
+                        class="lieferzeiten-external-orders__channel-tab"
+                        :class="{ 'is--active': activeChannel === channel.id }"
+                        type="button"
+                        @click="activeChannel = channel.id; loadOrders()"
+                    >
+                        <span class="lieferzeiten-external-orders__channel-logo">
+                            <img :src="channel.logo" :alt="channel.label" />
+                        </span>
+                        <span class="lieferzeiten-external-orders__channel-label">{{ channel.label }}</span>
+                    </button>
+                </div>
+                <div class="lieferzeiten-external-orders__filters-bar">
+                    <div class="lieferzeiten-external-orders__filters">
+                        <button
+                                class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary"
+                                type="button"
+                                @click="resetFilters"
+                        >
+                            <sw-icon name="regular-filter" size="16"></sw-icon>
+                            Filter löschen
+                        </button>
+                        <sw-datepicker
+                                v-model="dateFilters.start"
+                                placeholder="Start Datum"
+                                class="lieferzeiten-external-orders__date"
+                                size="small"
+                                date-type="date"
+                                @change="setDateFilter('start', $event)"
+                        />
+                        <sw-datepicker
+                                v-model="dateFilters.end"
+                                placeholder="End Datum"
+                                class="lieferzeiten-external-orders__date"
+                                size="small"
+                                date-type="date"
+                                @change="setDateFilter('end', $event)"
+                        />
+                        <button
+                                class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary"
+                                type="button"
+                                @click="applyDateFilter"
+                        >
+                            Anwenden
+                        </button>
+                    </div>
+                    <div class="lieferzeiten-external-orders__filters-actions">
+                        <sw-text-field
+                                v-model="tableSearchTerm"
+                                placeholder="Suche Bestellungen"
+                                class="lieferzeiten-external-orders__search"
+                                size="small"
+                                type="search"></sw-text-field>
+                        <button
+                                class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary"
+                                type="button"
+                                :disabled="!hasSelectedOrders"
+                                @click="openTestMarkingModal"
+                        >
+                            Testmarkierung Anwenden
+                        </button>
+                    </div>
+                </div>
+                <div
+                        v-if="paginatedOrders.length > 0"
+                        class="lieferzeiten-external-orders__table-wrapper"
+                >
+                    <table class="lieferzeiten-external-orders__table">
+                        <thead>
+                        <tr>
+                            <th class="lieferzeiten-external-orders__cell lieferzeiten-external-orders__cell--checkbox">
+                                <input
+                                        type="checkbox"
+                                        class="lieferzeiten-external-orders__checkbox"
+                                        :checked="isAllSelected"
+                                        @change="toggleSelectAll($event)"
+                                />
+                            </th>
+                            <th class="lieferzeiten-external-orders__cell">
+                                <div class="lieferzeiten-external-orders__column-header">
+                                    <button
+                                            class="lieferzeiten-external-orders__column-sort"
+                                            type="button"
+                                            @click="onSortColumn('orderNumber')"
+                                    >
+                                        BestellNr
+                                        <span class="lieferzeiten-external-orders__sort-indicator">
+                                                {{ getSortIndicator('orderNumber') }}
+                                            </span>
+                                    </button>
+                                    <button
+                                            class="lieferzeiten-external-orders__column-filter-button"
+                                            :class="{ 'is--active': isColumnFilterActive('orderNumber') }"
+                                            type="button"
+                                            @click.stop="toggleColumnFilter('orderNumber')"
+                                    >
+                                        <sw-icon name="regular-filter" size="16" />
+                                    </button>
+                                    <div
+                                            v-if="activeColumnFilter === 'orderNumber'"
+                                            class="lieferzeiten-external-orders__column-filter-panel"
+                                            @click.stop
+                                    >
+                                        <sw-single-select
+                                                v-model:value="columnFilterMatchMode"
+                                                :options="columnFilterMatchOptions"
+                                                value-property="value"
+                                                label-property="label"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"
+                                                @change="setColumnFilterMatchMode"
+                                        />
+                                        <sw-single-select
+                                                v-model:value="columnFilters.orderNumber.operator"
+                                                :options="columnFilterOperatorOptions"
+                                                value-property="value"
+                                                label-property="label"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"
+                                                @change="setColumnFilterOperator('orderNumber', $event)"
+                                        />
+                                        <sw-text-field
+                                                v-model="columnFilters.orderNumber.value"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"></sw-text-field>
+                                        <button class="lieferzeiten-external-orders__column-filter-add lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary lieferzeiten-external-orders__button--small"
+                                                disabled
+                                                type="button">
+                                            + Add Rule
+                                        </button>
+                                        <div class="lieferzeiten-external-orders__column-filter-actions">
+                                            <button class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--secondary lieferzeiten-external-orders__button--small"
+                                                    @click="clearColumnFilter('orderNumber')"
+                                                    type="button">
+                                                Clear
+                                            </button>
+                                            <button class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary lieferzeiten-external-orders__button--small"
+                                                    @click="applyColumnFilter"
+                                                    type="button">
+                                                Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="lieferzeiten-external-orders__cell">
+                                <div class="lieferzeiten-external-orders__column-header">
+                                    <button
+                                            class="lieferzeiten-external-orders__column-sort"
+                                            type="button"
+                                            @click="onSortColumn('customerName')"
+                                    >
+                                        Kundenname
+                                        <span class="lieferzeiten-external-orders__sort-indicator">
+                                                {{ getSortIndicator('customerName') }}
+                                            </span>
+                                    </button>
+                                    <button
+                                            class="lieferzeiten-external-orders__column-filter-button"
+                                            :class="{ 'is--active': isColumnFilterActive('customerName') }"
+                                            type="button"
+                                            @click.stop="toggleColumnFilter('customerName')"
+                                    >
+                                        <sw-icon name="regular-filter" size="16"></sw-icon>
+                                    </button>
+                                    <div
+                                            v-if="activeColumnFilter === 'customerName'"
+                                            class="lieferzeiten-external-orders__column-filter-panel"
+                                            @click.stop
+                                    >
+                                        <sw-single-select
+                                                v-model:value="columnFilterMatchMode"
+                                                :options="columnFilterMatchOptions"
+                                                value-property="value"
+                                                label-property="label"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"
+                                                @change="setColumnFilterMatchMode"
+                                        />
+                                        <sw-single-select
+                                                v-model:value="columnFilters.customerName.operator"
+                                                :options="columnFilterOperatorOptions"
+                                                value-property="value"
+                                                label-property="label"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"
+                                                @change="setColumnFilterOperator('customerName', $event)"
+                                        />
+                                        <sw-text-field
+                                                v-model="columnFilters.customerName.value"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"></sw-text-field>
+                                        <button class="lieferzeiten-external-orders__column-filter-add lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary lieferzeiten-external-orders__button--small"
+                                                disabled
+                                                type="button">
+                                            + Add Rule
+                                        </button>
+                                        <div class="lieferzeiten-external-orders__column-filter-actions">
+                                            <button class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--secondary lieferzeiten-external-orders__button--small"
+                                                    @click="clearColumnFilter('customerName')"
+                                                    type="button">
+                                                Clear
+                                            </button>
+                                            <button class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary lieferzeiten-external-orders__button--small"
+                                                    @click="applyColumnFilter"
+                                                    type="button">
+                                                Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="lieferzeiten-external-orders__cell lieferzeiten-external-orders__cell--order-reference">
+                                <div class="lieferzeiten-external-orders__column-header">
+                                    <button
+                                            class="lieferzeiten-external-orders__column-sort"
+                                            type="button"
+                                            @click="onSortColumn('orderReference')"
+                                    >
+                                        AuftragsNr
+                                        <span class="lieferzeiten-external-orders__sort-indicator">
+                                                {{ getSortIndicator('orderReference') }}
+                                            </span>
+                                    </button>
+                                    <button
+                                            class="lieferzeiten-external-orders__column-filter-button"
+                                            :class="{ 'is--active': isColumnFilterActive('orderReference') }"
+                                            type="button"
+                                            @click.stop="toggleColumnFilter('orderReference')"
+                                    >
+                                        <sw-icon name="regular-filter" size="16"></sw-icon>
+                                    </button>
+                                    <div
+                                            v-if="activeColumnFilter === 'orderReference'"
+                                            class="lieferzeiten-external-orders__column-filter-panel"
+                                            @click.stop
+                                    >
+                                        <sw-single-select
+                                                v-model:value="columnFilterMatchMode"
+                                                :options="columnFilterMatchOptions"
+                                                value-property="value"
+                                                label-property="label"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"
+                                                @change="setColumnFilterMatchMode"
+                                        />
+                                        <sw-single-select
+                                                v-model:value="columnFilters.orderReference.operator"
+                                                :options="columnFilterOperatorOptions"
+                                                value-property="value"
+                                                label-property="label"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"
+                                                @change="setColumnFilterOperator('orderReference', $event)"
+                                        />
+                                        <sw-text-field
+                                                v-model="columnFilters.orderReference.value"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"></sw-text-field>
+                                        <button class="lieferzeiten-external-orders__column-filter-add lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary lieferzeiten-external-orders__button--small"
+                                                disabled
+                                                type="button">
+                                            + Add Rule
+                                        </button>
+                                        <div class="lieferzeiten-external-orders__column-filter-actions">
+                                            <button class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--secondary lieferzeiten-external-orders__button--small"
+                                                    @click="clearColumnFilter('orderReference')"
+                                                    type="button">
+                                                Clear
+                                            </button>
+                                            <button class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary lieferzeiten-external-orders__button--small"
+                                                    @click="applyColumnFilter"
+                                                    type="button">
+                                                Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="lieferzeiten-external-orders__cell">
+                                <div class="lieferzeiten-external-orders__column-header">
+                                    <button
+                                            class="lieferzeiten-external-orders__column-sort"
+                                            type="button"
+                                            @click="onSortColumn('email')"
+                                    >
+                                        Email
+                                        <span class="lieferzeiten-external-orders__sort-indicator">
+                                                {{ getSortIndicator('email') }}
+                                            </span>
+                                    </button>
+                                    <button
+                                            class="lieferzeiten-external-orders__column-filter-button"
+                                            :class="{ 'is--active': isColumnFilterActive('email') }"
+                                            type="button"
+                                            @click.stop="toggleColumnFilter('email')"
+                                    >
+                                        <sw-icon name="regular-filter" size="16" />
+                                    </button>
+                                    <div
+                                            v-if="activeColumnFilter === 'email'"
+                                            class="lieferzeiten-external-orders__column-filter-panel"
+                                            @click.stop
+                                    >
+                                        <sw-single-select
+                                                v-model:value="columnFilterMatchMode"
+                                                :options="columnFilterMatchOptions"
+                                                value-property="value"
+                                                label-property="label"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"
+                                                @change="setColumnFilterMatchMode"
+                                        />
+                                        <sw-single-select
+                                                v-model:value="columnFilters.email.operator"
+                                                :options="columnFilterOperatorOptions"
+                                                value-property="value"
+                                                label-property="label"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"
+                                                @change="setColumnFilterOperator('email', $event)"
+                                        />
+                                        <sw-text-field
+                                                v-model="columnFilters.email.value"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"></sw-text-field>
+                                        <button class="lieferzeiten-external-orders__column-filter-add lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary lieferzeiten-external-orders__button--small"
+                                                disabled
+                                                type="button">
+                                            + Add Rule
+                                        </button>
+                                        <div class="lieferzeiten-external-orders__column-filter-actions">
+                                            <button class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--secondary lieferzeiten-external-orders__button--small"
+                                                    @click="clearColumnFilter('email')"
+                                                    type="button">
+                                                Clear
+                                            </button>
+                                            <button class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary lieferzeiten-external-orders__button--small"
+                                                    @click="applyColumnFilter"
+                                                    type="button">
+                                                Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="lieferzeiten-external-orders__cell lieferzeiten-external-orders__cell--date">
+                                <div class="lieferzeiten-external-orders__column-header">
+                                    <button
+                                            class="lieferzeiten-external-orders__column-sort"
+                                            type="button"
+                                            @click="onSortColumn('date')"
+                                    >
+                                        Datum
+                                        <span class="lieferzeiten-external-orders__sort-indicator">
+                                                {{ getSortIndicator('date') }}
+                                            </span>
+                                    </button>
+                                    <button
+                                            class="lieferzeiten-external-orders__column-filter-button"
+                                            :class="{ 'is--active': isColumnFilterActive('date') }"
+                                            type="button"
+                                            @click.stop="toggleColumnFilter('date')"
+                                    >
+                                        <sw-icon name="regular-filter" size="16"></sw-icon>
+                                    </button>
+                                    <div
+                                            v-if="activeColumnFilter === 'date'"
+                                            class="lieferzeiten-external-orders__column-filter-panel"
+                                            @click.stop
+                                    >
+                                        <sw-single-select
+                                                v-model:value="columnFilterMatchMode"
+                                                :options="columnFilterMatchOptions"
+                                                value-property="value"
+                                                label-property="label"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"
+                                                @change="setColumnFilterMatchMode"
+                                        />
+                                        <sw-single-select
+                                                v-model:value="columnFilters.date.operator"
+                                                :options="columnFilterOperatorOptions"
+                                                value-property="value"
+                                                label-property="label"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"
+                                                @change="setColumnFilterOperator('date', $event)"
+                                        />
+                                        <sw-text-field
+                                                v-model="columnFilters.date.value"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"></sw-text-field>
+                                        <button class="lieferzeiten-external-orders__column-filter-add lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary lieferzeiten-external-orders__button--small"
+                                                disabled
+                                                type="button">
+                                            + Add Rule
+                                        </button>
+                                        <div class="lieferzeiten-external-orders__column-filter-actions">
+                                            <button class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--secondary lieferzeiten-external-orders__button--small"
+                                                    @click="clearColumnFilter('date')"
+                                                    type="button">
+                                                Clear
+                                            </button>
+                                            <button class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary lieferzeiten-external-orders__button--small"
+                                                    @click="applyColumnFilter"
+                                                    type="button">
+                                                Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="lieferzeiten-external-orders__cell">
+                                <div class="lieferzeiten-external-orders__column-header">
+                                    <button
+                                            class="lieferzeiten-external-orders__column-sort"
+                                            type="button"
+                                            @click="onSortColumn('statusLabel')"
+                                    >
+                                        Bestellstatus
+                                        <span class="lieferzeiten-external-orders__sort-indicator">
+                                                {{ getSortIndicator('statusLabel') }}
+                                            </span>
+                                    </button>
+                                    <button
+                                            class="lieferzeiten-external-orders__column-filter-button"
+                                            :class="{ 'is--active': isColumnFilterActive('statusLabel') }"
+                                            type="button"
+                                            @click.stop="toggleColumnFilter('statusLabel')"
+                                    >
+                                        <sw-icon name="regular-filter" size="16"></sw-icon>
+                                    </button>
+                                    <div
+                                            v-if="activeColumnFilter === 'statusLabel'"
+                                            class="lieferzeiten-external-orders__column-filter-panel"
+                                            @click.stop
+                                    >
+                                        <sw-single-select
+                                                v-model:value="columnFilterMatchMode"
+                                                :options="columnFilterMatchOptions"
+                                                value-property="value"
+                                                label-property="label"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"
+                                                @change="setColumnFilterMatchMode"
+                                        />
+                                        <sw-single-select
+                                                v-model:value="columnFilters.statusLabel.operator"
+                                                :options="columnFilterOperatorOptions"
+                                                value-property="value"
+                                                label-property="label"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"
+                                                @change="setColumnFilterOperator('statusLabel', $event)"
+                                        />
+                                        <sw-text-field
+                                                v-model="columnFilters.statusLabel.value"
+                                                size="small"
+                                                class="lieferzeiten-external-orders__column-filter-field"></sw-text-field>
+                                        <button class="lieferzeiten-external-orders__column-filter-add lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary lieferzeiten-external-orders__button--small"
+                                                disabled
+                                                type="button">
+                                            + Add Rule
+                                        </button>
+                                        <div class="lieferzeiten-external-orders__column-filter-actions">
+                                            <button class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--secondary lieferzeiten-external-orders__button--small"
+                                                    @click="clearColumnFilter('statusLabel')"
+                                                    type="button">
+                                                Clear
+                                            </button>
+                                            <button class="lieferzeiten-external-orders__button lieferzeiten-external-orders__button--primary lieferzeiten-external-orders__button--small"
+                                                    @click="applyColumnFilter"
+                                                    type="button">
+                                                Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="lieferzeiten-external-orders__cell lieferzeiten-external-orders__cell--actions">
+                                Ansicht
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="order in paginatedOrders" :key="getOrderKey(order)">
+                            <td class="lieferzeiten-external-orders__cell lieferzeiten-external-orders__cell--checkbox">
+                                <input
+                                        type="checkbox"
+                                        class="lieferzeiten-external-orders__checkbox"
+                                        :checked="isOrderSelected(order)"
+                                        @change="toggleOrderSelection(order, $event)"
+                                />
+                            </td>
+                            <td class="lieferzeiten-external-orders__cell">{{ order.orderNumber }}</td>
+                            <td class="lieferzeiten-external-orders__cell">{{ order.customerName }}</td>
+                            <td class="lieferzeiten-external-orders__cell lieferzeiten-external-orders__cell--order-reference">{{ order.orderReference }}</td>
+                            <td class="lieferzeiten-external-orders__cell">{{ order.email }}</td>
+                            <td class="lieferzeiten-external-orders__cell lieferzeiten-external-orders__cell--date">{{ formatDateForTable(order.date) }}</td>
+                            <td class="lieferzeiten-external-orders__cell">
+                                    <span class="lieferzeiten-external-orders__status-pill" :class="statusClass(order)">
+                                        {{ order.statusLabel }}
+                                    </span>
+                            </td>
+                            <td class="lieferzeiten-external-orders__cell lieferzeiten-external-orders__cell--actions">
+                                <button class="lieferzeiten-external-orders__action lieferzeiten-external-orders__button lieferzeiten-external-orders__button--ghost lieferzeiten-external-orders__button--small"
+                                        @click="openDetail(order)"
+                                        type="button">
+                                    <sw-icon name="regular-eye" size="16"></sw-icon>
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div
+                        v-if="paginatedOrders.length > 0"
+                        class="lieferzeiten-external-orders__pagination"
+                >
+                    <div class="lieferzeiten-external-orders__pagination-controls">
+                        <button
+                                type="button"
+                                class="lieferzeiten-external-orders__pagination-nav"
+                                :disabled="page <= 1"
+                                @click="goToFirstPage"
+                        >
+                            «
+                        </button>
+                        <button
+                                type="button"
+                                class="lieferzeiten-external-orders__pagination-nav"
+                                :disabled="page <= 1"
+                                @click="goToPreviousPage"
+                        >
+                            ‹
+                        </button>
+                        <div class="lieferzeiten-external-orders__pagination-pages">
+                            <button
+                                    v-for="pageNumber in visiblePages"
+                                    :key="pageNumber"
+                                    type="button"
+                                    class="lieferzeiten-external-orders__pagination-page"
+                                    :class="{ 'is--active': pageNumber === page }"
+                                    @click="goToPage(pageNumber)"
+                            >
+                                {{ pageNumber }}
+                            </button>
+                        </div>
+                        <button
+                                type="button"
+                                class="lieferzeiten-external-orders__pagination-nav"
+                                :disabled="page >= totalPages"
+                                @click="goToNextPage"
+                        >
+                            ›
+                        </button>
+                        <button
+                                type="button"
+                                class="lieferzeiten-external-orders__pagination-nav"
+                                :disabled="page >= totalPages"
+                                @click="goToLastPage"
+                        >
+                            »
+                        </button>
+                        <label class="lieferzeiten-external-orders__pagination-limit">
+                            <span>Pro Seite</span>
+                            <select
+                                    :value="String(limit)"
+                                    @change="onLimitChange($event.target.value)"
+                            >
+                                <option
+                                        v-for="option in limitOptions"
+                                        :key="option"
+                                        :value="String(option)"
+                                >
+                                    {{ option }}
+                                </option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <sw-empty-state
+                        v-else
+                        class="lieferzeiten-external-orders__empty-state"
+                        icon="regular-shopping-cart"
+                        title="Keine Bestellungen gefunden"
+                        subline="Es wurden keine Bestellungen für die aktuelle Auswahl geladen."></sw-empty-state>
+            </sw-card>
+
+            <div
+                v-if="showDetailModal && selectedOrder"
+                class="lieferzeiten-external-orders__detail-overlay"
+                @click.self="closeDetail"
+            >
+                <div class="lieferzeiten-external-orders__detail-dialog" role="dialog" aria-modal="true">
+                    <header class="lieferzeiten-external-orders__detail-header">
+                        <h3>Bestellübersicht für {{ selectedOrder.orderNumber }}</h3>
+                        <button class="lieferzeiten-external-orders__detail-close" type="button" @click="closeDetail">×</button>
+                    </header>
+                    <div class="lieferzeiten-external-orders__detail-body">
+                        <div class="lieferzeiten-external-orders__detail">
+                            <section class="lieferzeiten-external-orders__detail-card">
+                                <div class="lieferzeiten-external-orders__detail-card-header">
+                                    <h4>Zusätzliche Bestellinformationen</h4>
+                                </div>
+                                <div class="lieferzeiten-external-orders__detail-card-body">
+                                    <div class="lieferzeiten-external-orders__detail-grid">
+                                        <div class="lieferzeiten-external-orders__detail-section">
+                                            <h4>Kundendetails (Shopware)</h4>
+                                            <dl>
+                                                <dt>Kundenname - Shopware</dt>
+                                                <dd>{{ selectedOrder.customer.firstName }} {{ selectedOrder.customer.lastName }}</dd>
+                                                <dt>Kundennummer</dt>
+                                                <dd>{{ selectedOrder.customer.number }}</dd>
+                                                <dt>Vorname</dt>
+                                                <dd>{{ selectedOrder.customer.firstName }}</dd>
+                                                <dt>Nachname</dt>
+                                                <dd>{{ selectedOrder.customer.lastName }}</dd>
+                                                <dt>Kunden-Mail-Adresse - Shopware</dt>
+                                                <dd>{{ selectedOrder.customer.email }}</dd>
+                                                <dt>Kundengruppe - Shopware</dt>
+                                                <dd>{{ selectedOrder.customer.group }}</dd>
+                                            </dl>
+                                        </div>
+                                        <div class="lieferzeiten-external-orders__detail-section">
+                                            <h4>Zahlungsdetails</h4>
+                                            <dl>
+                                                <dt>Zahlungsmethode</dt>
+                                                <dd>{{ selectedOrder.payment.method }}</dd>
+                                                <dt>Zahlungscode</dt>
+                                                <dd>{{ selectedOrder.payment.code }}</dd>
+                                                <dt>Fälligkeitsdatum</dt>
+                                                <dd>{{ selectedOrder.payment.dueDate }}</dd>
+                                                <dt>Ausstehender Betrag</dt>
+                                                <dd>{{ selectedOrder.payment.outstanding }}</dd>
+                                                <dt>Abgerechnet</dt>
+                                                <dd>{{ selectedOrder.payment.settled }}</dd>
+                                                <dt>Zusatzinfo</dt>
+                                                <dd>{{ selectedOrder.payment.extra }}</dd>
+                                            </dl>
+                                        </div>
+                                        <div class="lieferzeiten-external-orders__detail-section">
+                                            <h4>Rechnungsanschrift (mit Land) - Shopware</h4>
+                                            <dl>
+                                                <dt>Straße</dt>
+                                                <dd>{{ selectedOrder.billingAddress.street }}</dd>
+                                                <dt>PLZ</dt>
+                                                <dd>{{ selectedOrder.billingAddress.zip }}</dd>
+                                                <dt>Stadt</dt>
+                                                <dd>{{ selectedOrder.billingAddress.city }}</dd>
+                                                <dt>Land</dt>
+                                                <dd>{{ selectedOrder.billingAddress.country }}</dd>
+                                            </dl>
+                                        </div>
+                                        <div class="lieferzeiten-external-orders__detail-section">
+                                            <h4>Lieferanschrift - Shopware</h4>
+                                            <dl>
+                                                <dt>Lieferadresse</dt>
+                                                <dd>{{ selectedOrder.shippingAddress.name }}</dd>
+                                                <dt>Lieferstraße</dt>
+                                                <dd>{{ selectedOrder.shippingAddress.street }}</dd>
+                                                <dt>Postleitzahl/Stadt</dt>
+                                                <dd>{{ selectedOrder.shippingAddress.zipCity }}</dd>
+                                                <dt>Land</dt>
+                                                <dd>{{ selectedOrder.shippingAddress.country }}</dd>
+                                            </dl>
+                                        </div>
+                                        <div class="lieferzeiten-external-orders__detail-section">
+                                            <h4>Weitere Details</h4>
+                                            <dl>
+                                                <dt>Bestelldatum</dt>
+                                                <dd>{{ selectedOrder.additional.orderDate }}</dd>
+                                                <dt>Status</dt>
+                                                <dd>{{ selectedOrder.additional.status }}</dd>
+                                                <dt>Bestelltyp</dt>
+                                                <dd>{{ selectedOrder.additional.orderType }}</dd>
+                                                <dt>Notizen</dt>
+                                                <dd>{{ selectedOrder.additional.notes }}</dd>
+                                                <dt>Fachberater - San6 (ERP)</dt>
+                                                <dd>{{ selectedOrder.additional.consultant }}</dd>
+                                                <dt>Mandant</dt>
+                                                <dd>{{ selectedOrder.additional.tenant }}</dd>
+                                                <dt>San6 Auftragsnummer - San6 (ERP)</dt>
+                                                <dd>{{ selectedOrder.additional.san6OrderNumber }}</dd>
+                                            </dl>
+                                        </div>
+                                        <div class="lieferzeiten-external-orders__detail-section">
+                                            <h4>Erweiterte Bestelldaten</h4>
+                                            <dl>
+                                                <dt>Versanddienstleister</dt>
+                                                <dd>{{ selectedOrder.shipping.carrier }}</dd>
+                                                <dt>Versanddienstleister Trackingnummer(n) - San6 (ERP)</dt>
+                                                <dd>{{ selectedOrder.shipping.carrier }}: {{ selectedOrder.shipping.trackingNumbers.join(', ') }}</dd>
+                                                <dt>Einträge in Orgas San6 - San6 (ERP)</dt>
+                                                <dd>{{ selectedOrder.additional.orgaEntries.join(', ') }}</dd>
+                                                <dt>Dokumente aus Bildarchiv San6 - San6 (ERP)</dt>
+                                                <dd>{{ selectedOrder.additional.documents.join(', ') }}</dd>
+                                                <dt>PDMS ID + Variante - Shopware</dt>
+                                                <dd>{{ selectedOrder.additional.pdmsId }} / {{ selectedOrder.additional.pdmsVariant }}</dd>
+                                                <dt>TopM Artikelnummer + Ausführung - San6 (ERP)</dt>
+                                                <dd>{{ selectedOrder.additional.topmArticleNumber }} / {{ selectedOrder.additional.topmExecution }}</dd>
+                                                <dt>Bestellstatushistorie Gambio/Shopware - Shopware</dt>
+                                                <dd>{{ selectedOrder.additional.statusHistorySource }}</dd>
+                                            </dl>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="lieferzeiten-external-orders__detail-card">
+                                <div class="lieferzeiten-external-orders__detail-card-header">
+                                    <h4>Bestellprodukte</h4>
+                                </div>
+                                <div class="lieferzeiten-external-orders__detail-card-body">
+                                    <div class="lieferzeiten-external-orders__detail-table-wrapper">
+                                        <table class="lieferzeiten-external-orders__detail-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Produktname</th>
+                                                    <th>Menge</th>
+                                                    <th>Status Position</th>
+                                                    <th>Expédié/Commandé</th>
+                                                    <th>Nettowert des Artikels - Shopware</th>
+                                                    <th>Steuersatz des Artikels - Shopware</th>
+                                                    <th>Bruttowert des Artikels - Shopware</th>
+                                                    <th>Gesamtwert des Artikels - Shopware</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="(item, index) in selectedOrder.items" :key="`detail-item-${index}`">
+                                                    <td>{{ item.name }}</td>
+                                                    <td>{{ item.orderedQuantity ?? item.quantity }}</td>
+                                                    <td>{{ itemDisplayStatus(item, selectedOrder.items) }}</td>
+                                                    <td>{{ itemShipmentRatio(item) }}</td>
+                                                    <td>{{ formatCurrency(item.netPrice) }}</td>
+                                                    <td>{{ item.taxRate }}%</td>
+                                                    <td>{{ formatCurrency(item.grossPrice) }}</td>
+                                                    <td>{{ formatCurrency(item.totalPrice) }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="lieferzeiten-external-orders__detail-card">
+                                <div class="lieferzeiten-external-orders__detail-card-header">
+                                    <h4>Statusverlauf</h4>
+                                </div>
+                                <div class="lieferzeiten-external-orders__detail-card-body">
+                                    <div class="lieferzeiten-external-orders__detail-table-wrapper">
+                                        <table class="lieferzeiten-external-orders__detail-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Status</th>
+                                                    <th>Datum</th>
+                                                    <th>Kommentare</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="(entry, index) in selectedOrder.statusHistory" :key="`detail-status-${index}`">
+                                                    <td>
+                                                        <span class="lieferzeiten-external-orders__status-pill" :class="statusClassFromLabel(entry.status)">
+                                                            {{ entry.status }}
+                                                        </span>
+                                                    </td>
+                                                    <td>{{ entry.date }}</td>
+                                                    <td>{{ entry.comment }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="lieferzeiten-external-orders__detail-card">
+                                <div class="lieferzeiten-external-orders__detail-card-header">
+                                    <h4>Bestellgesamtsummen</h4>
+                                </div>
+                                <div class="lieferzeiten-external-orders__detail-card-body">
+                                    <div class="lieferzeiten-external-orders__totals">
+                                        <div class="lieferzeiten-external-orders__totals-row">
+                                            <span>Warenwert</span>
+                                            <span>{{ formatCurrency(selectedOrder.totals.items) }}</span>
+                                        </div>
+                                        <div class="lieferzeiten-external-orders__totals-row">
+                                            <span>Versandkosten</span>
+                                            <span>{{ formatCurrency(selectedOrder.totals.shipping) }}</span>
+                                        </div>
+                                        <div class="lieferzeiten-external-orders__totals-row">
+                                            <span>Summe</span>
+                                            <span>{{ formatCurrency(selectedOrder.totals.sum) }}</span>
+                                        </div>
+                                        <div class="lieferzeiten-external-orders__totals-row">
+                                            <span>inkl. MwSt.</span>
+                                            <span>{{ formatCurrency(selectedOrder.totals.tax) }}</span>
+                                        </div>
+                                        <div class="lieferzeiten-external-orders__totals-row">
+                                            <span>Summe netto</span>
+                                            <span>{{ formatCurrency(selectedOrder.totals.net) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                v-if="showTestMarkingModal"
+                class="lieferzeiten-external-orders__testmarking-overlay"
+                role="dialog"
+                aria-modal="true"
+            >
+                <div class="lieferzeiten-external-orders__testmarking-dialog">
+                    <header class="lieferzeiten-external-orders__testmarking-header">
+                        <h3>Bestätigen von Änderungen der Testmarkierung</h3>
+                        <button
+                            type="button"
+                            class="lieferzeiten-external-orders__testmarking-close"
+                            aria-label="Modal schließen"
+                            @click="closeTestMarkingModal"
+                        >
+                            ×
+                        </button>
+                    </header>
+                    <div class="lieferzeiten-external-orders__testmarking-body">
+                        <p class="lieferzeiten-external-orders__testmarking-intro">
+                            Sie sind dabei, die folgenden Bestellungen als Testbestellungen zu markieren bzw. die Markierung
+                            aufzuheben. Bitte überprüfen Sie die Änderungen, bevor Sie sie bestätigen.
+                        </p>
+                        <div class="lieferzeiten-external-orders__testmarking-grid">
+                            <div class="lieferzeiten-external-orders__testmarking-card">
+                                <h4 class="lieferzeiten-external-orders__testmarking-title is--positive">
+                                    Als Test zu markierende Bestellungen
+                                </h4>
+                                <ul class="lieferzeiten-external-orders__testmarking-list">
+                                    <li
+                                        v-for="order in testMarkingOrders"
+                                        :key="getOrderKey(order)"
+                                    >
+                                        {{ getOrderDisplayLabel(order) }}
+                                    </li>
+                                    <li v-if="testMarkingOrders.length === 0">
+                                        Keine Bestellungen ausgewählt.
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="lieferzeiten-external-orders__testmarking-card">
+                                <h4 class="lieferzeiten-external-orders__testmarking-title is--negative">
+                                    Bestellungen, die nicht als Test markieren
+                                </h4>
+                                <ul class="lieferzeiten-external-orders__testmarking-list">
+                                    <li
+                                        v-for="order in unmarkedTestOrders"
+                                        :key="getOrderKey(order)"
+                                    >
+                                        {{ getOrderDisplayLabel(order) }}
+                                    </li>
+                                    <li v-if="unmarkedTestOrders.length === 0">
+                                        Keine Bestellungen ausgewählt.
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <footer class="lieferzeiten-external-orders__testmarking-footer">
+                        <sw-button variant="secondary" @click="closeTestMarkingModal">
+                            Abbrechen
+                        </sw-button>
+                        <sw-button variant="primary" @click="applyTestMarking">
+                            Bestätige
+                        </sw-button>
+                    </footer>
+                </div>
+            </div>
+
+            
+        </div>
+    </main>
+</div>
