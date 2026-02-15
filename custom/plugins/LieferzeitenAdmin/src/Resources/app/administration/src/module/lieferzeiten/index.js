@@ -5,6 +5,7 @@ import './page/lieferzeiten-index';
 import './page/lieferzeiten-all';
 import './page/lieferzeiten-open';
 import './page/lieferzeiten-statistics';
+import './page/lieferzeit-empty';
 
 const { Module } = Shopware;
 
@@ -59,6 +60,14 @@ Module.register('lieferzeiten', {
                         privilege: 'admin',
                     },
                 },
+                lieferzeit: {
+                    component: 'lieferzeit-empty',
+                    path: 'lieferzeit',
+                    meta: {
+                        parentPath: 'lieferzeiten.index',
+                        privilege: 'admin',
+                    },
+                },
             },
         },
     },
@@ -66,12 +75,21 @@ Module.register('lieferzeiten', {
     navigation: [
         {
             id: 'lieferzeiten-menu-entry',
-            label: 'Lieferzeiten',
+            label: 'Bestellübersichten',
             color: '#2B8CBF',
             path: 'lieferzeiten.index.all',
             icon: 'regular-clock',
             parent: 'sw-order',
             position: 46,
+        },
+        {
+            id: 'lieferzeit-menu-entry',
+            label: 'Lieferzeit',
+            color: '#2B8CBF',
+            path: 'lieferzeiten.index.lieferzeit',
+            icon: 'regular-clock',
+            parent: 'sw-order',
+            position: 47,
         },
     ],
 });
