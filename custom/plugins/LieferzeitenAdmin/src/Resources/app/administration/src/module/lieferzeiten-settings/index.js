@@ -15,12 +15,8 @@ Module.register('lieferzeiten-settings', {
 
     routes: {
         index: {
-            component: 'lieferzeiten-channel-settings-list',
             path: '',
-            meta: {
-                parentPath: 'sw.settings.index.bestellungLiefezeit',
-                privilege: 'admin',
-            },
+            redirect: { name: 'lieferzeiten.settings.channelSettings' },
         },
         syncConfiguration: {
             component: 'lieferzeiten-sync-settings',
@@ -50,11 +46,18 @@ Module.register('lieferzeiten-settings', {
                 privilege: 'admin',
             },
         },
+        statistics: {
+            component: 'lieferzeiten-statistics',
+            path: 'statistics',
+            meta: {
+                privilege: 'admin',
+            },
+        },
     },
 
     settingsItem: {
         group: 'bestellungLiefezeit',
-        to: 'lieferzeiten.settings.index',
+        to: 'lieferzeiten.settings.channelSettings',
         icon: 'regular-clock',
         privilege: 'admin',
     },
