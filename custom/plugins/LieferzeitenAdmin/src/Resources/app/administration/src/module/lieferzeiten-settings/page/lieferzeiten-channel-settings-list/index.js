@@ -53,12 +53,30 @@ const OTHER_CHANNELS_GROUP = {
     title: 'Weitere Kanäle',
 };
 
+const API_CONFIG_DOMAIN = 'LieferzeitenAdmin.config';
+
+const API_CONFIG_FIELDS = [
+    { key: 'shopwareApiUrl', label: 'Shopware API URL' },
+    { key: 'shopwareApiToken', label: 'Shopware API token', type: 'password' },
+    { key: 'gambioApiUrl', label: 'Gambio API URL' },
+    { key: 'gambioApiToken', label: 'Gambio API token', type: 'password' },
+    { key: 'shopwareStatusPushApiUrl', label: 'Shopware status push API URL' },
+    { key: 'shopwareStatusPushApiToken', label: 'Shopware status push API token', type: 'password' },
+    { key: 'gambioStatusPushApiUrl', label: 'Gambio status push API URL' },
+    { key: 'gambioStatusPushApiToken', label: 'Gambio status push API token', type: 'password' },
+    { key: 'pdmsApiUrl', label: 'PDMS API URL' },
+    { key: 'pdmsApiToken', label: 'PDMS API token', type: 'password' },
+    { key: 'pdmsLieferzeitenPath', label: 'PDMS Lieferzeiten path' },
+    { key: 'san6ApiUrl', label: 'SAN6 API URL' },
+    { key: 'san6ApiToken', label: 'SAN6 API token', type: 'password' },
+];
+
 Component.register('lieferzeiten-channel-settings-list', {
     template,
 
     mixins: ['notification'],
 
-    inject: ['repositoryFactory', 'lieferzeitenOrdersService'],
+    inject: ['repositoryFactory', 'lieferzeitenOrdersService', 'systemConfigApiService'],
 
     data() {
         return {
@@ -76,6 +94,8 @@ Component.register('lieferzeiten-channel-settings-list', {
             channelPdmsLieferzeiten: {},
             channelPdmsMappingIncomplete: {},
             selectedChannelByGroup: {},
+            apiConfigFields: API_CONFIG_FIELDS,
+            apiConfigValues: {},
         };
     },
 
@@ -132,6 +152,7 @@ Component.register('lieferzeiten-channel-settings-list', {
         this.salesChannelRepository = this.repositoryFactory.create('sales_channel');
         this.loadData();
         this.loadDemoDataStatus();
+        this.loadApiConfig();
     },
 
     methods: {
@@ -294,6 +315,36 @@ Component.register('lieferzeiten-channel-settings-list', {
             } catch (error) {
                 return normalizeDomainKey(url);
             }
+        },
+
+
+        buildApiConfigKey(fieldKey) {
+            return `${API_CONFIG_DOMAIN}.${fieldKey}`;
+        },
+
+        async loadApiConfig() {
+            try {
+                const values = await this.systemConfigApiService.getValues(API_CONFIG_DOMAIN);
+                const nextValues = {};
+
+                this.apiConfigFields.forEach((field) => {
+                    nextValues[field.key] = values[this.buildApiConfigKey(field.key)] ?? '';
+                });
+
+                this.apiConfigValues = nextValues;
+            } catch (error) {
+                this.notifyRequestError(error, 'API / Token / SAN6');
+            }
+        },
+
+        async saveApiConfig() {
+            const payload = {};
+
+            this.apiConfigFields.forEach((field) => {
+                payload[this.buildApiConfigKey(field.key)] = this.apiConfigValues[field.key] ?? '';
+            });
+
+            await this.systemConfigApiService.saveValues(payload);
         },
 
         extractErrorMessage(error) {
@@ -505,6 +556,7 @@ Component.register('lieferzeiten-channel-settings-list', {
             this.isSaving = true;
 
             try {
+                await this.saveApiConfig();
                 const whitelistedChannelIds = this.getWhitelistedChannelIds();
                 const existingEntries = new Map();
 

@@ -5,17 +5,11 @@
         <title lang="en-GB">External Orders</title>
         <title lang="de-DE">Externe Bestellungen</title>
 
-        <input-field type="int">
-            <name>externalOrdersItemsPerPage</name>
-            <label lang="en-GB">Items per page</label>
-            <label lang="de-DE">Nombre par page</label>
-            <defaultValue>25</defaultValue>
+        <input-field type="text">
+            <name>externalOrdersPageTitle</name>
+            <label lang="en-GB">External Orders title</label>
+            <label lang="de-DE">Titel für External Orders</label>
+            <defaultValue>Externe Bestellung</defaultValue>
         </input-field>
-
-        <component name="external-orders-testdata-button">
-            <name>externalOrdersDemoData</name>
-            <label lang="en-GB">Demo data</label>
-            <label lang="de-DE">Demo Daten</label>
-        </component>
     </card>
 </config>

@@ -15,8 +15,20 @@ Component.register('external-orders-settings', {
         return {
             isLoading: false,
             isSaving: false,
+            activeOverviewTab: 'all',
+            overviewTabs: [
+                { id: 'all', label: 'Alle Übersichten' },
+                { id: 'b2b', label: 'B2B' },
+                { id: 'ebay_de', label: 'eBay DE' },
+                { id: 'kaufland', label: 'Kaufland' },
+                { id: 'ebay_at', label: 'eBay AT' },
+                { id: 'zonami', label: 'Zonami' },
+                { id: 'peg', label: 'PEG' },
+                { id: 'bezb', label: 'BEZB' },
+            ],
             config: {
-                externalOrdersItemsPerPage: 25,
+                externalOrdersSan6BaseUrl: '',
+                externalOrdersSan6Authentifizierung: '',
             },
         };
     },
