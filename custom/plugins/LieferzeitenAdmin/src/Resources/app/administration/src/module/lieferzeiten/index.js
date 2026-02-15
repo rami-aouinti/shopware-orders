@@ -18,6 +18,13 @@ Module.register('lieferzeiten-delivery-management', {
                 privilege: 'admin',
             },
         },
+        deliveryManagement: {
+            component: 'lieferzeiten-delivery-management',
+            path: 'delivery-management',
+            meta: {
+                privilege: 'admin',
+            },
+        },
     },
 
     navigation: [
@@ -34,7 +41,7 @@ Module.register('lieferzeiten-delivery-management', {
             id: 'lieferzeiten-delivery-management',
             label: 'lieferzeiten.general.mainMenuItemDeliveryManagement',
             color: '#2B8CBF',
-            path: 'lieferzeiten.index',
+            path: 'lieferzeiten.deliveryManagement',
             icon: 'regular-clock',
             parent: 'lieferzeit-parent',
             position: 10,

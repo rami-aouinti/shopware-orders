@@ -1,5 +1,5 @@
 const LEGACY_ROUTE_REDIRECTS = {
-    '#/lieferzeiten-delivery-management/': '#/sw/lieferzeiten/',
+    '#/lieferzeiten-delivery-management/': '#/sw/lieferzeiten/delivery-management/',
 };
 
 if (typeof window !== 'undefined' && typeof window.location?.hash === 'string') {
