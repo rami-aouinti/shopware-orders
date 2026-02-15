@@ -65,10 +65,10 @@ Module.register('lieferzeiten', {
             id: 'lieferzeiten',
             label: 'lieferzeiten.general.mainMenuItemGeneral',
             color: '#2B8CBF',
-            path: 'lieferzeiten.index',
+            path: 'lieferzeiten.index.all',
             icon: 'regular-clock',
             parent: 'sw-order',
-            position: 100,
+            position: 46,
             privilege: 'admin',
         },
         {
