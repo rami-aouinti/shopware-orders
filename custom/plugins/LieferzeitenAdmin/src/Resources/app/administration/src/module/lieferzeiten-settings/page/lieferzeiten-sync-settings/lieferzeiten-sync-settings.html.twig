@@ -11,6 +11,10 @@
 
     <template #content>
         <sw-card-view>
+            <sw-card :isLoading="isLoading" title="Demo Daten" class="sw-mb-16">
+                <lieferzeiten-demo-data-button />
+            </sw-card>
+
             <sw-card
                 v-for="group in groups"
                 :key="group.title"

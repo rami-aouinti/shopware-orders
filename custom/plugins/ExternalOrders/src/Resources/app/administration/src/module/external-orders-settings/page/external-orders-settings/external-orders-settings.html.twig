@@ -11,33 +11,16 @@
 
     <template #content>
         <sw-card-view>
-            <sw-card :isLoading="isLoading" title="API & Kanäle">
-                <external-orders-channel-config />
-            </sw-card>
-
-            <sw-card :isLoading="isLoading" title="Technische Einstellungen">
-                <sw-text-field
-                    v-model:value="config.externalOrdersTimeout"
-                    label="External Orders API timeout (seconds)"
+            <sw-card :isLoading="isLoading" title="Externe Bestellung">
+                <sw-number-field
+                    v-model:value="config.externalOrdersItemsPerPage"
+                    numberType="int"
+                    :min="1"
+                    :step="1"
+                    label="Nombre par page"
                 />
-            </sw-card>
 
-            <sw-card :isLoading="isLoading" title="SAN6 Konfiguration">
-                <sw-text-field v-model:value="config.externalOrdersSan6BaseUrl" label="SAN6 base URL" placeholder="https://example.com:4443" />
-                <sw-text-field v-model:value="config.externalOrdersSan6Company" label="SAN6 company" />
-                <sw-text-field v-model:value="config.externalOrdersSan6Product" label="SAN6 product" />
-                <sw-select-field v-model:value="config.externalOrdersSan6Mandant" label="SAN6 mandant">
-                    <option value="Schule">Schule</option>
-                    <option value="Zentrale">Zentrale</option>
-                </sw-select-field>
-                <sw-text-field v-model:value="config.externalOrdersSan6Sys" label="SAN6 sys" />
-                <sw-text-field v-model:value="config.externalOrdersSan6Authentifizierung" label="SAN6 authentification" />
-                <sw-text-field v-model:value="config.externalOrdersSan6ReadFunction" label="SAN6 read function" />
-                <sw-text-field v-model:value="config.externalOrdersSan6WriteFunction" label="SAN6 write function" />
-                <sw-select-field v-model:value="config.externalOrdersSan6SendStrategy" label="SAN6 send strategy">
-                    <option value="filetransferurl">filetransferurl</option>
-                    <option value="post-xml">post-xml</option>
-                </sw-select-field>
+                <external-orders-testdata-button class="sw-mt-16" />
             </sw-card>
         </sw-card-view>
     </template>

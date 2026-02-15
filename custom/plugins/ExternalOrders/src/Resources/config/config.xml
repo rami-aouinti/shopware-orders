@@ -5,104 +5,17 @@
         <title lang="en-GB">External Orders</title>
         <title lang="de-DE">Externe Bestellungen</title>
 
-        <input-field type="float">
-            <name>externalOrdersTimeout</name>
-            <label lang="en-GB">External Orders API timeout (seconds)</label>
-            <label lang="de-DE">External Orders API-Timeout (Sekunden)</label>
-            <helpText lang="en-GB">Timeout for each external orders API request.</helpText>
-            <helpText lang="de-DE">Timeout für jede External Orders API-Anfrage.</helpText>
-            <defaultValue>2.5</defaultValue>
+        <input-field type="int">
+            <name>externalOrdersItemsPerPage</name>
+            <label lang="en-GB">Items per page</label>
+            <label lang="de-DE">Nombre par page</label>
+            <defaultValue>25</defaultValue>
         </input-field>
 
-        <component name="external-orders-channel-config">
-            <name>channelCredentials</name>
-            <label lang="en-GB">Channel credentials</label>
-            <label lang="de-DE">Channel Zugangsdaten</label>
-            <helpText lang="en-GB">Select a channel card to set API URL + token. You can also run the cron sync immediately and see the last execution status.</helpText>
-            <helpText lang="de-DE">Wähle eine Kanal-Karte, um API-URL + Token zu speichern. Außerdem kannst du den Cron-Sync sofort starten und den letzten Ausführungsstatus sehen.</helpText>
+        <component name="external-orders-testdata-button">
+            <name>externalOrdersDemoData</name>
+            <label lang="en-GB">Demo data</label>
+            <label lang="de-DE">Demo Daten</label>
         </component>
-
-        <title lang="en-GB">SAN6 configuration</title>
-        <title lang="de-DE">SAN6 Konfiguration</title>
-
-        <input-field type="text">
-            <name>externalOrdersSan6BaseUrl</name>
-            <label lang="en-GB">SAN6 base URL</label>
-            <label lang="de-DE">SAN6 Basis-URL</label>
-            <placeholder>https://example.com:4443</placeholder>
-        </input-field>
-
-        <input-field type="text">
-            <name>externalOrdersSan6Company</name>
-            <label lang="en-GB">SAN6 company</label>
-            <label lang="de-DE">SAN6 Company</label>
-        </input-field>
-
-        <input-field type="text">
-            <name>externalOrdersSan6Product</name>
-            <label lang="en-GB">SAN6 product</label>
-            <label lang="de-DE">SAN6 Product</label>
-        </input-field>
-
-        <input-field type="single-select">
-            <name>externalOrdersSan6Mandant</name>
-            <label lang="en-GB">SAN6 mandant</label>
-            <label lang="de-DE">SAN6 Mandant</label>
-            <options>
-                <option>
-                    <id>Schule</id>
-                    <name>Schule</name>
-                </option>
-                <option>
-                    <id>Zentrale</id>
-                    <name>Zentrale</name>
-                </option>
-            </options>
-            <defaultValue>Schule</defaultValue>
-        </input-field>
-
-        <input-field type="text">
-            <name>externalOrdersSan6Sys</name>
-            <label lang="en-GB">SAN6 sys</label>
-            <label lang="de-DE">SAN6 Sys</label>
-        </input-field>
-
-        <input-field type="text">
-            <name>externalOrdersSan6Authentifizierung</name>
-            <label lang="en-GB">SAN6 authentification</label>
-            <label lang="de-DE">SAN6 Authentifizierung</label>
-        </input-field>
-
-        <input-field type="text">
-            <name>externalOrdersSan6ReadFunction</name>
-            <label lang="en-GB">SAN6 read function</label>
-            <label lang="de-DE">SAN6 Lese-Funktion</label>
-            <defaultValue>API-AUFTRAEGE</defaultValue>
-        </input-field>
-
-        <input-field type="text">
-            <name>externalOrdersSan6WriteFunction</name>
-            <label lang="en-GB">SAN6 write function</label>
-            <label lang="de-DE">SAN6 Schreib-Funktion</label>
-            <defaultValue>API-AUFTRAGNEU2</defaultValue>
-        </input-field>
-
-        <input-field type="single-select">
-            <name>externalOrdersSan6SendStrategy</name>
-            <label lang="en-GB">SAN6 send strategy</label>
-            <label lang="de-DE">SAN6 Versandstrategie</label>
-            <options>
-                <option>
-                    <id>filetransferurl</id>
-                    <name>filetransferurl</name>
-                </option>
-                <option>
-                    <id>post-xml</id>
-                    <name>post-xml</name>
-                </option>
-            </options>
-            <defaultValue>filetransferurl</defaultValue>
-        </input-field>
-
     </card>
 </config>

@@ -16,16 +16,7 @@ Component.register('external-orders-settings', {
             isLoading: false,
             isSaving: false,
             config: {
-                externalOrdersTimeout: '2.5',
-                externalOrdersSan6BaseUrl: '',
-                externalOrdersSan6Company: '',
-                externalOrdersSan6Product: '',
-                externalOrdersSan6Mandant: 'Schule',
-                externalOrdersSan6Sys: '',
-                externalOrdersSan6Authentifizierung: '',
-                externalOrdersSan6ReadFunction: 'API-AUFTRAEGE',
-                externalOrdersSan6WriteFunction: 'API-AUFTRAGNEU2',
-                externalOrdersSan6SendStrategy: 'filetransferurl',
+                externalOrdersItemsPerPage: 25,
             },
         };
     },
