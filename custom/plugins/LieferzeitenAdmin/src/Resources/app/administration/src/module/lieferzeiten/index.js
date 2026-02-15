@@ -30,14 +30,13 @@ Module.register('lieferzeiten', {
 
     navigation: [
         {
-            id: 'lieferzeiten',
+            id: 'lieferzeiten-menu-entry',
             label: 'Lieferzeiten',
             color: '#2B8CBF',
             path: 'lieferzeiten.index',
             icon: 'regular-clock',
             parent: 'sw-order',
             position: 46,
-            privilege: 'admin',
         },
     ],
 });
