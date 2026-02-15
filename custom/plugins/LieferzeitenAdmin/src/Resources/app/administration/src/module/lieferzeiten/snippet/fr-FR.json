@@ -35,6 +35,10 @@
           "liefertermin.anfrage.wiedereroeffnet": "Demande de date de livraison rouverte"
         }
       }
+    },
+    "general": {
+      "mainMenuItemGeneral": "Lieferzeiten",
+      "mainMenuItemDeliveryManagement": "Delivery Management"
     }
   }
 }
