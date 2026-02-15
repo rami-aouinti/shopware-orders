@@ -1,49 +1,15 @@
 .lieferzeiten-task-assignment-rule-list {
+    .sw-page__content {
+        overflow: hidden;
+    }
+
     .lza-task-rule-layout {
-        display: grid;
+        display: flex;
+        flex-direction: column;
         gap: 16px;
         padding: 8px;
-    }
-
-    .lza-task-rule-hero {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        padding: 20px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #101523 0%, #1f315e 100%);
-        color: #fff;
-
-        h3 {
-            margin: 0 0 8px;
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        p {
-            margin: 0;
-            color: rgba(255, 255, 255, 0.85);
-            max-width: 640px;
-            line-height: 1.5;
-        }
-    }
-
-    .lza-task-rule-tags {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        gap: 8px;
-        max-width: 360px;
-    }
-
-    .lza-tag {
-        background: rgba(255, 255, 255, 0.18);
-        border: 1px solid rgba(255, 255, 255, 0.32);
-        border-radius: 999px;
-        padding: 6px 12px;
-        font-size: 12px;
-        font-weight: 600;
+        height: 100%;
+        min-height: 0;
     }
 
     .lza-rules-panel {
@@ -54,6 +20,7 @@
         display: flex;
         flex-direction: column;
         min-height: 0;
+        flex: 1;
     }
 
     .lza-rules-toolbar,
@@ -76,7 +43,8 @@
     .lza-rule-table {
         display: grid;
         gap: 10px;
-        max-height: 62vh;
+        min-height: 0;
+        flex: 1;
         overflow: auto;
         padding-right: 4px;
     }

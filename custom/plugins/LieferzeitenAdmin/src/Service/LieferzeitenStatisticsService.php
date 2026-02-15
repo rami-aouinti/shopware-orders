@@ -9,6 +9,8 @@ readonly class LieferzeitenStatisticsService
 {
     private const STATISTICS_TIMEZONE = 'Europe/Berlin';
     private const STORAGE_TIMEZONE = 'UTC';
+    private const DEFAULT_PERIOD_DAYS = 30;
+    private const MAX_PERIOD_DAYS = 3650;
 
     private const DOMAIN_SOURCE_MAPPING = [
         'first-medical-e-commerce' => ['first medical', 'e-commerce', 'shopware', 'gambio'],
@@ -42,7 +44,7 @@ readonly class LieferzeitenStatisticsService
         $from = is_string($from) ? $from : null;
         $to = is_string($to) ? $to : null;
 
-        $periodDays = $this->sanitizePeriod($periodDays ?? 30);
+        $periodDays = $this->sanitizePeriod($periodDays ?? self::DEFAULT_PERIOD_DAYS);
         $statisticsTimezone = $this->getStatisticsTimezone();
         $window = $this->resolveWindow($periodDays, $from, $to);
 
@@ -501,11 +503,11 @@ readonly class LieferzeitenStatisticsService
 
     private function sanitizePeriod(int $periodDays): int
     {
-        if (in_array($periodDays, [7, 30, 90], true)) {
-            return $periodDays;
+        if ($periodDays <= 0) {
+            return self::DEFAULT_PERIOD_DAYS;
         }
 
-        return 30;
+        return min($periodDays, self::MAX_PERIOD_DAYS);
     }
 
     /**
@@ -515,7 +517,7 @@ readonly class LieferzeitenStatisticsService
     {
         $timezone = new \DateTimeZone(date_default_timezone_get());
         $now = new \DateTimeImmutable('now', $timezone);
-        $normalizedPeriod = $this->sanitizePeriod($periodDays ?? 30);
+        $normalizedPeriod = $this->sanitizePeriod($periodDays ?? self::DEFAULT_PERIOD_DAYS);
 
         $fromDate = $this->parseDateValue($from);
         $toDate = $this->parseDateValue($to);

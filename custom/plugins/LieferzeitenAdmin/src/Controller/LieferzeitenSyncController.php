@@ -241,7 +241,11 @@ class LieferzeitenSyncController extends AbstractController
 
     private function statisticsByVersion(Request $request, Context $context): JsonResponse
     {
-        $period = $request->query->has('period') ? (int) $request->query->get('period', 30) : null;
+        $period = null;
+        if ($request->query->has('period')) {
+            $rawPeriod = $request->query->get('period');
+            $period = is_numeric($rawPeriod) ? (int) $rawPeriod : null;
+        }
         $domain = $request->query->get('domain') ? (string) $request->query->get('domain') : null;
         $channel = $request->query->get('channel') ? (string) $request->query->get('channel') : null;
         $from = $request->query->get('from') ? (string) $request->query->get('from') : null;

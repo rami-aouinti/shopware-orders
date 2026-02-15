@@ -1,6 +1,6 @@
 {% block lieferzeiten_statistics %}
     <div class="lieferzeiten-statistics">
-        <sw-container columns="1fr auto auto" gap="16px" class="lieferzeiten-statistics__filters">
+        <sw-container columns="1fr 1fr auto" gap="16px" class="lieferzeiten-statistics__filters">
             <sw-single-select
                 v-model:value="selectedPeriod"
                 :label="$t('lieferzeiten.statistics.periodLabel')"
@@ -15,6 +15,21 @@
                 labelProperty="label"
                 valueProperty="value"
             />
+            <sw-container
+                v-if="selectedPeriod === 'custom'"
+                columns="1fr 1fr"
+                gap="12px"
+                class="lieferzeiten-statistics__custom-range"
+            >
+                <sw-datepicker
+                    v-model:value="customFrom"
+                    :label="$t('lieferzeiten.statistics.customRange.from')"
+                />
+                <sw-datepicker
+                    v-model:value="customTo"
+                    :label="$t('lieferzeiten.statistics.customRange.to')"
+                />
+            </sw-container>
             <sw-button variant="primary" @click="exportCsv">
                 {{ $t('lieferzeiten.statistics.exportCsv') }}
             </sw-button>
@@ -79,6 +94,63 @@
                 :description="$t('lieferzeiten.statistics.timelineEmptyDescription')"
             />
         </sw-card>
+
+        <sw-container columns="repeat(3, minmax(0, 1fr))" gap="16px" class="lieferzeiten-statistics__breakdowns">
+            <sw-card :title="$t('lieferzeiten.statistics.eventTypeBreakdownTitle')">
+                <div v-if="eventTypeBreakdown.length" class="lieferzeiten-statistics__chart lieferzeiten-statistics__breakdown-chart">
+                    <div v-for="item in eventTypeBreakdown" :key="`event-type-${item.eventType}`" class="lieferzeiten-statistics__chart-row lieferzeiten-statistics__breakdown-row">
+                        <span>{{ formatEventTypeLabel(item.eventType) }}</span>
+                        <div class="lieferzeiten-statistics__bar-wrap">
+                            <div class="lieferzeiten-statistics__bar" :style="{ width: getBreakdownBarWidth(item.value, eventTypeBreakdownMaxValue) }"></div>
+                        </div>
+                        <strong>{{ item.value }}</strong>
+                    </div>
+                </div>
+                <sw-empty-state
+                    v-else
+                    :title="$t('lieferzeiten.emptyState.title')"
+                    :description="$t('lieferzeiten.emptyState.description')"
+                />
+            </sw-card>
+
+            <sw-card :title="$t('lieferzeiten.statistics.criticalStatusTitle')">
+                <div v-if="criticalStatusBreakdown.length" class="lieferzeiten-statistics__chart lieferzeiten-statistics__breakdown-chart">
+                    <div v-for="item in criticalStatusBreakdown" :key="`critical-status-${item.statusKey}`" class="lieferzeiten-statistics__chart-row lieferzeiten-statistics__breakdown-row">
+                        <span>{{ formatCriticalStatusLabel(item.statusKey) }}</span>
+                        <div class="lieferzeiten-statistics__bar-wrap">
+                            <div class="lieferzeiten-statistics__bar lieferzeiten-statistics__bar--critical" :style="{ width: getBreakdownBarWidth(item.value, criticalStatusBreakdownMaxValue) }"></div>
+                        </div>
+                        <strong>{{ item.value }}</strong>
+                    </div>
+                </div>
+                <sw-empty-state
+                    v-else
+                    :title="$t('lieferzeiten.emptyState.title')"
+                    :description="$t('lieferzeiten.emptyState.description')"
+                />
+            </sw-card>
+
+            <sw-card :title="$t('lieferzeiten.statistics.channelAnomaliesTitle')">
+                <div v-if="channelAnomalies.length" class="lieferzeiten-statistics__chart lieferzeiten-statistics__breakdown-chart">
+                    <div v-for="item in channelAnomalies" :key="`channel-anomaly-${item.sourceSystem}`" class="lieferzeiten-statistics__chart-row lieferzeiten-statistics__breakdown-row">
+                        <div class="lieferzeiten-statistics__anomaly-labels">
+                            <span>{{ item.sourceSystem }}</span>
+                            <small>{{ formatCriticalStatusLabel(item.topStatus) }}</small>
+                        </div>
+                        <div class="lieferzeiten-statistics__bar-wrap">
+                            <div class="lieferzeiten-statistics__bar lieferzeiten-statistics__bar--anomaly" :style="{ width: getBreakdownBarWidth(item.value, channelAnomaliesMaxValue) }"></div>
+                        </div>
+                        <strong>{{ item.value }}</strong>
+                    </div>
+                </div>
+                <sw-empty-state
+                    v-else
+                    :title="$t('lieferzeiten.emptyState.title')"
+                    :description="$t('lieferzeiten.emptyState.description')"
+                />
+            </sw-card>
+        </sw-container>
+
 
         <sw-card :title="$t('lieferzeiten.statistics.tableTitle')">
             <div class="lieferzeiten-statistics__table-scroll">

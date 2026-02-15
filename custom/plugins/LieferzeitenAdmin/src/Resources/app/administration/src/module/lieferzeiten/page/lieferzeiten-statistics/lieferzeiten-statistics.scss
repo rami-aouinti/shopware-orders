@@ -5,7 +5,7 @@
 
     &__filters {
         align-items: end;
-        grid-template-columns: minmax(220px, 1fr) minmax(220px, 0.55fr) auto;
+        grid-template-columns: minmax(220px, 0.9fr) minmax(220px, 0.9fr) auto;
 
         .sw-field {
             margin-bottom: 0;
@@ -17,6 +17,12 @@
             font-weight: 600;
             border-radius: 8px;
             white-space: nowrap;
+        }
+    }
+
+    &__custom-range {
+        .sw-field {
+            margin-bottom: 0;
         }
     }
 
@@ -49,6 +55,48 @@
     &__table-scroll {
         width: 100%;
         overflow-x: auto;
+    }
+
+
+    &__breakdowns {
+        max-width: 1280px;
+        width: 100%;
+        margin: 0 auto;
+
+        .sw-card {
+            min-height: 260px;
+        }
+    }
+
+    &__breakdown-chart {
+        max-height: 320px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    &__breakdown-row {
+        grid-template-columns: minmax(140px, 180px) minmax(120px, 1fr) 32px;
+        font-size: 14px;
+    }
+
+    &__bar--critical {
+        background: #dd4949;
+    }
+
+    &__bar--anomaly {
+        background: #f08a1e;
+    }
+
+    &__anomaly-labels {
+        display: grid;
+        gap: 2px;
+
+        small {
+            color: #52667a;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
     }
 
     &__chart {
@@ -142,12 +190,16 @@
 @media screen and (max-width: 1400px) {
     .lieferzeiten-statistics {
         &__filters {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
 
             .sw-button {
-                grid-column: 1 / -1;
                 justify-self: start;
             }
+        }
+
+        &__custom-range {
+            grid-template-columns: 1fr 1fr;
+            grid-column: 1 / -1;
         }
 
         &__metrics {
@@ -158,6 +210,10 @@
 
         &__chart-row {
             grid-template-columns: minmax(160px, 220px) minmax(180px, 1fr) 32px;
+        }
+
+        &__breakdowns {
+            grid-template-columns: repeat(2, minmax(240px, 1fr)) !important;
         }
     }
 }
@@ -172,6 +228,10 @@
             }
         }
 
+        &__custom-range {
+            grid-template-columns: 1fr;
+        }
+
         &__metrics {
             grid-template-columns: 1fr !important;
             overflow-x: visible;
@@ -181,6 +241,10 @@
             font-size: 44px;
         }
 
+        &__breakdowns {
+            grid-template-columns: 1fr !important;
+        }
+
         &__chart-row {
             grid-template-columns: 1fr;
             gap: 8px;
@@ -188,6 +252,10 @@
             strong {
                 justify-self: end;
             }
+        }
+
+        &__breakdown-row {
+            grid-template-columns: 1fr;
         }
     }
 }
