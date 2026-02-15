@@ -5,122 +5,6 @@
         <title lang="en-GB">Lieferzeiten Sync</title>
         <title lang="de-DE">Lieferzeiten Sync</title>
 
-        <input-field type="text">
-            <name>syncStrategy</name>
-            <label lang="en-GB">Sync strategy</label>
-            <label lang="de-DE">Sync-Strategie</label>
-            <helpText lang="en-GB">Allowed values: scheduled, on_demand, both</helpText>
-            <helpText lang="de-DE">Erlaubte Werte: scheduled, on_demand, both</helpText>
-            <defaultValue>scheduled</defaultValue>
-        </input-field>
-
-        <input-field type="text">
-            <name>shopwareApiUrl</name>
-            <label lang="en-GB">Shopware API URL</label>
-            <label lang="de-DE">Shopware API-URL</label>
-        </input-field>
-        <input-field type="text">
-            <name>shopwareApiToken</name>
-            <label lang="en-GB">Shopware API token</label>
-            <label lang="de-DE">Shopware API-Token</label>
-        </input-field>
-
-        <input-field type="text">
-            <name>gambioApiUrl</name>
-            <label lang="en-GB">Gambio API URL</label>
-            <label lang="de-DE">Gambio API-URL</label>
-        </input-field>
-        <input-field type="text">
-            <name>gambioApiToken</name>
-            <label lang="en-GB">Gambio API token</label>
-            <label lang="de-DE">Gambio API-Token</label>
-        </input-field>
-
-
-        <input-field type="text">
-            <name>shopwareStatusPushApiUrl</name>
-            <label lang="en-GB">Shopware status push API URL</label>
-            <label lang="de-DE">Shopware Status-Push API-URL</label>
-        </input-field>
-        <input-field type="text">
-            <name>shopwareStatusPushApiToken</name>
-            <label lang="en-GB">Shopware status push API token</label>
-            <label lang="de-DE">Shopware Status-Push API-Token</label>
-        </input-field>
-
-        <input-field type="text">
-            <name>gambioStatusPushApiUrl</name>
-            <label lang="en-GB">Gambio status push API URL</label>
-            <label lang="de-DE">Gambio Status-Push API-URL</label>
-        </input-field>
-        <input-field type="text">
-            <name>gambioStatusPushApiToken</name>
-            <label lang="en-GB">Gambio status push API token</label>
-            <label lang="de-DE">Gambio Status-Push API-Token</label>
-        </input-field>
-
-        <input-field type="text">
-            <name>shopwareDateSettings</name>
-            <label lang="en-GB">Shopware date settings (JSON)</label>
-            <label lang="de-DE">Shopware Datums-Einstellungen (JSON)</label>
-            <helpText lang="en-GB">Format: {"shipping":{"workingDays":0,"cutoff":"12:00"},"delivery":{"workingDays":2,"cutoff":"12:00"}} (legacy fallback: {"workingDays":2,"cutoff":"12:00"})</helpText>
-            <helpText lang="de-DE">Format: {"shipping":{"workingDays":0,"cutoff":"12:00"},"delivery":{"workingDays":2,"cutoff":"12:00"}} (Legacy-Fallback: {"workingDays":2,"cutoff":"12:00"})</helpText>
-        </input-field>
-
-        <input-field type="text">
-            <name>gambioDateSettings</name>
-            <label lang="en-GB">Gambio date settings (JSON)</label>
-            <label lang="de-DE">Gambio Datums-Einstellungen (JSON)</label>
-            <helpText lang="en-GB">Format: {"shipping":{"workingDays":0,"cutoff":"12:00"},"delivery":{"workingDays":2,"cutoff":"12:00"}} (legacy fallback: {"workingDays":2,"cutoff":"12:00"})</helpText>
-            <helpText lang="de-DE">Format: {"shipping":{"workingDays":0,"cutoff":"12:00"},"delivery":{"workingDays":2,"cutoff":"12:00"}} (Legacy-Fallback: {"workingDays":2,"cutoff":"12:00"})</helpText>
-        </input-field>
-
-
-        <input-field type="text">
-            <name>status8CarrierMapping</name>
-            <label lang="en-GB">Status 8 carrier mapping override (JSON)</label>
-            <label lang="de-DE">Status-8-Carrier-Mapping Override (JSON)</label>
-            <helpText lang="en-GB">Versioned override schema: {"version":2,"global":{"state":true},"carriers":{"dhl":{"state":false},"gls":{"state":true}}}</helpText>
-            <helpText lang="de-DE">Versioniertes Override-Schema: {"version":2,"global":{"state":true},"carriers":{"dhl":{"state":false},"gls":{"state":true}}}</helpText>
-        </input-field>
-
-        <input-field type="text">
-            <name>pdmsApiUrl</name>
-            <label lang="en-GB">PDMS API URL</label>
-            <label lang="de-DE">PDMS API-URL</label>
-        </input-field>
-        <input-field type="text">
-            <name>pdmsApiToken</name>
-            <label lang="en-GB">PDMS API token</label>
-            <label lang="de-DE">PDMS API-Token</label>
-        </input-field>
-        <input-field type="text">
-            <name>pdmsLieferzeitenPath</name>
-            <label lang="en-GB">PDMS Lieferzeiten path</label>
-            <label lang="de-DE">PDMS-Lieferzeiten-Pfad</label>
-            <defaultValue>/lieferzeiten</defaultValue>
-        </input-field>
-
-        <input-field type="text">
-            <name>san6ApiUrl</name>
-            <label lang="en-GB">San6 API URL</label>
-            <label lang="de-DE">San6 API-URL</label>
-        </input-field>
-        <input-field type="text">
-            <name>san6ApiToken</name>
-            <label lang="en-GB">San6 API token</label>
-            <label lang="de-DE">San6 API-Token</label>
-        </input-field>
-
-
-        <input-field type="text">
-            <name>defaultAssigneeLieferterminAnfrageZusaetzlich</name>
-            <label lang="en-GB">Default assignee for trigger liefertermin.anfrage.zusaetzlich</label>
-            <label lang="de-DE">Standard-Zuweisung für Trigger liefertermin.anfrage.zusaetzlich</label>
-            <helpText lang="en-GB">Fallback assignee used when no assignment rule resolves an assignee.</helpText>
-            <helpText lang="de-DE">Fallback-Zuweisung, wenn keine Regel eine verantwortliche Person ermittelt.</helpText>
-        </input-field>
-
         <component name="lieferzeiten-demo-data-button">
             <name>toggleDemoData</name>
             <label lang="en-GB">Demo data</label>
@@ -128,6 +12,5 @@
             <helpText lang="en-GB">Stores demo data if none exists, otherwise removes existing demo data from the database.</helpText>
             <helpText lang="de-DE">Speichert Demo-Daten, wenn keine vorhanden sind, oder entfernt vorhandene Demo-Daten aus der Datenbank.</helpText>
         </component>
-
     </card>
 </config>
