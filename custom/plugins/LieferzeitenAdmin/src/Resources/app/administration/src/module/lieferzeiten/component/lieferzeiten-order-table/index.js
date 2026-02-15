@@ -1427,7 +1427,12 @@ Shopware.Component.register('lieferzeiten-order-table', {
         resolveAdditionalRequestInitiator() {
             const contextUser = Shopware?.Context?.api?.user || null;
             const sessionUser = Shopware?.Store?.get?.('session')?.currentUser || Shopware?.State?.get?.('session')?.currentUser || null;
-            const user = contextUser || sessionUser;
+            const user = [contextUser, sessionUser]
+                .find((candidate) => candidate && typeof candidate === 'object' && !Array.isArray(candidate)) || null;
+
+            if (!user) {
+                return null;
+            }
 
             const userId = typeof user?.id === 'string' ? user.id.trim() : '';
             const fullName = [user?.firstName, user?.lastName]
