@@ -102,7 +102,7 @@
                                 :disabled="!hasEditAccess"
                                 :value="getMatrixValue(getActiveChannel(group).id, item.key, 'shippingOverdueWorkingDays')"
                                 :error="getFieldError(getActiveChannel(group).id, item.key, 'shippingOverdueWorkingDays')"
-                                @input="onChangeNumberField(getActiveChannel(group).id, item.key, 'shippingOverdueWorkingDays', $event)"
+                                @update:value="onChangeNumberField(getActiveChannel(group).id, item.key, 'shippingOverdueWorkingDays', $event)"
                             />
                         </template>
 
@@ -113,7 +113,7 @@
                                 :disabled="!hasEditAccess"
                                 :value="getMatrixValue(getActiveChannel(group).id, item.key, 'deliveryOverdueWorkingDays')"
                                 :error="getFieldError(getActiveChannel(group).id, item.key, 'deliveryOverdueWorkingDays')"
-                                @input="onChangeNumberField(getActiveChannel(group).id, item.key, 'deliveryOverdueWorkingDays', $event)"
+                                @update:value="onChangeNumberField(getActiveChannel(group).id, item.key, 'deliveryOverdueWorkingDays', $event)"
                             />
                         </template>
                     </sw-data-grid>
