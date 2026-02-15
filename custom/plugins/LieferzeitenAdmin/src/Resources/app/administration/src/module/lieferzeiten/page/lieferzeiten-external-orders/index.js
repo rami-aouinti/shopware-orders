@@ -123,6 +123,9 @@ Component.register('lieferzeiten-external-orders', {
     },
 
     computed: {
+        detailOrder() {
+            return this.normalizeOrderDetail(this.selectedOrder ?? {});
+        },
         columns() {
             return [
                 {
