@@ -161,7 +161,7 @@ Component.register('lieferzeiten-task-assignment-rule-list', {
             }
 
             const entity = this.repository.create(Shopware.Context.api);
-            entity.name = 'New rule';
+            entity.name = 'Neue Regel';
             entity.triggerKey = this.triggerOptions[0];
             entity.assigneeType = this.assigneeTypeOptions[0];
             entity.assigneeIdentifier = '';
