@@ -123,6 +123,9 @@ Component.register('lieferzeiten-external-orders', {
     },
 
     computed: {
+        detailOrder() {
+            return this.normalizeOrderDetail(this.selectedOrder ?? {});
+        },
         columns() {
             return [
                 {
@@ -730,11 +733,14 @@ Component.register('lieferzeiten-external-orders', {
                     topmExecution: '',
                     statusHistorySource: '',
                     ...(base.additional ?? {}),
+                    orgaEntries: Array.isArray(base.additional?.orgaEntries) ? base.additional.orgaEntries : [],
+                    documents: Array.isArray(base.additional?.documents) ? base.additional.documents : [],
                 },
                 shipping: {
                     carrier: '',
                     trackingNumbers: [],
                     ...(base.shipping ?? {}),
+                    trackingNumbers: Array.isArray(base.shipping?.trackingNumbers) ? base.shipping.trackingNumbers : [],
                 },
                 items,
                 statusHistory,
