@@ -23,8 +23,6 @@
             <name>externalOrdersDemoData</name>
             <label lang="en-GB">Demo data</label>
             <label lang="de-DE">Demo-Daten</label>
-            <helpText lang="en-GB">Create or remove demo external orders.</helpText>
-            <helpText lang="de-DE">Demo-External-Orders erstellen oder entfernen.</helpText>
         </component>
 
         <input-field type="float">
