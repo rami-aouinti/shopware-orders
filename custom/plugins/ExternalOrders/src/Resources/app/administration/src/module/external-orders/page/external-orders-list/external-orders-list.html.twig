@@ -57,102 +57,98 @@
                         <span class="external-orders__channel-label">{{ channel.label }}</span>
                     </button>
                 </div>
-            </sw-card>
-
-            <sw-card class="external-orders__filters-card" style="max-width: none; width: 100%;">
                 <div class="external-orders__filters-bar">
                     <div class="external-orders__filters">
                         <button
-                            class="external-orders__button external-orders__button--primary"
-                            type="button"
-                            @click="resetFilters"
+                                class="external-orders__button external-orders__button--primary"
+                                type="button"
+                                @click="resetFilters"
                         >
                             <sw-icon name="regular-filter" size="16"></sw-icon>
                             Filter löschen
                         </button>
                         <sw-datepicker
-                            v-model="dateFilters.start"
-                            placeholder="Start Datum"
-                            class="external-orders__date"
-                            size="small"
-                            date-type="date"
-                            @change="setDateFilter('start', $event)"
+                                v-model="dateFilters.start"
+                                placeholder="Start Datum"
+                                class="external-orders__date"
+                                size="small"
+                                date-type="date"
+                                @change="setDateFilter('start', $event)"
                         />
                         <sw-datepicker
-                            v-model="dateFilters.end"
-                            placeholder="End Datum"
-                            class="external-orders__date"
-                            size="small"
-                            date-type="date"
-                            @change="setDateFilter('end', $event)"
+                                v-model="dateFilters.end"
+                                placeholder="End Datum"
+                                class="external-orders__date"
+                                size="small"
+                                date-type="date"
+                                @change="setDateFilter('end', $event)"
                         />
                         <button
-                            class="external-orders__button external-orders__button--primary"
-                            type="button"
-                            @click="applyDateFilter"
+                                class="external-orders__button external-orders__button--primary"
+                                type="button"
+                                @click="applyDateFilter"
                         >
                             Anwenden
                         </button>
                     </div>
                     <div class="external-orders__filters-actions">
                         <sw-text-field
-                            v-model="tableSearchTerm"
-                            placeholder="Suche Bestellungen"
-                            class="external-orders__search"
-                            size="small"
-                            type="search"></sw-text-field>
+                                v-model="tableSearchTerm"
+                                placeholder="Suche Bestellungen"
+                                class="external-orders__search"
+                                size="small"
+                                type="search"></sw-text-field>
                         <button
-                            class="external-orders__button external-orders__button--primary"
-                            type="button"
-                            :disabled="!hasSelectedOrders"
-                            @click="openTestMarkingModal"
+                                class="external-orders__button external-orders__button--primary"
+                                type="button"
+                                :disabled="!hasSelectedOrders"
+                                @click="openTestMarkingModal"
                         >
                             Testmarkierung Anwenden
                         </button>
                     </div>
                 </div>
-
                 <div
-                    v-if="paginatedOrders.length > 0"
-                    class="external-orders__table-wrapper"
+                        v-if="paginatedOrders.length > 0"
+                        class="external-orders__table-wrapper"
                 >
                     <table class="external-orders__table">
                         <thead>
-                            <tr>
-                                <th class="external-orders__cell external-orders__cell--checkbox">
-                                    <input
+                        <tr>
+                            <th class="external-orders__cell external-orders__cell--checkbox">
+                                <input
                                         type="checkbox"
                                         class="external-orders__checkbox"
                                         :checked="isAllSelected"
                                         @change="toggleSelectAll($event)"
-                                    />
-                                </th>
-                                <th class="external-orders__cell">
-                                    <div class="external-orders__column-header">
-                                        <button
+                                />
+                            </th>
+                            <th class="external-orders__cell">
+                                <div class="external-orders__column-header">
+                                    <button
                                             class="external-orders__column-sort"
                                             type="button"
                                             @click="onSortColumn('orderNumber')"
-                                        >
-                                            BestellNr
-                                            <span class="external-orders__sort-indicator">
+                                    >
+                                        BestellNr
+                                        <span class="external-orders__sort-indicator">
                                                 {{ getSortIndicator('orderNumber') }}
                                             </span>
-                                        </button>
-                                        <button
+                                    </button>
+                                    <button
                                             class="external-orders__column-filter-button"
                                             :class="{ 'is--active': isColumnFilterActive('orderNumber') }"
                                             type="button"
                                             @click.stop="toggleColumnFilter('orderNumber')"
-                                        >
-                                            <sw-icon name="regular-filter" size="16" />
-                                        </button>
-                                        <div
+                                    >
+                                        <sw-icon name="regular-filter" size="16" />
+                                    </button>
+                                    <div
                                             v-if="activeColumnFilter === 'orderNumber'"
                                             class="external-orders__column-filter-panel"
                                             @click.stop
-                                        >
-                                            <sw-single-select
+                                    >
+                                        <sw-single-select
                                                 v-model:value="columnFilterMatchMode"
                                                 :options="columnFilterMatchOptions"
                                                 value-property="value"
@@ -160,8 +156,8 @@
                                                 size="small"
                                                 class="external-orders__column-filter-field"
                                                 @change="setColumnFilterMatchMode"
-                                            />
-                                            <sw-single-select
+                                        />
+                                        <sw-single-select
                                                 v-model:value="columnFilters.orderNumber.operator"
                                                 :options="columnFilterOperatorOptions"
                                                 value-property="value"
@@ -169,57 +165,57 @@
                                                 size="small"
                                                 class="external-orders__column-filter-field"
                                                 @change="setColumnFilterOperator('orderNumber', $event)"
-                                            />
-                                            <sw-text-field
+                                        />
+                                        <sw-text-field
                                                 v-model="columnFilters.orderNumber.value"
                                                 size="small"
                                                 class="external-orders__column-filter-field"></sw-text-field>
-                                            <button class="external-orders__column-filter-add external-orders__button external-orders__button--primary external-orders__button--small"
+                                        <button class="external-orders__column-filter-add external-orders__button external-orders__button--primary external-orders__button--small"
                                                 disabled
-                                             type="button">
-                                                + Add Rule
-                                            </button>
-                                            <div class="external-orders__column-filter-actions">
-                                                <button class="external-orders__button external-orders__button--secondary external-orders__button--small"
+                                                type="button">
+                                            + Add Rule
+                                        </button>
+                                        <div class="external-orders__column-filter-actions">
+                                            <button class="external-orders__button external-orders__button--secondary external-orders__button--small"
                                                     @click="clearColumnFilter('orderNumber')"
-                                                 type="button">
-                                                    Clear
-                                                </button>
-                                                <button class="external-orders__button external-orders__button--primary external-orders__button--small"
+                                                    type="button">
+                                                Clear
+                                            </button>
+                                            <button class="external-orders__button external-orders__button--primary external-orders__button--small"
                                                     @click="applyColumnFilter"
-                                                 type="button">
-                                                    Apply
-                                                </button>
-                                            </div>
+                                                    type="button">
+                                                Apply
+                                            </button>
                                         </div>
                                     </div>
-                                </th>
-                                <th class="external-orders__cell">
-                                    <div class="external-orders__column-header">
-                                        <button
+                                </div>
+                            </th>
+                            <th class="external-orders__cell">
+                                <div class="external-orders__column-header">
+                                    <button
                                             class="external-orders__column-sort"
                                             type="button"
                                             @click="onSortColumn('customerName')"
-                                        >
-                                            Kundenname
-                                            <span class="external-orders__sort-indicator">
+                                    >
+                                        Kundenname
+                                        <span class="external-orders__sort-indicator">
                                                 {{ getSortIndicator('customerName') }}
                                             </span>
-                                        </button>
-                                        <button
+                                    </button>
+                                    <button
                                             class="external-orders__column-filter-button"
                                             :class="{ 'is--active': isColumnFilterActive('customerName') }"
                                             type="button"
                                             @click.stop="toggleColumnFilter('customerName')"
-                                        >
-                                            <sw-icon name="regular-filter" size="16"></sw-icon>
-                                        </button>
-                                        <div
+                                    >
+                                        <sw-icon name="regular-filter" size="16"></sw-icon>
+                                    </button>
+                                    <div
                                             v-if="activeColumnFilter === 'customerName'"
                                             class="external-orders__column-filter-panel"
                                             @click.stop
-                                        >
-                                            <sw-single-select
+                                    >
+                                        <sw-single-select
                                                 v-model:value="columnFilterMatchMode"
                                                 :options="columnFilterMatchOptions"
                                                 value-property="value"
@@ -227,8 +223,8 @@
                                                 size="small"
                                                 class="external-orders__column-filter-field"
                                                 @change="setColumnFilterMatchMode"
-                                            />
-                                            <sw-single-select
+                                        />
+                                        <sw-single-select
                                                 v-model:value="columnFilters.customerName.operator"
                                                 :options="columnFilterOperatorOptions"
                                                 value-property="value"
@@ -236,57 +232,57 @@
                                                 size="small"
                                                 class="external-orders__column-filter-field"
                                                 @change="setColumnFilterOperator('customerName', $event)"
-                                            />
-                                            <sw-text-field
+                                        />
+                                        <sw-text-field
                                                 v-model="columnFilters.customerName.value"
                                                 size="small"
                                                 class="external-orders__column-filter-field"></sw-text-field>
-                                            <button class="external-orders__column-filter-add external-orders__button external-orders__button--primary external-orders__button--small"
+                                        <button class="external-orders__column-filter-add external-orders__button external-orders__button--primary external-orders__button--small"
                                                 disabled
-                                             type="button">
-                                                + Add Rule
-                                            </button>
-                                            <div class="external-orders__column-filter-actions">
-                                                <button class="external-orders__button external-orders__button--secondary external-orders__button--small"
+                                                type="button">
+                                            + Add Rule
+                                        </button>
+                                        <div class="external-orders__column-filter-actions">
+                                            <button class="external-orders__button external-orders__button--secondary external-orders__button--small"
                                                     @click="clearColumnFilter('customerName')"
-                                                 type="button">
-                                                    Clear
-                                                </button>
-                                                <button class="external-orders__button external-orders__button--primary external-orders__button--small"
+                                                    type="button">
+                                                Clear
+                                            </button>
+                                            <button class="external-orders__button external-orders__button--primary external-orders__button--small"
                                                     @click="applyColumnFilter"
-                                                 type="button">
-                                                    Apply
-                                                </button>
-                                            </div>
+                                                    type="button">
+                                                Apply
+                                            </button>
                                         </div>
                                     </div>
-                                </th>
-                                <th class="external-orders__cell external-orders__cell--order-reference">
-                                    <div class="external-orders__column-header">
-                                        <button
+                                </div>
+                            </th>
+                            <th class="external-orders__cell external-orders__cell--order-reference">
+                                <div class="external-orders__column-header">
+                                    <button
                                             class="external-orders__column-sort"
                                             type="button"
                                             @click="onSortColumn('orderReference')"
-                                        >
-                                            AuftragsNr
-                                            <span class="external-orders__sort-indicator">
+                                    >
+                                        AuftragsNr
+                                        <span class="external-orders__sort-indicator">
                                                 {{ getSortIndicator('orderReference') }}
                                             </span>
-                                        </button>
-                                        <button
+                                    </button>
+                                    <button
                                             class="external-orders__column-filter-button"
                                             :class="{ 'is--active': isColumnFilterActive('orderReference') }"
                                             type="button"
                                             @click.stop="toggleColumnFilter('orderReference')"
-                                        >
-                                            <sw-icon name="regular-filter" size="16"></sw-icon>
-                                        </button>
-                                        <div
+                                    >
+                                        <sw-icon name="regular-filter" size="16"></sw-icon>
+                                    </button>
+                                    <div
                                             v-if="activeColumnFilter === 'orderReference'"
                                             class="external-orders__column-filter-panel"
                                             @click.stop
-                                        >
-                                            <sw-single-select
+                                    >
+                                        <sw-single-select
                                                 v-model:value="columnFilterMatchMode"
                                                 :options="columnFilterMatchOptions"
                                                 value-property="value"
@@ -294,8 +290,8 @@
                                                 size="small"
                                                 class="external-orders__column-filter-field"
                                                 @change="setColumnFilterMatchMode"
-                                            />
-                                            <sw-single-select
+                                        />
+                                        <sw-single-select
                                                 v-model:value="columnFilters.orderReference.operator"
                                                 :options="columnFilterOperatorOptions"
                                                 value-property="value"
@@ -303,57 +299,57 @@
                                                 size="small"
                                                 class="external-orders__column-filter-field"
                                                 @change="setColumnFilterOperator('orderReference', $event)"
-                                            />
-                                            <sw-text-field
+                                        />
+                                        <sw-text-field
                                                 v-model="columnFilters.orderReference.value"
                                                 size="small"
                                                 class="external-orders__column-filter-field"></sw-text-field>
-                                            <button class="external-orders__column-filter-add external-orders__button external-orders__button--primary external-orders__button--small"
+                                        <button class="external-orders__column-filter-add external-orders__button external-orders__button--primary external-orders__button--small"
                                                 disabled
-                                             type="button">
-                                                + Add Rule
-                                            </button>
-                                            <div class="external-orders__column-filter-actions">
-                                                <button class="external-orders__button external-orders__button--secondary external-orders__button--small"
+                                                type="button">
+                                            + Add Rule
+                                        </button>
+                                        <div class="external-orders__column-filter-actions">
+                                            <button class="external-orders__button external-orders__button--secondary external-orders__button--small"
                                                     @click="clearColumnFilter('orderReference')"
-                                                 type="button">
-                                                    Clear
-                                                </button>
-                                                <button class="external-orders__button external-orders__button--primary external-orders__button--small"
+                                                    type="button">
+                                                Clear
+                                            </button>
+                                            <button class="external-orders__button external-orders__button--primary external-orders__button--small"
                                                     @click="applyColumnFilter"
-                                                 type="button">
-                                                    Apply
-                                                </button>
-                                            </div>
+                                                    type="button">
+                                                Apply
+                                            </button>
                                         </div>
                                     </div>
-                                </th>
-                                <th class="external-orders__cell">
-                                    <div class="external-orders__column-header">
-                                        <button
+                                </div>
+                            </th>
+                            <th class="external-orders__cell">
+                                <div class="external-orders__column-header">
+                                    <button
                                             class="external-orders__column-sort"
                                             type="button"
                                             @click="onSortColumn('email')"
-                                        >
-                                            Email
-                                            <span class="external-orders__sort-indicator">
+                                    >
+                                        Email
+                                        <span class="external-orders__sort-indicator">
                                                 {{ getSortIndicator('email') }}
                                             </span>
-                                        </button>
-                                        <button
+                                    </button>
+                                    <button
                                             class="external-orders__column-filter-button"
                                             :class="{ 'is--active': isColumnFilterActive('email') }"
                                             type="button"
                                             @click.stop="toggleColumnFilter('email')"
-                                        >
-                                            <sw-icon name="regular-filter" size="16" />
-                                        </button>
-                                        <div
+                                    >
+                                        <sw-icon name="regular-filter" size="16" />
+                                    </button>
+                                    <div
                                             v-if="activeColumnFilter === 'email'"
                                             class="external-orders__column-filter-panel"
                                             @click.stop
-                                        >
-                                            <sw-single-select
+                                    >
+                                        <sw-single-select
                                                 v-model:value="columnFilterMatchMode"
                                                 :options="columnFilterMatchOptions"
                                                 value-property="value"
@@ -361,8 +357,8 @@
                                                 size="small"
                                                 class="external-orders__column-filter-field"
                                                 @change="setColumnFilterMatchMode"
-                                            />
-                                            <sw-single-select
+                                        />
+                                        <sw-single-select
                                                 v-model:value="columnFilters.email.operator"
                                                 :options="columnFilterOperatorOptions"
                                                 value-property="value"
@@ -370,57 +366,57 @@
                                                 size="small"
                                                 class="external-orders__column-filter-field"
                                                 @change="setColumnFilterOperator('email', $event)"
-                                            />
-                                            <sw-text-field
+                                        />
+                                        <sw-text-field
                                                 v-model="columnFilters.email.value"
                                                 size="small"
                                                 class="external-orders__column-filter-field"></sw-text-field>
-                                            <button class="external-orders__column-filter-add external-orders__button external-orders__button--primary external-orders__button--small"
+                                        <button class="external-orders__column-filter-add external-orders__button external-orders__button--primary external-orders__button--small"
                                                 disabled
-                                             type="button">
-                                                + Add Rule
-                                            </button>
-                                            <div class="external-orders__column-filter-actions">
-                                                <button class="external-orders__button external-orders__button--secondary external-orders__button--small"
+                                                type="button">
+                                            + Add Rule
+                                        </button>
+                                        <div class="external-orders__column-filter-actions">
+                                            <button class="external-orders__button external-orders__button--secondary external-orders__button--small"
                                                     @click="clearColumnFilter('email')"
-                                                 type="button">
-                                                    Clear
-                                                </button>
-                                                <button class="external-orders__button external-orders__button--primary external-orders__button--small"
+                                                    type="button">
+                                                Clear
+                                            </button>
+                                            <button class="external-orders__button external-orders__button--primary external-orders__button--small"
                                                     @click="applyColumnFilter"
-                                                 type="button">
-                                                    Apply
-                                                </button>
-                                            </div>
+                                                    type="button">
+                                                Apply
+                                            </button>
                                         </div>
                                     </div>
-                                </th>
-                                <th class="external-orders__cell external-orders__cell--date">
-                                    <div class="external-orders__column-header">
-                                        <button
+                                </div>
+                            </th>
+                            <th class="external-orders__cell external-orders__cell--date">
+                                <div class="external-orders__column-header">
+                                    <button
                                             class="external-orders__column-sort"
                                             type="button"
                                             @click="onSortColumn('date')"
-                                        >
-                                            Datum
-                                            <span class="external-orders__sort-indicator">
+                                    >
+                                        Datum
+                                        <span class="external-orders__sort-indicator">
                                                 {{ getSortIndicator('date') }}
                                             </span>
-                                        </button>
-                                        <button
+                                    </button>
+                                    <button
                                             class="external-orders__column-filter-button"
                                             :class="{ 'is--active': isColumnFilterActive('date') }"
                                             type="button"
                                             @click.stop="toggleColumnFilter('date')"
-                                        >
-                                            <sw-icon name="regular-filter" size="16"></sw-icon>
-                                        </button>
-                                        <div
+                                    >
+                                        <sw-icon name="regular-filter" size="16"></sw-icon>
+                                    </button>
+                                    <div
                                             v-if="activeColumnFilter === 'date'"
                                             class="external-orders__column-filter-panel"
                                             @click.stop
-                                        >
-                                            <sw-single-select
+                                    >
+                                        <sw-single-select
                                                 v-model:value="columnFilterMatchMode"
                                                 :options="columnFilterMatchOptions"
                                                 value-property="value"
@@ -428,8 +424,8 @@
                                                 size="small"
                                                 class="external-orders__column-filter-field"
                                                 @change="setColumnFilterMatchMode"
-                                            />
-                                            <sw-single-select
+                                        />
+                                        <sw-single-select
                                                 v-model:value="columnFilters.date.operator"
                                                 :options="columnFilterOperatorOptions"
                                                 value-property="value"
@@ -437,57 +433,57 @@
                                                 size="small"
                                                 class="external-orders__column-filter-field"
                                                 @change="setColumnFilterOperator('date', $event)"
-                                            />
-                                            <sw-text-field
+                                        />
+                                        <sw-text-field
                                                 v-model="columnFilters.date.value"
                                                 size="small"
                                                 class="external-orders__column-filter-field"></sw-text-field>
-                                            <button class="external-orders__column-filter-add external-orders__button external-orders__button--primary external-orders__button--small"
+                                        <button class="external-orders__column-filter-add external-orders__button external-orders__button--primary external-orders__button--small"
                                                 disabled
-                                             type="button">
-                                                + Add Rule
-                                            </button>
-                                            <div class="external-orders__column-filter-actions">
-                                                <button class="external-orders__button external-orders__button--secondary external-orders__button--small"
+                                                type="button">
+                                            + Add Rule
+                                        </button>
+                                        <div class="external-orders__column-filter-actions">
+                                            <button class="external-orders__button external-orders__button--secondary external-orders__button--small"
                                                     @click="clearColumnFilter('date')"
-                                                 type="button">
-                                                    Clear
-                                                </button>
-                                                <button class="external-orders__button external-orders__button--primary external-orders__button--small"
+                                                    type="button">
+                                                Clear
+                                            </button>
+                                            <button class="external-orders__button external-orders__button--primary external-orders__button--small"
                                                     @click="applyColumnFilter"
-                                                 type="button">
-                                                    Apply
-                                                </button>
-                                            </div>
+                                                    type="button">
+                                                Apply
+                                            </button>
                                         </div>
                                     </div>
-                                </th>
-                                <th class="external-orders__cell">
-                                    <div class="external-orders__column-header">
-                                        <button
+                                </div>
+                            </th>
+                            <th class="external-orders__cell">
+                                <div class="external-orders__column-header">
+                                    <button
                                             class="external-orders__column-sort"
                                             type="button"
                                             @click="onSortColumn('statusLabel')"
-                                        >
-                                            Bestellstatus
-                                            <span class="external-orders__sort-indicator">
+                                    >
+                                        Bestellstatus
+                                        <span class="external-orders__sort-indicator">
                                                 {{ getSortIndicator('statusLabel') }}
                                             </span>
-                                        </button>
-                                        <button
+                                    </button>
+                                    <button
                                             class="external-orders__column-filter-button"
                                             :class="{ 'is--active': isColumnFilterActive('statusLabel') }"
                                             type="button"
                                             @click.stop="toggleColumnFilter('statusLabel')"
-                                        >
-                                            <sw-icon name="regular-filter" size="16"></sw-icon>
-                                        </button>
-                                        <div
+                                    >
+                                        <sw-icon name="regular-filter" size="16"></sw-icon>
+                                    </button>
+                                    <div
                                             v-if="activeColumnFilter === 'statusLabel'"
                                             class="external-orders__column-filter-panel"
                                             @click.stop
-                                        >
-                                            <sw-single-select
+                                    >
+                                        <sw-single-select
                                                 v-model:value="columnFilterMatchMode"
                                                 :options="columnFilterMatchOptions"
                                                 value-property="value"
@@ -495,8 +491,8 @@
                                                 size="small"
                                                 class="external-orders__column-filter-field"
                                                 @change="setColumnFilterMatchMode"
-                                            />
-                                            <sw-single-select
+                                        />
+                                        <sw-single-select
                                                 v-model:value="columnFilters.statusLabel.operator"
                                                 :options="columnFilterOperatorOptions"
                                                 value-property="value"
@@ -504,126 +500,126 @@
                                                 size="small"
                                                 class="external-orders__column-filter-field"
                                                 @change="setColumnFilterOperator('statusLabel', $event)"
-                                            />
-                                            <sw-text-field
+                                        />
+                                        <sw-text-field
                                                 v-model="columnFilters.statusLabel.value"
                                                 size="small"
                                                 class="external-orders__column-filter-field"></sw-text-field>
-                                            <button class="external-orders__column-filter-add external-orders__button external-orders__button--primary external-orders__button--small"
+                                        <button class="external-orders__column-filter-add external-orders__button external-orders__button--primary external-orders__button--small"
                                                 disabled
-                                             type="button">
-                                                + Add Rule
-                                            </button>
-                                            <div class="external-orders__column-filter-actions">
-                                                <button class="external-orders__button external-orders__button--secondary external-orders__button--small"
+                                                type="button">
+                                            + Add Rule
+                                        </button>
+                                        <div class="external-orders__column-filter-actions">
+                                            <button class="external-orders__button external-orders__button--secondary external-orders__button--small"
                                                     @click="clearColumnFilter('statusLabel')"
-                                                 type="button">
-                                                    Clear
-                                                </button>
-                                                <button class="external-orders__button external-orders__button--primary external-orders__button--small"
+                                                    type="button">
+                                                Clear
+                                            </button>
+                                            <button class="external-orders__button external-orders__button--primary external-orders__button--small"
                                                     @click="applyColumnFilter"
-                                                 type="button">
-                                                    Apply
-                                                </button>
-                                            </div>
+                                                    type="button">
+                                                Apply
+                                            </button>
                                         </div>
                                     </div>
-                                </th>
-                                <th class="external-orders__cell external-orders__cell--actions">
-                                    Ansicht
-                                </th>
-                            </tr>
+                                </div>
+                            </th>
+                            <th class="external-orders__cell external-orders__cell--actions">
+                                Ansicht
+                            </th>
+                        </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="order in paginatedOrders" :key="getOrderKey(order)">
-                                <td class="external-orders__cell external-orders__cell--checkbox">
-                                    <input
+                        <tr v-for="order in paginatedOrders" :key="getOrderKey(order)">
+                            <td class="external-orders__cell external-orders__cell--checkbox">
+                                <input
                                         type="checkbox"
                                         class="external-orders__checkbox"
                                         :checked="isOrderSelected(order)"
                                         @change="toggleOrderSelection(order, $event)"
-                                    />
-                                </td>
-                                <td class="external-orders__cell">{{ order.orderNumber }}</td>
-                                <td class="external-orders__cell">{{ order.customerName }}</td>
-                                <td class="external-orders__cell external-orders__cell--order-reference">{{ order.orderReference }}</td>
-                                <td class="external-orders__cell">{{ order.email }}</td>
-                                <td class="external-orders__cell external-orders__cell--date">{{ formatDateForTable(order.date) }}</td>
-                                <td class="external-orders__cell">
+                                />
+                            </td>
+                            <td class="external-orders__cell">{{ order.orderNumber }}</td>
+                            <td class="external-orders__cell">{{ order.customerName }}</td>
+                            <td class="external-orders__cell external-orders__cell--order-reference">{{ order.orderReference }}</td>
+                            <td class="external-orders__cell">{{ order.email }}</td>
+                            <td class="external-orders__cell external-orders__cell--date">{{ formatDateForTable(order.date) }}</td>
+                            <td class="external-orders__cell">
                                     <span class="external-orders__status-pill" :class="statusClass(order)">
                                         {{ order.statusLabel }}
                                     </span>
-                                </td>
-                                <td class="external-orders__cell external-orders__cell--actions">
-                                    <button class="external-orders__action external-orders__button external-orders__button--ghost external-orders__button--small"
+                            </td>
+                            <td class="external-orders__cell external-orders__cell--actions">
+                                <button class="external-orders__action external-orders__button external-orders__button--ghost external-orders__button--small"
                                         @click="openDetail(order)"
-                                     type="button">
-                                        <sw-icon name="regular-eye" size="16"></sw-icon>
-                                    </button>
-                                </td>
-                            </tr>
+                                        type="button">
+                                    <sw-icon name="regular-eye" size="16"></sw-icon>
+                                </button>
+                            </td>
+                        </tr>
                         </tbody>
                     </table>
                 </div>
                 <div
-                    v-if="paginatedOrders.length > 0"
-                    class="external-orders__pagination"
+                        v-if="paginatedOrders.length > 0"
+                        class="external-orders__pagination"
                 >
                     <div class="external-orders__pagination-controls">
                         <button
-                            type="button"
-                            class="external-orders__pagination-nav"
-                            :disabled="page <= 1"
-                            @click="goToFirstPage"
+                                type="button"
+                                class="external-orders__pagination-nav"
+                                :disabled="page <= 1"
+                                @click="goToFirstPage"
                         >
                             «
                         </button>
                         <button
-                            type="button"
-                            class="external-orders__pagination-nav"
-                            :disabled="page <= 1"
-                            @click="goToPreviousPage"
+                                type="button"
+                                class="external-orders__pagination-nav"
+                                :disabled="page <= 1"
+                                @click="goToPreviousPage"
                         >
                             ‹
                         </button>
                         <div class="external-orders__pagination-pages">
                             <button
-                                v-for="pageNumber in visiblePages"
-                                :key="pageNumber"
-                                type="button"
-                                class="external-orders__pagination-page"
-                                :class="{ 'is--active': pageNumber === page }"
-                                @click="goToPage(pageNumber)"
+                                    v-for="pageNumber in visiblePages"
+                                    :key="pageNumber"
+                                    type="button"
+                                    class="external-orders__pagination-page"
+                                    :class="{ 'is--active': pageNumber === page }"
+                                    @click="goToPage(pageNumber)"
                             >
                                 {{ pageNumber }}
                             </button>
                         </div>
                         <button
-                            type="button"
-                            class="external-orders__pagination-nav"
-                            :disabled="page >= totalPages"
-                            @click="goToNextPage"
+                                type="button"
+                                class="external-orders__pagination-nav"
+                                :disabled="page >= totalPages"
+                                @click="goToNextPage"
                         >
                             ›
                         </button>
                         <button
-                            type="button"
-                            class="external-orders__pagination-nav"
-                            :disabled="page >= totalPages"
-                            @click="goToLastPage"
+                                type="button"
+                                class="external-orders__pagination-nav"
+                                :disabled="page >= totalPages"
+                                @click="goToLastPage"
                         >
                             »
                         </button>
                         <label class="external-orders__pagination-limit">
                             <span>Pro Seite</span>
                             <select
-                                :value="String(limit)"
-                                @change="onLimitChange($event.target.value)"
+                                    :value="String(limit)"
+                                    @change="onLimitChange($event.target.value)"
                             >
                                 <option
-                                    v-for="option in limitOptions"
-                                    :key="option"
-                                    :value="String(option)"
+                                        v-for="option in limitOptions"
+                                        :key="option"
+                                        :value="String(option)"
                                 >
                                     {{ option }}
                                 </option>
@@ -632,11 +628,11 @@
                     </div>
                 </div>
                 <sw-empty-state
-                    v-else
-                    class="external-orders__empty-state"
-                    icon="regular-shopping-cart"
-                    title="Keine Bestellungen gefunden"
-                    subline="Es wurden keine Bestellungen für die aktuelle Auswahl geladen."></sw-empty-state>
+                        v-else
+                        class="external-orders__empty-state"
+                        icon="regular-shopping-cart"
+                        title="Keine Bestellungen gefunden"
+                        subline="Es wurden keine Bestellungen für die aktuelle Auswahl geladen."></sw-empty-state>
             </sw-card>
 
             <div
