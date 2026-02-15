@@ -1,0 +1,40 @@
+{
+  "lieferzeiten": {
+    "lms": {
+      "general": {
+        "mainMenuItem": "Gestion des délais de livraison"
+      },
+      "navigation": {
+        "notificationToggles": "Paramètres des notifications e-mail",
+        "taskAssignmentRules": "Règles d’assignation des tâches"
+      },
+      "notificationMatrix": {
+        "title": "Paramètres des notifications e-mail",
+        "source": "Source : `lieferzeiten_notification_toggle` avec clé logique",
+        "emailOnlyHint": "Seul le canal e-mail est actuellement opérationnel et configurable.",
+        "invalidEntries": "{count} entrée(s) incohérente(s) détectée(s) (triggerKey/channel/code). Elles sont verrouillées dans la matrice.",
+        "notificationType": "Type de notification",
+        "triggers": {
+          "commande.creee": "Commande créée",
+          "commande.changement_statut": "Statut de commande modifié",
+          "tracking.mis_a_jour": "Suivi mis à jour",
+          "expedition.confirmee": "Expédition confirmée",
+          "changements.date_livraison": "Date de livraison modifiée",
+          "livraison.date.attribuee": "Date de livraison attribuée",
+          "livraison.date.modifiee": "Date de livraison modifiée",
+          "douane.requise": "Douane requise",
+          "commande.storno": "Commande annulée",
+          "livraison.impossible": "Livraison impossible",
+          "livraison.retoure": "Livraison retournée",
+          "rappel.vorkasse": "Rappel de paiement anticipé",
+          "paiement.recu.vorkasse": "Paiement anticipé reçu",
+          "commande.terminee.rappel_evaluation": "Commande terminée - rappel d’évaluation",
+          "versand.datum.ueberfaellig": "Date d’expédition dépassée",
+          "liefertermin.anfrage.zusaetzlich": "Demande de date de livraison ajoutée",
+          "liefertermin.anfrage.geschlossen": "Demande de date de livraison clôturée",
+          "liefertermin.anfrage.wiedereroeffnet": "Demande de date de livraison rouverte"
+        }
+      }
+    }
+  }
+}
