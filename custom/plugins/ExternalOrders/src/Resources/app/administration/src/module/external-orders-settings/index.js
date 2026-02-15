@@ -33,7 +33,7 @@ Module.register('external-orders-settings', {
             id: 'external-orders-settings',
             label: 'Lieferzeit',
             color: '#009ee3',
-            path: 'lieferzeiten.index',
+            path: 'lieferzeiten.index.all',
             icon: 'regular-shopping-cart',
             parent: 'sw-order',
             position: 46,
