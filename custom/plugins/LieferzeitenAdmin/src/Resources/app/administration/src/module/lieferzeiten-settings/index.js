@@ -50,7 +50,7 @@ Module.register('lieferzeiten-settings', {
             color: '#009ee3',
             path: 'lieferzeiten.settings.index',
             icon: 'regular-cog',
-            parent: 'sw-order',
+            parent: 'sw-settings',
             position: 90,
         },
         {
