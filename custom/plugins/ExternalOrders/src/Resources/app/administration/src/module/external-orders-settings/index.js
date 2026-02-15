@@ -15,14 +15,14 @@ Module.register('external-orders-settings', {
             component: 'external-orders-settings',
             path: 'index',
             meta: {
-                parentPath: 'sw.settings.index.bestellungLiefezeit',
+                parentPath: 'sw.settings.index',
                 privilege: 'admin',
             },
         },
     },
 
     settingsItem: {
-        group: 'bestellungLiefezeit',
+        group: 'plugins',
         to: 'external.orders.settings.index',
         icon: 'regular-shopping-cart',
         privilege: 'admin',
@@ -33,7 +33,7 @@ Module.register('external-orders-settings', {
             id: 'external-orders-settings',
             label: 'Lieferzeit',
             color: '#009ee3',
-            path: 'lieferzeiten.index',
+            path: 'external.orders.settings.index',
             icon: 'regular-shopping-cart',
             parent: 'sw-order',
             position: 46,
