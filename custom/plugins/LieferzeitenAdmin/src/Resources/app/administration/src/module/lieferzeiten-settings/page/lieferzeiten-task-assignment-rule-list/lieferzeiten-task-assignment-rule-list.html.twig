@@ -25,13 +25,12 @@
                 Statistiques
             </sw-tabs-item>
         </sw-tabs>
+
         <div class="lza-task-rule-layout">
             <section class="lza-task-rule-hero">
                 <div>
                     <h3>Task rules designer</h3>
-                    <p>
-                        Règles d'assignation avec un affichage amélioré et repères clairs pour les champs obligatoires.
-                    </p>
+                    <p>Règles d'assignation avec un affichage amélioré et repères clairs pour les champs obligatoires.</p>
                 </div>
                 <div class="lza-task-rule-tags">
                     <span class="lza-tag">Trigger *</span>
@@ -47,25 +46,59 @@
                 Les règles créées en démo utilisent le préfixe <code>demo_</code>.
             </sw-alert>
 
-            <sw-card class="lza-task-rule-card">
-                <sw-entity-listing
-                    v-if="items"
-                    :items="items"
-                    :repository="repository"
-                    :columns="columns"
-                    :isLoading="isLoading"
-                    :showSelection="false"
-                    :allowInlineEdit="hasEditAccess"
-                    :allowDelete="hasEditAccess"
-                    :total="total"
-                    :page="page"
-                    :limit="limit"
-                    @page-change="onPageChange"
-                    @inline-edit-save="onInlineEditSave"
-                    @inline-edit-cancel="getList"
-                    @delete="onDelete"
-                />
-            </sw-card>
+            <section class="lza-rules-panel" :class="{ 'is-loading': isLoading }">
+                <div class="lza-rules-toolbar">
+                    <div>{{ total }} règle(s)</div>
+                    <sw-button size="small" @click="getList">Refresh</sw-button>
+                </div>
+
+                <div v-if="!rules.length" class="lza-empty-state">
+                    Aucune règle trouvée. Vérifiez que les données de démonstration ont bien été seedées.
+                </div>
+
+                <div v-else class="lza-rule-table" role="table" aria-label="Task assignment rules">
+                    <div class="lza-rule-header" role="row">
+                        <span>Name</span>
+                        <span>Status</span>
+                        <span>Trigger *</span>
+                        <span>Rule</span>
+                        <span>Assignee type *</span>
+                        <span>Assignee *</span>
+                        <span>Priority</span>
+                        <span>Active</span>
+                        <span>Last changed</span>
+                        <span>Actions</span>
+                    </div>
+
+                    <div v-for="rule in rules" :key="rule.id" class="lza-rule-row" role="row">
+                        <input v-model="rule.name" type="text" :disabled="!hasEditAccess" />
+                        <input v-model="rule.status" type="text" :disabled="!hasEditAccess" />
+                        <input v-model="rule.triggerKey" type="text" required :disabled="!hasEditAccess" />
+                        <input v-model="rule.ruleId" type="text" :disabled="!hasEditAccess" />
+                        <input v-model="rule.assigneeType" type="text" required :disabled="!hasEditAccess" />
+                        <input v-model="rule.assigneeIdentifier" type="text" required :disabled="!hasEditAccess" />
+                        <input v-model.number="rule.priority" type="number" :disabled="!hasEditAccess" />
+                        <label class="lza-checkbox-cell">
+                            <input v-model="rule.active" type="checkbox" :disabled="!hasEditAccess" />
+                            <span>{{ rule.active ? 'Yes' : 'No' }}</span>
+                        </label>
+                        <div class="lza-last-change">
+                            <div>{{ formatDate(rule.lastChangedAt) }}</div>
+                            <small>{{ rule.lastChangedBy || '—' }}</small>
+                        </div>
+                        <div class="lza-actions">
+                            <sw-button size="small" variant="primary" :disabled="!hasEditAccess" @click="onSaveRule(rule)">Save</sw-button>
+                            <sw-button size="small" variant="danger" :disabled="!hasEditAccess" @click="onDeleteRule(rule)">Delete</sw-button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lza-pagination">
+                    <sw-button size="small" :disabled="page <= 1 || isLoading" @click="onPageChange({ page: page - 1, limit })">Previous</sw-button>
+                    <span>Page {{ page }}</span>
+                    <sw-button size="small" :disabled="(page * limit) >= total || isLoading" @click="onPageChange({ page: page + 1, limit })">Next</sw-button>
+                </div>
+            </section>
         </div>
     </template>
 </sw-page>
