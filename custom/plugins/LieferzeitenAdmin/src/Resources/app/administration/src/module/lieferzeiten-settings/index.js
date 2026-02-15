@@ -1,6 +1,7 @@
 import './page/lieferzeiten-channel-settings-list';
 import './page/lieferzeiten-task-assignment-rule-list';
 import './page/lieferzeiten-notification-toggle-list';
+import './page/lieferzeiten-sync-settings';
 
 const { Module } = Shopware;
 
@@ -14,8 +15,15 @@ Module.register('lieferzeiten-settings', {
 
     routes: {
         index: {
-            component: 'lieferzeiten-channel-settings-list',
+            component: 'lieferzeiten-sync-settings',
             path: '',
+            meta: {
+                privilege: 'admin',
+            },
+        },
+        syncConfiguration: {
+            component: 'lieferzeiten-sync-settings',
+            path: 'sync-configuration',
             meta: {
                 privilege: 'admin',
             },
@@ -62,12 +70,20 @@ Module.register('lieferzeiten-settings', {
             position: 5,
         },
         {
+            id: 'lieferzeiten-settings-sync-config',
+            label: 'Sync configuration',
+            color: '#009ee3',
+            path: 'lieferzeiten.settings.syncConfiguration',
+            parent: 'lieferzeiten-settings',
+            position: 10,
+        },
+        {
             id: 'lieferzeiten-settings-channel',
             label: 'lieferzeiten.lms.navigation.thresholdsByChannel',
             color: '#009ee3',
-            path: 'lieferzeiten.settings.index',
+            path: 'lieferzeiten.settings.channelSettings',
             parent: 'lieferzeiten-settings',
-            position: 10,
+            position: 20,
         },
         {
             id: 'lieferzeiten-settings-task',
@@ -75,7 +91,7 @@ Module.register('lieferzeiten-settings', {
             color: '#009ee3',
             path: 'lieferzeiten.settings.taskAssignmentRules',
             parent: 'lieferzeiten-settings',
-            position: 20,
+            position: 30,
         },
         {
             id: 'lieferzeiten-settings-notifications',
@@ -83,7 +99,7 @@ Module.register('lieferzeiten-settings', {
             color: '#009ee3',
             path: 'lieferzeiten.settings.notificationToggles',
             parent: 'lieferzeiten-settings',
-            position: 30,
+            position: 40,
         },
     ],
 });
