@@ -2,6 +2,8 @@
   "lieferzeiten": {
     "general": {
       "mainMenuItemGeneral": "Lieferzeiten",
+      "mainMenuItemParent": "Lieferzeit",
+      "mainMenuItemDeliveryManagement": "Delivery Management",
       "description": "Monitoring der Lieferzeiten im Admin",
       "infoTitle": "Hinweis",
       "timezoneInfo": "Zeitberechnungen basieren auf der Zeitzone Europe/Berlin.",
