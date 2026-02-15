@@ -1,9 +1,7 @@
 {
     "external-orders-settings": {
         "navigation": {
-            "section": "Bestellungen & Lieferzeiten",
-            "orders": "Bestellungen",
-            "deliveryTime": "Lieferzeit"
+            "section": "External Orders"
         }
     }
 }

@@ -30,29 +30,13 @@ Module.register('external-orders-settings', {
 
     navigation: [
         {
-            id: 'bestellungen-lieferzeiten-settings',
+            id: 'external-orders-settings',
             label: 'external-orders-settings.navigation.section',
             color: '#009ee3',
             path: 'external.orders.settings.index',
             icon: 'regular-cog',
             parent: 'sw-settings',
             position: 85,
-        },
-        {
-            id: 'bestellungen-lieferzeiten-settings-bestellungen',
-            label: 'external-orders-settings.navigation.orders',
-            color: '#009ee3',
-            path: 'external.orders.settings.index',
-            parent: 'bestellungen-lieferzeiten-settings',
-            position: 10,
-        },
-        {
-            id: 'bestellungen-lieferzeiten-settings-lieferzeit',
-            label: 'external-orders-settings.navigation.deliveryTime',
-            color: '#009ee3',
-            path: 'lieferzeiten.settings.index',
-            parent: 'bestellungen-lieferzeiten-settings',
-            position: 20,
         },
     ],
 });
