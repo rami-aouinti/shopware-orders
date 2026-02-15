@@ -1,6 +1,6 @@
 <sw-page class="external-orders-settings">
     <template #smart-bar-header>
-        <h2>Externe Bestellung</h2>
+        <h2>LieferzeitAdmin · SAN6 Konfiguration</h2>
     </template>
 
     <template #smart-bar-actions>
@@ -11,21 +11,7 @@
 
     <template #content>
         <sw-card-view>
-            <sw-card :isLoading="isLoading" title="Übersichten API / Token">
-                <external-orders-channel-config />
-            </sw-card>
-
-            <sw-card :isLoading="isLoading" title="Allgemein" class="sw-mt-16">
-                <sw-number-field
-                    v-model:value="config.externalOrdersTimeout"
-                    label="API Timeout (Sekunden)"
-                    numberType="float"
-                    :step="0.1"
-                    :min="0"
-                />
-            </sw-card>
-
-            <sw-card :isLoading="isLoading" title="SAN6" class="sw-mt-16">
+            <sw-card :isLoading="isLoading" title="SAN6 / LieferzeitAdmin">
                 <sw-text-field
                     v-model:value="config.externalOrdersSan6BaseUrl"
                     label="SAN6 API URL"
