@@ -3,6 +3,7 @@ import './page/lieferzeiten-task-assignment-rule-list';
 import './page/lieferzeiten-notification-toggle-list';
 import './page/lieferzeiten-sync-settings';
 import './page/lieferzeiten-statistics-settings';
+import '../lieferzeiten/page/lieferzeiten-statistics';
 
 const { Module } = Shopware;
 
