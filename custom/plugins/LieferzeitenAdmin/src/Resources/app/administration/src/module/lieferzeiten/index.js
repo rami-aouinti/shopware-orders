@@ -2,6 +2,7 @@ import './page/lieferzeiten-index';
 import './page/lieferzeiten-all';
 import './page/lieferzeiten-open';
 import './page/lieferzeiten-statistics';
+import './page/lieferzeiten-delivery-management';
 import './component/lieferzeiten-domain-selection';
 import './component/lieferzeiten-order-table';
 
@@ -28,34 +29,10 @@ Module.register('lieferzeiten', {
 
     routes: {
         index: {
-            component: 'lieferzeiten-index',
+            component: 'lieferzeiten-delivery-management',
             path: 'index',
-            redirect: { name: 'lieferzeiten.index.all' },
-            children: {
-                all: {
-                    component: 'lieferzeiten-all',
-                    path: 'all',
-                    meta: {
-                        parentPath: 'lieferzeiten.index',
-                        privilege: 'admin',
-                    },
-                },
-                open: {
-                    component: 'lieferzeiten-open',
-                    path: 'open',
-                    meta: {
-                        parentPath: 'lieferzeiten.index',
-                        privilege: 'admin',
-                    },
-                },
-                statistics: {
-                    component: 'lieferzeiten-statistics',
-                    path: 'statistics',
-                    meta: {
-                        parentPath: 'lieferzeiten.index',
-                        privilege: 'admin',
-                    },
-                },
+            meta: {
+                privilege: 'admin',
             },
         },
     },
@@ -63,23 +40,12 @@ Module.register('lieferzeiten', {
     navigation: [
         {
             id: 'lieferzeiten',
-            label: 'lieferzeiten.general.mainMenuItemGeneral',
+            label: 'lieferzeiten.general.mainMenuItemDeliveryManagement',
             color: '#2B8CBF',
-            path: 'lieferzeiten.index.all',
+            path: 'lieferzeiten.index',
             icon: 'regular-clock',
             parent: 'sw-order',
             position: 46,
-            privilege: 'admin',
-        },
-        {
-            id: 'lieferzeiten-statistics',
-            label: 'lieferzeiten.general.mainMenuItemStatistics',
-            color: '#2B8CBF',
-            path: 'lieferzeiten.index.statistics',
-            icon: 'regular-chart-bar',
-            parent: 'sw-dashboard',
-            position: 110,
-            privilege: 'admin',
         },
     ],
 });
