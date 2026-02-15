@@ -69,24 +69,16 @@ Shopware.Component.register('lieferzeiten-index', {
 
     watch: {
         selectedDomain() {
-            if (!this.canAccessMainViews) {
-                return;
-            }
-
             this.loadOrders();
             this.loadStatistics();
         },
     },
 
     computed: {
-        canAccessMainViews() {
-            return Boolean(this.selectedBereich) && Boolean(normalizeDomainKey(this.selectedDomain));
-        },
-
         filteredOrders() {
             const domainKey = normalizeDomainKey(this.selectedDomain);
             if (!domainKey) {
-                return [];
+                return this.orders;
             }
 
             return this.orders.filter((order) => order.domainKey === domainKey);
@@ -98,33 +90,16 @@ Shopware.Component.register('lieferzeiten-index', {
         onBereichChange(bereich) {
             this.selectedBereich = bereich;
 
-            if (!this.canAccessMainViews) {
-                this.orders = [];
-                this.statisticsMetrics = {
-                    openOrders: 0,
-                    overdueShipping: 0,
-                    overdueDelivery: 0,
-                };
-                return;
-            }
-
             this.loadOrders();
             this.loadStatistics();
         },
 
         async loadStatistics() {
-            if (!this.canAccessMainViews) {
-                this.statisticsMetrics = {
-                    openOrders: 0,
-                    overdueShipping: 0,
-                    overdueDelivery: 0,
-                };
-                return;
-            }
             try {
+                const domainKey = normalizeDomainKey(this.selectedDomain);
                 const payload = await this.lieferzeitenOrdersService.getStatistics({
                     period: 30,
-                    domain: normalizeDomainKey(this.selectedDomain),
+                    ...(domainKey ? { domain: domainKey } : {}),
                     channel: 'all',
                 });
 
@@ -168,11 +143,6 @@ Shopware.Component.register('lieferzeiten-index', {
         },
 
         async loadOrders() {
-            if (!this.canAccessMainViews) {
-                this.orders = [];
-                this.isLoading = false;
-                return;
-            }
             this.isLoading = true;
             this.loadError = null;
 
@@ -180,7 +150,7 @@ Shopware.Component.register('lieferzeiten-index', {
                 const domainKey = normalizeDomainKey(this.selectedDomain);
                 const result = await this.lieferzeitenOrdersService.getOrders({
                     ...this.buildFilterParams(),
-                    domain: domainKey,
+                    ...(domainKey ? { domain: domainKey } : {}),
                 });
                 const orders = Array.isArray(result) ? result : [];
 

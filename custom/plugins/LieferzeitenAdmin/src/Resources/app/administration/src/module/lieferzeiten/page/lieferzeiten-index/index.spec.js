@@ -20,17 +20,22 @@ describe('lieferzeiten/page/lieferzeiten-index', () => {
         component = global.Shopware.Component.register.mock.calls[0][1];
     });
 
-    it('keeps main views locked until both bereich and kanal are selected', () => {
+    it('returns all orders when no domain is selected', () => {
         const context = {
-            selectedBereich: 'first-medical-e-commerce',
+            orders: [{ id: '1' }, { id: '2' }],
             selectedDomain: null,
         };
 
-        expect(component.computed.canAccessMainViews.call(context)).toBe(false);
+        expect(component.computed.filteredOrders.call(context)).toEqual(context.orders);
+    });
 
-        context.selectedDomain = 'ebay.de';
+    it('filters orders when a domain is selected', () => {
+        const context = {
+            orders: [{ id: '1', domainKey: 'ebay.de' }, { id: '2', domainKey: 'kaufland' }],
+            selectedDomain: 'ebay.de',
+        };
 
-        expect(component.computed.canAccessMainViews.call(context)).toBe(true);
+        expect(component.computed.filteredOrders.call(context)).toEqual([{ id: '1', domainKey: 'ebay.de' }]);
     });
 
 

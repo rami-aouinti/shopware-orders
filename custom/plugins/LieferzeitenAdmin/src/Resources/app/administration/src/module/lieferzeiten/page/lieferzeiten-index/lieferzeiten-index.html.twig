@@ -20,13 +20,6 @@
                 </sw-card>
 
 
-                <sw-empty-state
-                    v-if="!canAccessMainViews"
-                    :title="$t('lieferzeiten.domainSelection.accessPendingTitle')"
-                    :subline="$t('lieferzeiten.domainSelection.statisticsAccessPendingDescription')"
-                />
-
-                <template v-else>
                 <sw-card class="lieferzeiten-index__filters" :title="$t('global.sw-data-grid.filterPanel.title')">
                     <sw-container columns="repeat(auto-fit, minmax(220px, 1fr))" gap="16px">
                         <sw-text-field v-model:value="filters.bestellnummer" label="Bestellnummer" />
@@ -106,7 +99,6 @@
                         />
                     </template>
                 </sw-card>
-                </template>
             </sw-card-view>
         </template>
     </sw-page>
