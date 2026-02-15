@@ -38,6 +38,7 @@
     },
     "general": {
       "mainMenuItemGeneral": "Lieferzeiten",
+      "mainMenuItemParent": "Lieferzeit",
       "mainMenuItemDeliveryManagement": "Delivery Management"
     }
   }

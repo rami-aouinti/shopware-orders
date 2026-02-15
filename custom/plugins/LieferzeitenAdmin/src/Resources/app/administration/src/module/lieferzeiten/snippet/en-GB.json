@@ -2,6 +2,7 @@
   "lieferzeiten": {
     "general": {
       "mainMenuItemGeneral": "Lieferzeiten",
+      "mainMenuItemParent": "Lieferzeit",
       "mainMenuItemDeliveryManagement": "Delivery Management",
       "description": "Delivery time monitoring in admin",
       "infoTitle": "Notice",
