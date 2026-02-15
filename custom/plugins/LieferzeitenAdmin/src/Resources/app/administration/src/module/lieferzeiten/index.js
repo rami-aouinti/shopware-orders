@@ -68,7 +68,7 @@ Module.register('lieferzeiten', {
             id: 'lieferzeiten-menu-entry',
             label: 'Lieferzeiten',
             color: '#2B8CBF',
-            path: 'lieferzeiten.index',
+            path: 'lieferzeiten.index.all',
             icon: 'regular-clock',
             parent: 'sw-order',
             position: 46,
