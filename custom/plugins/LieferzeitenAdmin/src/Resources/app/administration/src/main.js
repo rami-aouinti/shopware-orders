@@ -1,6 +1,4 @@
 const LEGACY_ROUTE_REDIRECTS = {
-    '#/lieferzeiten/': '#/sw/lieferzeiten/',
-    '#/lieferzeiten-settings/': '#/sw/lieferzeiten-settings/',
     '#/lieferzeiten-delivery-management/': '#/sw/lieferzeiten/',
 };
 
