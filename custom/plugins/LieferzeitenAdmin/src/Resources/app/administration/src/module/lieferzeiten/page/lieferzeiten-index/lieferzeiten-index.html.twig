@@ -57,7 +57,7 @@
                     <sw-loader v-if="isLoading" />
 
                     <sw-empty-state
-                        v-else-if="loadError"
+                        v-if="loadError"
                         :title="$t('lieferzeiten.loading.errorTitle')"
                         :subline="$t('lieferzeiten.loading.errorDescription')"
                     >
@@ -68,36 +68,34 @@
                         </template>
                     </sw-empty-state>
 
-                    <template v-else>
-                        <sw-tabs>
-                            <sw-tabs-item
-                                :route="{ name: 'lieferzeiten.index.all' }"
-                                :title="$t('lieferzeiten.tabs.all')"
-                            >
-                                {{ $t('lieferzeiten.tabs.all') }}
-                            </sw-tabs-item>
-                            <sw-tabs-item
-                                :route="{ name: 'lieferzeiten.index.open' }"
-                                :title="$t('lieferzeiten.tabs.open')"
-                            >
-                                {{ $t('lieferzeiten.tabs.open') }}
-                            </sw-tabs-item>
+                    <sw-tabs>
+                        <sw-tabs-item
+                            :route="{ name: 'lieferzeiten.index.all' }"
+                            :title="$t('lieferzeiten.tabs.all')"
+                        >
+                            {{ $t('lieferzeiten.tabs.all') }}
+                        </sw-tabs-item>
+                        <sw-tabs-item
+                            :route="{ name: 'lieferzeiten.index.open' }"
+                            :title="$t('lieferzeiten.tabs.open')"
+                        >
+                            {{ $t('lieferzeiten.tabs.open') }}
+                        </sw-tabs-item>
 
-                            <sw-tabs-item
-                                :route="{ name: 'lieferzeiten.index.statistics' }"
-                                :title="$t('lieferzeiten.tabs.statistics')"
-                            >
-                                {{ $t('lieferzeiten.tabs.statistics') }}
-                            </sw-tabs-item>
-                        </sw-tabs>
+                        <sw-tabs-item
+                            :route="{ name: 'lieferzeiten.index.statistics' }"
+                            :title="$t('lieferzeiten.tabs.statistics')"
+                        >
+                            {{ $t('lieferzeiten.tabs.statistics') }}
+                        </sw-tabs-item>
+                    </sw-tabs>
 
-                        <router-view
-                            :orders="filteredOrders"
-                            :selected-domain="selectedDomain"
-                            :on-reload-order="loadOrders"
-                            :statistics-metrics="statisticsMetrics"
-                        />
-                    </template>
+                    <router-view
+                        :orders="filteredOrders"
+                        :selected-domain="selectedDomain"
+                        :on-reload-order="loadOrders"
+                        :statistics-metrics="statisticsMetrics"
+                    />
                 </sw-card>
             </sw-card-view>
         </template>
