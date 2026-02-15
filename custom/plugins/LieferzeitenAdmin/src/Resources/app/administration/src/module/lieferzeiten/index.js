@@ -29,22 +29,13 @@ Module.register('lieferzeiten-delivery-management', {
 
     navigation: [
         {
-            id: 'lieferzeit-parent',
-            label: 'lieferzeiten.general.mainMenuItemParent',
+            id: 'lieferzeiten-delivery-management',
+            label: 'lieferzeiten.general.mainMenuItemGeneral',
             color: '#2B8CBF',
             path: 'lieferzeiten.index',
             icon: 'regular-clock',
-            position: 110,
-            privilege: 'admin',
-        },
-        {
-            id: 'lieferzeiten-delivery-management',
-            label: 'lieferzeiten.general.mainMenuItemDeliveryManagement',
-            color: '#2B8CBF',
-            path: 'lieferzeiten.deliveryManagement',
-            icon: 'regular-clock',
-            parent: 'lieferzeit-parent',
-            position: 10,
+            parent: 'sw-order',
+            position: 46,
             privilege: 'admin',
         },
     ],
