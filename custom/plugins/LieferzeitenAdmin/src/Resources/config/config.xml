@@ -5,6 +5,10 @@
         <title lang="en-GB">Lieferzeiten Sync</title>
         <title lang="de-DE">Lieferzeiten Sync</title>
 
-        
+        <component name="lieferzeiten-demo-data-button">
+            <name>lieferzeitenDemoData</name>
+            <label lang="en-GB">Demo data</label>
+            <label lang="de-DE">Demo Daten Lieferzeit</label>
+        </component>
     </card>
 </config>

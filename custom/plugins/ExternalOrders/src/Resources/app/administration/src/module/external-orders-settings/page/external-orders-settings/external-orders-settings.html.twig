@@ -3,6 +3,7 @@
         <h2>Externe Bestellung</h2>
     </template>
 
+
     <template #smart-bar-actions>
         <sw-button-process variant="primary" :isLoading="isSaving" @click="onSave">
             {{ $tc('global.default.save') }}
@@ -11,16 +12,33 @@
 
     <template #content>
         <sw-card-view>
-            <sw-card :isLoading="isLoading" title="Externe Bestellung">
-                <sw-number-field
-                    v-model:value="config.externalOrdersItemsPerPage"
-                    numberType="int"
-                    :min="1"
-                    :step="1"
-                    label="Nombre par page"
-                />
+            <sw-tabs class="sw-mb-16">
+                <sw-tabs-item
+                    v-for="tab in overviewTabs"
+                    :key="tab.id"
+                    :title="tab.label"
+                    :activeTab="activeOverviewTab === tab.id"
+                    @click="activeOverviewTab = tab.id"
+                >
+                    {{ tab.label }}
+                </sw-tabs-item>
+            </sw-tabs>
 
-                <external-orders-testdata-button class="sw-mt-16" />
+            <sw-card :isLoading="isLoading" title="Übersichten API / Token">
+                <external-orders-channel-config />
+            </sw-card>
+
+            <sw-card :isLoading="isLoading" title="SAN6" class="sw-mt-16">
+                <sw-text-field
+                    v-model:value="config.externalOrdersSan6BaseUrl"
+                    label="SAN6 API URL"
+                    placeholder="https://..."
+                />
+                <sw-text-field
+                    v-model:value="config.externalOrdersSan6Authentifizierung"
+                    label="SAN6 API Token"
+                    class="sw-mt-16"
+                />
             </sw-card>
         </sw-card-view>
     </template>
