@@ -38,7 +38,7 @@ Component.register('external-orders-list', {
         return {
             isLoading: false,
             isSeedingTestData: false,
-            pageTitle: 'Externe Bestellung',
+            pageTitle: 'Bestellübersichten',
             orders: [],
             summary: {
                 orderCount: 0,
@@ -117,7 +117,7 @@ Component.register('external-orders-list', {
                 end: null,
             },
             page: 1,
-            limit: 25,
+            limit: 10,
             limitOptions: [10, 25, 50, 100],
             sortBy: 'date',
             sortDirection: 'DESC',
@@ -332,10 +332,12 @@ Component.register('external-orders-list', {
                 }
 
                 const configuredPerPage = Number(getConfigValue('externalOrdersPerPage'));
-                if (!Number.isNaN(configuredPerPage) && configuredPerPage > 0) {
-                    this.limit = configuredPerPage;
-                    this.limitOptions = Array.from(new Set([...this.limitOptions, configuredPerPage])).sort((left, right) => left - right);
-                }
+                const resolvedPerPage = !Number.isNaN(configuredPerPage) && configuredPerPage > 0
+                    ? configuredPerPage
+                    : 10;
+
+                this.limit = resolvedPerPage;
+                this.limitOptions = Array.from(new Set([...this.limitOptions, resolvedPerPage])).sort((left, right) => left - right);
 
                 this.channelSources = {
                     all: 'Alle External Orders',
