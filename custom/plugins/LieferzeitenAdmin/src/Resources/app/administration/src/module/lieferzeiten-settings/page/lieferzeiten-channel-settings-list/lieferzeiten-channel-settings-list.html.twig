@@ -4,7 +4,6 @@
     </template>
 
     <template #smart-bar-actions>
-        <sw-button v-if="hasEditAccess" :isLoading="isSeedingDemoData" :variant="hasDemoData ? 'danger' : 'default'" @click="onToggleDemoData">{{ hasDemoData ? $tc('lieferzeiten.lms.dashboard.removeDemoData') : $tc('lieferzeiten.lms.dashboard.seedDemoData') }}</sw-button>
         <sw-button-process v-if="hasEditAccess" variant="primary" :isLoading="isSaving" @click="onSave">{{ $tc('global.default.save') }}</sw-button-process>
     </template>
 

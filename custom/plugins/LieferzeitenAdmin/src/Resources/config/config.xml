@@ -5,12 +5,6 @@
         <title lang="en-GB">Lieferzeiten Sync</title>
         <title lang="de-DE">Lieferzeiten Sync</title>
 
-        <component name="lieferzeiten-demo-data-button">
-            <name>toggleDemoData</name>
-            <label lang="en-GB">Demo data</label>
-            <label lang="de-DE">Demo-Daten</label>
-            <helpText lang="en-GB">Stores demo data if none exists, otherwise removes existing demo data from the database.</helpText>
-            <helpText lang="de-DE">Speichert Demo-Daten, wenn keine vorhanden sind, oder entfernt vorhandene Demo-Daten aus der Datenbank.</helpText>
-        </component>
+        
     </card>
 </config>
