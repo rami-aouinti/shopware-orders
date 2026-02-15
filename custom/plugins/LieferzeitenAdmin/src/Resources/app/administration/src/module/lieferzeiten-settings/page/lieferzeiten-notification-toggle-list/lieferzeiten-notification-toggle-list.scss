@@ -1,0 +1,56 @@
+.lieferzeiten-notification-toggle-list {
+    &__grid {
+        border: 1px solid #d1d9e0;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #ffffff;
+    }
+
+    &__table {
+        table-layout: fixed;
+    }
+
+    &__header-cell {
+        text-align: center;
+        background: #f0f4f8;
+        font-weight: 700;
+        vertical-align: middle;
+    }
+
+    &__header-cell--label {
+        text-align: left;
+    }
+
+    &__header-title {
+        display: inline-flex;
+        justify-content: center;
+        width: 100%;
+    }
+
+    &__trigger-cell {
+        font-weight: 600;
+        background: #f8fafc;
+    }
+
+    &__cell {
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    &__channel-row {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 36px;
+    }
+
+    &__channel-label {
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+
+    .sw-field--switch {
+        margin-bottom: 0;
+    }
+}
