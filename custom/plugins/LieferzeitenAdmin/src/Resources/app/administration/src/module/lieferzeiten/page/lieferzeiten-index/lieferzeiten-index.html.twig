@@ -20,13 +20,6 @@
                 </sw-card>
 
 
-                <sw-empty-state
-                    v-if="!canAccessMainViews"
-                    :title="$t('lieferzeiten.domainSelection.accessPendingTitle')"
-                    :subline="$t('lieferzeiten.domainSelection.statisticsAccessPendingDescription')"
-                />
-
-                <template v-else>
                 <sw-card class="lieferzeiten-index__filters" :title="$t('global.sw-data-grid.filterPanel.title')">
                     <sw-container columns="repeat(auto-fit, minmax(220px, 1fr))" gap="16px">
                         <sw-text-field v-model:value="filters.bestellnummer" label="Bestellnummer" />
@@ -63,50 +56,42 @@
                 <sw-card class="lieferzeiten-index__tabs">
                     <sw-loader v-if="isLoading" />
 
-                    <sw-empty-state
-                        v-else-if="loadError"
-                        :title="$t('lieferzeiten.loading.errorTitle')"
-                        :subline="$t('lieferzeiten.loading.errorDescription')"
-                    >
-                        <template #actions>
-                            <sw-button variant="primary" @click="reloadData">
-                                {{ $t('lieferzeiten.loading.retry') }}
-                            </sw-button>
-                        </template>
-                    </sw-empty-state>
+                    <sw-alert v-if="loadError" variant="error" :title="$t('lieferzeiten.loading.errorTitle')">
+                        {{ $t('lieferzeiten.loading.errorDescription') }}
+                        <sw-button variant="primary" size="small" @click="reloadData">
+                            {{ $t('lieferzeiten.loading.retry') }}
+                        </sw-button>
+                    </sw-alert>
 
-                    <template v-else>
-                        <sw-tabs>
-                            <sw-tabs-item
-                                :route="{ name: 'lieferzeiten.index.all' }"
-                                :title="$t('lieferzeiten.tabs.all')"
-                            >
-                                {{ $t('lieferzeiten.tabs.all') }}
-                            </sw-tabs-item>
-                            <sw-tabs-item
-                                :route="{ name: 'lieferzeiten.index.open' }"
-                                :title="$t('lieferzeiten.tabs.open')"
-                            >
-                                {{ $t('lieferzeiten.tabs.open') }}
-                            </sw-tabs-item>
+                    <sw-tabs>
+                        <sw-tabs-item
+                            :route="{ name: 'lieferzeiten.index.all' }"
+                            :title="$t('lieferzeiten.tabs.all')"
+                        >
+                            {{ $t('lieferzeiten.tabs.all') }}
+                        </sw-tabs-item>
+                        <sw-tabs-item
+                            :route="{ name: 'lieferzeiten.index.open' }"
+                            :title="$t('lieferzeiten.tabs.open')"
+                        >
+                            {{ $t('lieferzeiten.tabs.open') }}
+                        </sw-tabs-item>
 
-                            <sw-tabs-item
-                                :route="{ name: 'lieferzeiten.index.statistics' }"
-                                :title="$t('lieferzeiten.tabs.statistics')"
-                            >
-                                {{ $t('lieferzeiten.tabs.statistics') }}
-                            </sw-tabs-item>
-                        </sw-tabs>
+                        <sw-tabs-item
+                            :route="{ name: 'lieferzeiten.index.statistics' }"
+                            :title="$t('lieferzeiten.tabs.statistics')"
+                        >
+                            {{ $t('lieferzeiten.tabs.statistics') }}
+                        </sw-tabs-item>
+                    </sw-tabs>
 
-                        <router-view
-                            :orders="filteredOrders"
-                            :selected-domain="selectedDomain"
-                            :on-reload-order="loadOrders"
-                            :statistics-metrics="statisticsMetrics"
-                        />
-                    </template>
+                    <router-view
+                        :orders="filteredOrders"
+                        :selected-domain="selectedDomain"
+                        :on-reload-order="loadOrders"
+                        :statistics-metrics="statisticsMetrics"
+                    />
                 </sw-card>
-                </template>
             </sw-card-view>
         </template>
     </sw-page>
