@@ -1,3 +1,4 @@
+import './lieferzeiten-notification-toggle-list.scss';
 import template from './lieferzeiten-notification-toggle-list.html.twig';
 
 const { Component } = Shopware;
