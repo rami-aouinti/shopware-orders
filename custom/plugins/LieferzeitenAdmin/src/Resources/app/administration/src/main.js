@@ -1,10 +1,20 @@
-const LEGACY_ROUTE_PREFIXES = ['#/lieferzeiten/', '#/lieferzeiten-settings/'];
+const LEGACY_ROUTE_REDIRECTS = {
+    '#/lieferzeiten/': '#/sw/lieferzeiten/delivery/management/',
+    '#/lieferzeiten-settings/': '#/sw/lieferzeiten-settings/',
+    '#/lieferzeiten-delivery-management/': '#/sw/lieferzeiten/delivery/management/',
+};
 
 if (typeof window !== 'undefined' && typeof window.location?.hash === 'string') {
-    const legacyPrefix = LEGACY_ROUTE_PREFIXES.find((prefix) => window.location.hash.startsWith(prefix));
+    const matchedPrefix = Object.keys(LEGACY_ROUTE_REDIRECTS)
+        .find((prefix) => window.location.hash.startsWith(prefix));
 
-    if (legacyPrefix) {
-        window.location.replace(window.location.href.replace('#/', '#/sw/'));
+    if (matchedPrefix) {
+        const targetPrefix = LEGACY_ROUTE_REDIRECTS[matchedPrefix];
+        const redirectedHash = window.location.hash.replace(matchedPrefix, targetPrefix);
+
+        if (redirectedHash !== window.location.hash) {
+            window.location.replace(window.location.href.replace(window.location.hash, redirectedHash));
+        }
     }
 }
 
