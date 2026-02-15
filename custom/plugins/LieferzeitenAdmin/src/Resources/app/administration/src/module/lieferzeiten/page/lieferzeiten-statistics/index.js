@@ -95,6 +95,10 @@ Shopware.Component.register('lieferzeiten-statistics', {
     },
 
     computed: {
+        activitiesData() {
+            return Array.isArray(this.statistics.activitiesData) ? this.statistics.activitiesData : [];
+        },
+
         channelOptions() {
             return [
                 { value: 'all', label: this.$t('lieferzeiten.statistics.allChannels') },
@@ -111,12 +115,96 @@ Shopware.Component.register('lieferzeiten-statistics', {
         },
 
         filteredOrders() {
-            return this.statistics.activitiesData.map((activity) => ({
+            return this.activitiesData.map((activity) => ({
                 ...activity,
                 status: activity.status === 'open'
                     ? this.$t('lieferzeiten.status.open')
                     : (activity.status === 'done' ? this.$t('lieferzeiten.status.closed') : activity.status),
             }));
+        },
+
+        eventTypeBreakdown() {
+            const totals = this.activitiesData.reduce((accumulator, activity) => {
+                const normalizedEventType = String(activity?.eventType || 'unknown').trim().toLowerCase() || 'unknown';
+                accumulator[normalizedEventType] = (accumulator[normalizedEventType] || 0) + 1;
+
+                return accumulator;
+            }, {});
+
+            return Object.entries(totals)
+                .map(([eventType, value]) => ({ eventType, value }))
+                .sort((a, b) => b.value - a.value);
+        },
+
+        eventTypeBreakdownMaxValue() {
+            if (!this.eventTypeBreakdown.length) {
+                return 1;
+            }
+
+            return Math.max(...this.eventTypeBreakdown.map((item) => item.value));
+        },
+
+        criticalStatusBreakdown() {
+            const totals = this.activitiesData.reduce((accumulator, activity) => {
+                const statusKey = this.resolveCriticalStatus(activity);
+                accumulator[statusKey] = (accumulator[statusKey] || 0) + 1;
+
+                return accumulator;
+            }, {});
+
+            return Object.entries(totals)
+                .map(([statusKey, value]) => ({ statusKey, value }))
+                .sort((a, b) => b.value - a.value);
+        },
+
+        criticalStatusBreakdownMaxValue() {
+            if (!this.criticalStatusBreakdown.length) {
+                return 1;
+            }
+
+            return Math.max(...this.criticalStatusBreakdown.map((item) => item.value));
+        },
+
+        channelAnomalies() {
+            const totals = this.activitiesData.reduce((accumulator, activity) => {
+                const statusKey = this.resolveCriticalStatus(activity);
+
+                if (statusKey === 'ok') {
+                    return accumulator;
+                }
+
+                const sourceSystem = String(activity?.sourceSystem || 'unknown').trim() || 'unknown';
+
+                if (!accumulator[sourceSystem]) {
+                    accumulator[sourceSystem] = {
+                        sourceSystem,
+                        value: 0,
+                        topStatus: statusKey,
+                        statusTotals: {},
+                    };
+                }
+
+                accumulator[sourceSystem].value += 1;
+                accumulator[sourceSystem].statusTotals[statusKey] = (accumulator[sourceSystem].statusTotals[statusKey] || 0) + 1;
+
+                const topStatusEntry = Object.entries(accumulator[sourceSystem].statusTotals)
+                    .sort((a, b) => b[1] - a[1])[0];
+                accumulator[sourceSystem].topStatus = topStatusEntry ? topStatusEntry[0] : 'ok';
+
+                return accumulator;
+            }, {});
+
+            return Object.values(totals)
+                .sort((a, b) => b.value - a.value)
+                .slice(0, 5);
+        },
+
+        channelAnomaliesMaxValue() {
+            if (!this.channelAnomalies.length) {
+                return 1;
+            }
+
+            return Math.max(...this.channelAnomalies.map((item) => item.value));
         },
 
         channelChartData() {
@@ -435,6 +523,69 @@ Shopware.Component.register('lieferzeiten-statistics', {
 
         formatTimelineLabel(dateString) {
             return Shopware.Utils.format.date(dateString);
+        },
+
+        resolveCriticalStatus(activity) {
+            const status = String(activity?.status || '').toLowerCase();
+            const message = String(activity?.message || '').toLowerCase();
+            const eventType = String(activity?.eventType || '').toLowerCase();
+            const fullText = `${status} ${message} ${eventType}`;
+
+            if (/(failed|error|dead[_\s-]?letter|exception)/.test(fullText)) {
+                return 'failed';
+            }
+
+            if (/(overdue|late|ueberfaellig|überfällig|sla)/.test(fullText)) {
+                return 'overdue';
+            }
+
+            if (/(queued|queue|pending|enqueued|scheduled|waiting)/.test(fullText)) {
+                return 'queued';
+            }
+
+            if (/(retry|requeue|re-queue)/.test(fullText)) {
+                return 'retrying';
+            }
+
+            if (/(timeout|timed\s*out)/.test(fullText)) {
+                return 'timeout';
+            }
+
+            if (/(warning|warn|anomal)/.test(fullText)) {
+                return 'warning';
+            }
+
+            return 'ok';
+        },
+
+        formatEventTypeLabel(eventType) {
+            if (!eventType) {
+                return 'Unknown';
+            }
+
+            return eventType
+                .split(/[_\s-]+/)
+                .filter(Boolean)
+                .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                .join(' ');
+        },
+
+        formatCriticalStatusLabel(statusKey) {
+            const labels = {
+                failed: 'Failed',
+                queued: 'Queued',
+                overdue: 'Overdue',
+                retrying: 'Retrying',
+                timeout: 'Timeout',
+                warning: 'Warning',
+                ok: 'OK',
+            };
+
+            return labels[statusKey] || this.formatEventTypeLabel(statusKey);
+        },
+
+        getBreakdownBarWidth(value, maxValue) {
+            return `${Math.max(Math.round((value / (maxValue || 1)) * 100), 6)}%`;
         },
 
         onDrilldown(item) {

@@ -39,6 +39,11 @@
     "general": {
       "mainMenuItemGeneral": "Lieferzeiten",
       "mainMenuItemDeliveryManagement": "Delivery Management"
+    },
+    "statistics": {
+      "eventTypeBreakdownTitle": "Répartition des activités par type d’événement",
+      "criticalStatusTitle": "Répartition des statuts critiques",
+      "channelAnomaliesTitle": "Top anomalies par canal"
     }
   }
 }

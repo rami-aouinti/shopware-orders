@@ -202,7 +202,10 @@
       "customRange": {
         "from": "From",
         "to": "To"
-      }
+      },
+      "eventTypeBreakdownTitle": "Activity distribution by event type",
+      "criticalStatusTitle": "Critical status distribution",
+      "channelAnomaliesTitle": "Top channel anomalies"
     },
     "loading": {
       "errorTitle": "Unable to load orders",

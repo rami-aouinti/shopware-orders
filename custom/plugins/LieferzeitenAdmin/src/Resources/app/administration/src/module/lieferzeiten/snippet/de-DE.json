@@ -202,7 +202,10 @@
       "customRange": {
         "from": "Von",
         "to": "Bis"
-      }
+      },
+      "eventTypeBreakdownTitle": "Aktivitäten nach Ereignistyp",
+      "criticalStatusTitle": "Verteilung kritischer Status",
+      "channelAnomaliesTitle": "Top-Anomalien nach Kanal"
     },
     "loading": {
       "errorTitle": "Bestellungen konnten nicht geladen werden",

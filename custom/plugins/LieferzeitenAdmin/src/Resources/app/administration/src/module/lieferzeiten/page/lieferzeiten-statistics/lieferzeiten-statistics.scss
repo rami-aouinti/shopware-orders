@@ -57,6 +57,48 @@
         overflow-x: auto;
     }
 
+
+    &__breakdowns {
+        max-width: 1280px;
+        width: 100%;
+        margin: 0 auto;
+
+        .sw-card {
+            min-height: 260px;
+        }
+    }
+
+    &__breakdown-chart {
+        max-height: 320px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    &__breakdown-row {
+        grid-template-columns: minmax(140px, 180px) minmax(120px, 1fr) 32px;
+        font-size: 14px;
+    }
+
+    &__bar--critical {
+        background: #dd4949;
+    }
+
+    &__bar--anomaly {
+        background: #f08a1e;
+    }
+
+    &__anomaly-labels {
+        display: grid;
+        gap: 2px;
+
+        small {
+            color: #52667a;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+    }
+
     &__chart {
         display: grid;
         gap: 12px;
@@ -169,6 +211,10 @@
         &__chart-row {
             grid-template-columns: minmax(160px, 220px) minmax(180px, 1fr) 32px;
         }
+
+        &__breakdowns {
+            grid-template-columns: repeat(2, minmax(240px, 1fr)) !important;
+        }
     }
 }
 
@@ -195,6 +241,10 @@
             font-size: 44px;
         }
 
+        &__breakdowns {
+            grid-template-columns: 1fr !important;
+        }
+
         &__chart-row {
             grid-template-columns: 1fr;
             gap: 8px;
@@ -202,6 +252,10 @@
             strong {
                 justify-self: end;
             }
+        }
+
+        &__breakdown-row {
+            grid-template-columns: 1fr;
         }
     }
 }
