@@ -16,9 +16,21 @@ Component.register('external-orders-settings', {
             isLoading: false,
             isSaving: false,
             config: {
+                externalOrdersTimeout: 2.5,
                 externalOrdersSan6BaseUrl: '',
                 externalOrdersSan6Authentifizierung: '',
+                externalOrdersSan6SendStrategy: 'filetransferurl',
+                externalOrdersSan6ReadFunction: '',
+                externalOrdersSan6WriteFunction: '',
+                externalOrdersSan6Company: '',
+                externalOrdersSan6Product: '',
+                externalOrdersSan6Mandant: '',
+                externalOrdersSan6Sys: '',
             },
+            san6SendStrategyOptions: [
+                { value: 'filetransferurl', label: 'filetransferurl' },
+                { value: 'legacy', label: 'legacy' },
+            ],
         };
     },
 

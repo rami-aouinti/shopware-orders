@@ -157,7 +157,10 @@
       "period": {
         "7": "Letzte 7 Tage",
         "30": "Letzte 30 Tage",
-        "90": "Letzte 90 Tage"
+        "90": "Letzte 90 Tage",
+        "180": "Letzte 180 Tage",
+        "365": "Letzte 365 Tage",
+        "custom": "Benutzerdefinierter Zeitraum"
       },
       "status": {
         "overdue": "Überfällig"
@@ -196,7 +199,14 @@
         "closeTask": "Aufgabe konnte nicht geschlossen werden.",
         "reopenTask": "Aufgabe konnte nicht erneut geöffnet werden.",
         "openTracking": "Tracking-Historie konnte nicht geladen werden."
-      }
+      },
+      "customRange": {
+        "from": "Von",
+        "to": "Bis"
+      },
+      "eventTypeBreakdownTitle": "Aktivitäten nach Ereignistyp",
+      "criticalStatusTitle": "Verteilung kritischer Status",
+      "channelAnomaliesTitle": "Top-Anomalien nach Kanal"
     },
     "loading": {
       "errorTitle": "Bestellungen konnten nicht geladen werden",

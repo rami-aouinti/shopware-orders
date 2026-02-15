@@ -157,7 +157,10 @@
       "period": {
         "7": "Last 7 days",
         "30": "Last 30 days",
-        "90": "Last 90 days"
+        "90": "Last 90 days",
+        "180": "Last 180 days",
+        "365": "Last 365 days",
+        "custom": "Custom range"
       },
       "status": {
         "overdue": "Overdue"
@@ -196,7 +199,14 @@
         "closeTask": "Task could not be closed.",
         "reopenTask": "Task could not be reopened.",
         "openTracking": "Tracking history could not be loaded."
-      }
+      },
+      "customRange": {
+        "from": "From",
+        "to": "To"
+      },
+      "eventTypeBreakdownTitle": "Activity distribution by event type",
+      "criticalStatusTitle": "Critical status distribution",
+      "channelAnomaliesTitle": "Top channel anomalies"
     },
     "loading": {
       "errorTitle": "Unable to load orders",

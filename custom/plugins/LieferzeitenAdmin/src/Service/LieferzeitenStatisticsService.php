@@ -4,11 +4,16 @@ namespace LieferzeitenAdmin\Service;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 
 readonly class LieferzeitenStatisticsService
 {
     private const STATISTICS_TIMEZONE = 'Europe/Berlin';
     private const STORAGE_TIMEZONE = 'UTC';
+    private const DEFAULT_PERIOD_DAYS = 30;
+    private const MAX_PERIOD_DAYS = 3650;
+    private const DEFAULT_ACTIVITY_LIMIT = 200;
+    private const MAX_ACTIVITY_LIMIT = 1000;
 
     private const DOMAIN_SOURCE_MAPPING = [
         'first-medical-e-commerce' => ['first medical', 'e-commerce', 'shopware', 'gambio'],
@@ -32,7 +37,7 @@ readonly class LieferzeitenStatisticsService
     /**
      * @return array<string, mixed>
      */
-    public function getStatistics(?int $periodDays, ?string $domain, ?string $channel, mixed $from = null, mixed $to = null, ?\DateTimeImmutable $referenceNow = null): array
+    public function getStatistics(?int $periodDays, ?string $domain, ?string $channel, mixed $from = null, mixed $to = null, ?\DateTimeImmutable $referenceNow = null, ?int $limit = null, ?int $page = null, ?int $offset = null, ?string $sort = null, ?string $order = null): array
     {
         if ($from instanceof \DateTimeImmutable && $to === null && $referenceNow === null) {
             $referenceNow = $from;
@@ -42,7 +47,7 @@ readonly class LieferzeitenStatisticsService
         $from = is_string($from) ? $from : null;
         $to = is_string($to) ? $to : null;
 
-        $periodDays = $this->sanitizePeriod($periodDays ?? 30);
+        $periodDays = $this->sanitizePeriod($periodDays ?? self::DEFAULT_PERIOD_DAYS);
         $statisticsTimezone = $this->getStatisticsTimezone();
         $window = $this->resolveWindow($periodDays, $from, $to);
 
@@ -136,6 +141,35 @@ readonly class LieferzeitenStatisticsService
 
         $timeline = $this->connection->fetchAllAssociative($timelineSql, $params, $metricsParamTypes);
 
+        $activitiesFromSql = sprintf(
+            'FROM (
+                %s
+            ) t
+            LEFT JOIN `lieferzeiten_paket` p ON p.external_order_id = t.order_number
+            WHERE t.event_at IS NOT NULL
+              %s',
+            $eventSourcesSql,
+            $this->buildSourceScopeCondition('t.source_system', $params, $domain, $channel),
+        );
+
+        $activitiesTotal = (int) $this->connection->fetchOne(
+            sprintf('SELECT COUNT(*) %s', $activitiesFromSql),
+            $params,
+            $metricsParamTypes,
+        );
+
+        $resolvedLimit = $this->sanitizeLimit($limit);
+        $resolvedPage = max(1, (int) ($page ?? 1));
+        $resolvedOffset = $offset !== null
+            ? max(0, $offset)
+            : ($resolvedPage - 1) * $resolvedLimit;
+
+        if ($offset !== null) {
+            $resolvedPage = (int) floor($resolvedOffset / max(1, $resolvedLimit)) + 1;
+        }
+
+        $sortConfig = $this->resolveActivitySort($sort, $order);
+
         $activitiesSql = sprintf(
             'SELECT
                 CONCAT(t.event_type, ":", LOWER(HEX(t.id)), ":", DATE_FORMAT(t.event_at, "%%Y%%m%%d%%H%%i%%s%%f")) AS id,
@@ -147,19 +181,38 @@ readonly class LieferzeitenStatisticsService
                 t.event_at AS eventAt,
                 COALESCE(NULLIF(t.source_system, ""), "unknown") AS sourceSystem,
                 p.delivery_date AS promisedAt
-            FROM (
-                %s
-            ) t
-            LEFT JOIN `lieferzeiten_paket` p ON p.external_order_id = t.order_number
-            WHERE t.event_at IS NOT NULL
-              %s
-            ORDER BY t.event_at DESC
-            LIMIT 200',
-            $eventSourcesSql,
-            $this->buildSourceScopeCondition('t.source_system', $params, $domain, $channel),
+            %s
+            ORDER BY %s %s
+            LIMIT :activityLimit OFFSET :activityOffset',
+            $activitiesFromSql,
+            $sortConfig['column'],
+            $sortConfig['direction'],
         );
 
-        $activities = $this->connection->fetchAllAssociative($activitiesSql, $params, $metricsParamTypes);
+        $activityParams = array_merge($params, [
+            'activityLimit' => $resolvedLimit,
+            'activityOffset' => $resolvedOffset,
+        ]);
+        $activityParamTypes = array_merge($metricsParamTypes, [
+            'activityLimit' => ParameterType::INTEGER,
+            'activityOffset' => ParameterType::INTEGER,
+        ]);
+
+        $activities = $this->connection->fetchAllAssociative($activitiesSql, $activityParams, $activityParamTypes);
+        $activitiesData = array_map(static fn (array $row): array => [
+            'id' => (string) ($row['id'] ?? ''),
+            'orderNumber' => (string) ($row['orderNumber'] ?? ''),
+            'domain' => (string) ($row['domain'] ?? 'Unknown'),
+            'status' => (string) ($row['status'] ?? ''),
+            'eventType' => (string) ($row['eventType'] ?? ''),
+            'message' => (string) ($row['message'] ?? ''),
+            'eventAt' => (string) ($row['eventAt'] ?? ''),
+            'sourceSystem' => (string) ($row['sourceSystem'] ?? 'unknown'),
+            'promisedAt' => $row['promisedAt'],
+            'paketId' => isset($row['paketId']) ? (string) $row['paketId'] : null,
+            'taskId' => isset($row['taskId']) ? (string) $row['taskId'] : null,
+            'trackingNumber' => isset($row['trackingNumber']) ? (string) $row['trackingNumber'] : null,
+        ], $activities);
 
         return [
             'periodDays' => $periodDays,
@@ -183,21 +236,82 @@ readonly class LieferzeitenStatisticsService
                 'date' => (string) ($row['date'] ?? ''),
                 'count' => (int) ($row['count'] ?? 0),
             ], $timeline),
-            'activitiesData' => array_map(static fn (array $row): array => [
-                'id' => (string) ($row['id'] ?? ''),
-                'orderNumber' => (string) ($row['orderNumber'] ?? ''),
-                'domain' => (string) ($row['domain'] ?? 'Unknown'),
-                'status' => (string) ($row['status'] ?? ''),
-                'eventType' => (string) ($row['eventType'] ?? ''),
-                'message' => (string) ($row['message'] ?? ''),
-                'eventAt' => (string) ($row['eventAt'] ?? ''),
-                'sourceSystem' => (string) ($row['sourceSystem'] ?? 'unknown'),
-                'promisedAt' => $row['promisedAt'],
-                'paketId' => isset($row['paketId']) ? (string) $row['paketId'] : null,
-                'taskId' => isset($row['taskId']) ? (string) $row['taskId'] : null,
-                'trackingNumber' => isset($row['trackingNumber']) ? (string) $row['trackingNumber'] : null,
-            ], $activities),
+            'activities' => [
+                'total' => $activitiesTotal,
+                'page' => $resolvedPage,
+                'limit' => $resolvedLimit,
+                'offset' => $resolvedOffset,
+                'data' => $activitiesData,
+            ],
+            'total' => $activitiesTotal,
+            'page' => $resolvedPage,
+            'limit' => $resolvedLimit,
+            'activitiesData' => $activitiesData,
         ];
+    }
+
+    public function exportStatisticsCsv(?int $periodDays, ?string $domain, ?string $channel, mixed $from = null, mixed $to = null, ?string $sort = null, ?string $order = null): string
+    {
+        $offset = 0;
+        $rows = [];
+
+        do {
+            $payload = $this->getStatistics($periodDays, $domain, $channel, $from, $to, null, self::MAX_ACTIVITY_LIMIT, null, $offset, $sort, $order);
+            $batch = is_array($payload['activitiesData'] ?? null) ? $payload['activitiesData'] : [];
+            $rows = array_merge($rows, $batch);
+            $offset += self::MAX_ACTIVITY_LIMIT;
+            $total = (int) ($payload['total'] ?? 0);
+        } while ($offset < $total && $batch !== []);
+
+        $headers = ['orderNumber', 'domain', 'status', 'eventType', 'message', 'eventAt', 'promisedAt', 'sourceSystem'];
+        $csvRows = [implode(';', $headers)];
+
+        foreach ($rows as $row) {
+            $csvRows[] = implode(';', array_map(static function (mixed $value): string {
+                return '"' . str_replace('"', '""', (string) $value) . '"';
+            }, [
+                $row['orderNumber'] ?? '',
+                $row['domain'] ?? '',
+                $row['status'] ?? '',
+                $row['eventType'] ?? '',
+                $row['message'] ?? '',
+                $row['eventAt'] ?? '',
+                $row['promisedAt'] ?? '',
+                $row['sourceSystem'] ?? '',
+            ]));
+        }
+
+        return implode("\n", $csvRows);
+    }
+
+    private function sanitizeLimit(?int $limit): int
+    {
+        if ($limit === null || $limit <= 0) {
+            return self::DEFAULT_ACTIVITY_LIMIT;
+        }
+
+        return min($limit, self::MAX_ACTIVITY_LIMIT);
+    }
+
+    /**
+     * @return array{column:string,direction:string}
+     */
+    private function resolveActivitySort(?string $sort, ?string $order): array
+    {
+        $sortMap = [
+            'orderNumber' => 't.order_number',
+            'domain' => 't.domain',
+            'status' => 't.event_status',
+            'eventType' => 't.event_type',
+            'eventAt' => 't.event_at',
+            'promisedAt' => 'p.delivery_date',
+            'sourceSystem' => 't.source_system',
+        ];
+
+        $column = $sortMap[$sort ?? ''] ?? 't.event_at';
+        $direction = mb_strtoupper((string) $order) === 'ASC' ? 'ASC' : 'DESC';
+
+        return ['column' => $column, 'direction' => $direction];
     }
 
     /**
@@ -501,11 +615,11 @@ readonly class LieferzeitenStatisticsService
 
     private function sanitizePeriod(int $periodDays): int
     {
-        if (in_array($periodDays, [7, 30, 90], true)) {
-            return $periodDays;
+        if ($periodDays <= 0) {
+            return self::DEFAULT_PERIOD_DAYS;
         }
 
-        return 30;
+        return min($periodDays, self::MAX_PERIOD_DAYS);
     }
 
     /**
@@ -515,7 +629,7 @@ readonly class LieferzeitenStatisticsService
     {
         $timezone = new \DateTimeZone(date_default_timezone_get());
         $now = new \DateTimeImmutable('now', $timezone);
-        $normalizedPeriod = $this->sanitizePeriod($periodDays ?? 30);
+        $normalizedPeriod = $this->sanitizePeriod($periodDays ?? self::DEFAULT_PERIOD_DAYS);
 
         $fromDate = $this->parseDateValue($from);
         $toDate = $this->parseDateValue($to);
