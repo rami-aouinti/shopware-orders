@@ -33,6 +33,13 @@ Module.register('lieferzeiten-delivery-management', {
                 privilege: 'admin',
             },
         },
+        externalOrdersLike: {
+            component: 'lieferzeiten-external-orders',
+            path: 'lieferzeiten',
+            meta: {
+                privilege: 'admin',
+            },
+        },
     },
 
     navigation: [
@@ -40,7 +47,7 @@ Module.register('lieferzeiten-delivery-management', {
             id: 'lieferzeiten-delivery-management',
             label: 'lieferzeiten.general.mainMenuItemGeneral',
             color: '#2B8CBF',
-            path: 'lieferzeiten.index',
+            path: 'lieferzeiten.externalOrdersLike',
             icon: 'regular-clock',
             parent: 'sw-order',
             position: 46,
