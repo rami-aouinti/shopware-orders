@@ -4,7 +4,7 @@ const { Module } = Shopware;
 
 Module.register('lieferzeiten-delivery-management', {
     type: 'plugin',
-    name: 'lieferzeiten-delivery-management',
+    name: 'lieferzeiten',
     title: 'lieferzeiten.general.mainMenuItemDeliveryManagement',
     description: 'lieferzeiten.general.description',
     color: '#2B8CBF',
@@ -25,10 +25,11 @@ Module.register('lieferzeiten-delivery-management', {
             id: 'lieferzeiten-delivery-management',
             label: 'lieferzeiten.general.mainMenuItemDeliveryManagement',
             color: '#2B8CBF',
-            path: 'lieferzeiten-delivery-management.index',
+            path: 'lieferzeiten.index',
             icon: 'regular-clock',
             parent: 'sw-order',
             position: 46,
+            privilege: 'admin',
         },
     ],
 });
