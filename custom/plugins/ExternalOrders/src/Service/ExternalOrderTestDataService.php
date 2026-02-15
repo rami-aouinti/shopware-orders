@@ -96,7 +96,7 @@ class ExternalOrderTestDataService
             $orderUpsertPayload[] = $mappedOrderPayload;
 
             $metadataPayload[] = [
-                'id' => Uuid::fromStringToHex('external-order-data-' . $externalId),
+                'id' => hex2bin(Uuid::fromStringToHex('external-order-data-' . $externalId)),
                 'order_id' => hex2bin((string) $mappedOrderPayload['id']),
                 'external_id' => $externalId,
                 'channel' => $channel,
