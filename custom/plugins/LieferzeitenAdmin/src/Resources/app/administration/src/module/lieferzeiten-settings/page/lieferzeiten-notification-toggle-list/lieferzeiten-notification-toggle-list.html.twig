@@ -52,7 +52,7 @@
                             :key="triggerKey"
                             class="sw-data-grid__row"
                         >
-                            <td class="sw-data-grid__cell"><strong>{{ triggerKey }}</strong></td>
+                            <td class="sw-data-grid__cell"><strong>{{ getTriggerLabel(triggerKey) }}</strong></td>
                             <td
                                 v-for="scope in salesChannelColumns"
                                 :key="`${triggerKey}-${scope.id}`"

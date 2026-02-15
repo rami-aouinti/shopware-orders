@@ -241,7 +241,27 @@
         "source": "Quelle: `lieferzeiten_notification_toggle` mit logischem Schlüssel",
         "emailOnlyHint": "Derzeit ist nur der E-Mail-Kanal produktiv und konfigurierbar.",
         "invalidEntries": "{count} inkonsistente(r) Eintrag/Einträge erkannt (triggerKey/channel/code). Diese sind in der Matrix gesperrt.",
-        "notificationType": "Benachrichtigungstyp"
+        "notificationType": "Benachrichtigungstyp",
+        "triggers": {
+          "commande.creee": "Bestellung erstellt",
+          "commande.changement_statut": "Bestellstatus geändert",
+          "tracking.mis_a_jour": "Tracking aktualisiert",
+          "expedition.confirmee": "Versand bestätigt",
+          "changements.date_livraison": "Lieferdatum geändert",
+          "livraison.date.attribuee": "Lieferdatum zugewiesen",
+          "livraison.date.modifiee": "Lieferdatum angepasst",
+          "douane.requise": "Zoll erforderlich",
+          "commande.storno": "Bestellung storniert",
+          "livraison.impossible": "Lieferung nicht möglich",
+          "livraison.retoure": "Lieferung retourniert",
+          "rappel.vorkasse": "Vorkasse-Erinnerung",
+          "paiement.recu.vorkasse": "Vorkasse erhalten",
+          "commande.terminee.rappel_evaluation": "Bestellung abgeschlossen - Bewertungs-Erinnerung",
+          "versand.datum.ueberfaellig": "Versanddatum überfällig",
+          "liefertermin.anfrage.zusaetzlich": "Lieferterminanfrage ergänzt",
+          "liefertermin.anfrage.geschlossen": "Lieferterminanfrage geschlossen",
+          "liefertermin.anfrage.wiedereroeffnet": "Lieferterminanfrage wiedereröffnet"
+        }
       }
     },
     "businessStatus": {

@@ -100,6 +100,14 @@ Component.register('lieferzeiten-channel-settings-list', {
     },
 
     computed: {
+        isChannelSettingsRoute() {
+            return this.$route?.name === 'lieferzeiten.settings.channelSettings';
+        },
+
+        isIndexRoute() {
+            return this.$route?.name === 'lieferzeiten.settings.index';
+        },
+
         groupedChannels() {
             const groupedEntries = CHANNEL_GROUPS.map((group) => ({
                 ...group,
