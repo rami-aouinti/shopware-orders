@@ -58,6 +58,14 @@
     }
 
 
+
+    &__table-pagination {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+    }
     &__breakdowns {
         max-width: 1280px;
         width: 100%;

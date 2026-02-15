@@ -39,6 +39,11 @@ Shopware.Component.register('lieferzeiten-statistics', {
             selectedChannel: 'all',
             selectedActivity: null,
             isLoading: false,
+            activitiesPage: 1,
+            activitiesLimit: 25,
+            activitiesTotal: 0,
+            sortBy: 'eventAt',
+            sortDirection: 'DESC',
             loadError: null,
             statistics: {
                 metrics: {
@@ -49,6 +54,11 @@ Shopware.Component.register('lieferzeiten-statistics', {
                 channels: [],
                 timeline: [],
                 activitiesData: [],
+                activities: {
+                    total: 0,
+                    page: 1,
+                    limit: 25,
+                },
             },
             tableColumns: [
                 { property: 'orderNumber', label: this.$t('lieferzeiten.table.orderNumber'), primary: true },
@@ -73,23 +83,28 @@ Shopware.Component.register('lieferzeiten-statistics', {
                 this.customTo = null;
             }
 
+            this.activitiesPage = 1;
             this.loadStatistics();
         },
         selectedChannel() {
+            this.activitiesPage = 1;
             this.loadStatistics();
         },
         customFrom() {
             if (this.selectedPeriod === 'custom') {
+                this.activitiesPage = 1;
                 this.loadStatistics();
             }
         },
         customTo() {
             if (this.selectedPeriod === 'custom') {
+                this.activitiesPage = 1;
                 this.loadStatistics();
             }
         },
         selectedDomain() {
             this.selectedChannel = 'all';
+            this.activitiesPage = 1;
             this.loadStatistics();
         },
     },
@@ -97,6 +112,14 @@ Shopware.Component.register('lieferzeiten-statistics', {
     computed: {
         activitiesData() {
             return Array.isArray(this.statistics.activitiesData) ? this.statistics.activitiesData : [];
+        },
+
+        totalPages() {
+            if (this.activitiesLimit <= 0) {
+                return 1;
+            }
+
+            return Math.max(1, Math.ceil(this.activitiesTotal / this.activitiesLimit));
         },
 
         channelOptions() {
@@ -480,6 +503,10 @@ Shopware.Component.register('lieferzeiten-statistics', {
                     to: useCustomRange && this.customTo ? this.customTo : null,
                     domain: this.selectedDomain,
                     channel: this.selectedChannel,
+                    page: this.activitiesPage,
+                    limit: this.activitiesLimit,
+                    sort: this.sortBy,
+                    order: this.sortDirection,
                 });
 
                 this.statistics = {
@@ -490,8 +517,19 @@ Shopware.Component.register('lieferzeiten-statistics', {
                     },
                     channels: Array.isArray(payload.channels) ? payload.channels : [],
                     timeline: Array.isArray(payload.timeline) ? payload.timeline : [],
-                    activitiesData: Array.isArray(payload.activitiesData) ? payload.activitiesData : [],
+                    activitiesData: Array.isArray(payload.activities?.data)
+                        ? payload.activities.data
+                        : (Array.isArray(payload.activitiesData) ? payload.activitiesData : []),
+                    activities: {
+                        total: Number(payload.activities?.total ?? payload.total ?? 0),
+                        page: Number(payload.activities?.page ?? payload.page ?? this.activitiesPage),
+                        limit: Number(payload.activities?.limit ?? payload.limit ?? this.activitiesLimit),
+                    },
                 };
+
+                this.activitiesTotal = this.statistics.activities.total;
+                this.activitiesPage = this.statistics.activities.page;
+                this.activitiesLimit = this.statistics.activities.limit;
             } catch (error) {
                 this.statistics = {
                     metrics: {
@@ -502,11 +540,38 @@ Shopware.Component.register('lieferzeiten-statistics', {
                     channels: [],
                     timeline: [],
                     activitiesData: [],
+                    activities: {
+                        total: 0,
+                        page: 1,
+                        limit: this.activitiesLimit,
+                    },
                 };
+                this.activitiesTotal = 0;
                 this.loadError = error;
             } finally {
                 this.isLoading = false;
             }
+        },
+
+        onPageChange(page) {
+            const nextPage = Number(page) || 1;
+            this.activitiesPage = Math.max(1, Math.min(nextPage, this.totalPages));
+            this.loadStatistics();
+        },
+
+        onSortChange({ dataIndex, direction }) {
+            if (!dataIndex) {
+                return;
+            }
+
+            this.sortBy = dataIndex;
+            this.sortDirection = direction === 'ASC' ? 'ASC' : 'DESC';
+            this.activitiesPage = 1;
+            this.loadStatistics();
+        },
+
+        reloadActivityPage() {
+            this.loadStatistics();
         },
 
         formatDate(dateString) {
@@ -597,34 +662,38 @@ Shopware.Component.register('lieferzeiten-statistics', {
         },
 
         exportCsv() {
-            const headers = [
-                this.$t('lieferzeiten.table.orderNumber'),
-                this.$t('lieferzeiten.table.domain'),
-                this.$t('lieferzeiten.table.status'),
-                this.$t('lieferzeiten.statistics.activityDate'),
-                this.$t('lieferzeiten.statistics.promisedDate'),
-            ];
+            const useCustomRange = this.selectedPeriod === 'custom';
+            const query = new URLSearchParams();
 
-            const rows = this.filteredOrders.map((order) => [
-                order.orderNumber,
-                order.domain,
-                order.status,
-                this.formatDate(order.eventAt),
-                this.formatDate(order.promisedAt),
-            ]);
+            if (!useCustomRange) {
+                query.set('period', String(this.selectedPeriod));
+            }
 
-            const csv = [headers, ...rows]
-                .map((line) => line.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(';'))
-                .join('\n');
+            if (useCustomRange && this.customFrom) {
+                query.set('from', this.customFrom);
+            }
 
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            if (useCustomRange && this.customTo) {
+                query.set('to', this.customTo);
+            }
+
+            if (this.selectedDomain) {
+                query.set('domain', this.selectedDomain);
+            }
+
+            if (this.selectedChannel) {
+                query.set('channel', this.selectedChannel);
+            }
+
+            query.set('sort', this.sortBy);
+            query.set('order', this.sortDirection);
+            query.set('export', 'csv');
+
             const link = document.createElement('a');
-
-            link.href = URL.createObjectURL(blob);
-            link.download = 'lieferzeiten-statistiken.csv';
+            link.href = `${Shopware.Context.api.apiPath}/_action/lieferzeiten/v1/statistics?${query.toString()}`;
+            link.target = '_blank';
+            link.rel = 'noopener';
             link.click();
-
-            URL.revokeObjectURL(link.href);
         },
     },
 });
