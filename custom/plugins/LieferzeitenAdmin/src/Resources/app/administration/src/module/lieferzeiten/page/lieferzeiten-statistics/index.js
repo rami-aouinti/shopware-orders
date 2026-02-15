@@ -29,8 +29,13 @@ Shopware.Component.register('lieferzeiten-statistics', {
                 { value: 7, label: this.$t('lieferzeiten.statistics.period.7') },
                 { value: 30, label: this.$t('lieferzeiten.statistics.period.30') },
                 { value: 90, label: this.$t('lieferzeiten.statistics.period.90') },
+                { value: 180, label: this.$t('lieferzeiten.statistics.period.180') },
+                { value: 365, label: this.$t('lieferzeiten.statistics.period.365') },
+                { value: 'custom', label: this.$t('lieferzeiten.statistics.period.custom') },
             ],
             selectedPeriod: 30,
+            customFrom: null,
+            customTo: null,
             selectedChannel: 'all',
             selectedActivity: null,
             isLoading: false,
@@ -62,11 +67,26 @@ Shopware.Component.register('lieferzeiten-statistics', {
     },
 
     watch: {
-        selectedPeriod() {
+        selectedPeriod(value) {
+            if (value !== 'custom') {
+                this.customFrom = null;
+                this.customTo = null;
+            }
+
             this.loadStatistics();
         },
         selectedChannel() {
             this.loadStatistics();
+        },
+        customFrom() {
+            if (this.selectedPeriod === 'custom') {
+                this.loadStatistics();
+            }
+        },
+        customTo() {
+            if (this.selectedPeriod === 'custom') {
+                this.loadStatistics();
+            }
         },
         selectedDomain() {
             this.selectedChannel = 'all';
@@ -365,8 +385,11 @@ Shopware.Component.register('lieferzeiten-statistics', {
             this.loadError = null;
 
             try {
+                const useCustomRange = this.selectedPeriod === 'custom';
                 const payload = await this.lieferzeitenOrdersService.getStatistics({
-                    period: this.selectedPeriod,
+                    period: useCustomRange ? null : this.selectedPeriod,
+                    from: useCustomRange && this.customFrom ? this.customFrom : null,
+                    to: useCustomRange && this.customTo ? this.customTo : null,
                     domain: this.selectedDomain,
                     channel: this.selectedChannel,
                 });

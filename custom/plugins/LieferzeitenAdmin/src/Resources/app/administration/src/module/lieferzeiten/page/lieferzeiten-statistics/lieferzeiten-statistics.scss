@@ -5,7 +5,7 @@
 
     &__filters {
         align-items: end;
-        grid-template-columns: minmax(220px, 1fr) minmax(220px, 0.55fr) auto;
+        grid-template-columns: minmax(220px, 0.9fr) minmax(220px, 0.9fr) auto;
 
         .sw-field {
             margin-bottom: 0;
@@ -17,6 +17,12 @@
             font-weight: 600;
             border-radius: 8px;
             white-space: nowrap;
+        }
+    }
+
+    &__custom-range {
+        .sw-field {
+            margin-bottom: 0;
         }
     }
 
@@ -142,12 +148,16 @@
 @media screen and (max-width: 1400px) {
     .lieferzeiten-statistics {
         &__filters {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
 
             .sw-button {
-                grid-column: 1 / -1;
                 justify-self: start;
             }
+        }
+
+        &__custom-range {
+            grid-template-columns: 1fr 1fr;
+            grid-column: 1 / -1;
         }
 
         &__metrics {
@@ -170,6 +180,10 @@
             .sw-button {
                 width: 100%;
             }
+        }
+
+        &__custom-range {
+            grid-template-columns: 1fr;
         }
 
         &__metrics {
