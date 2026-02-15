@@ -5,6 +5,7 @@
 
     &__filters {
         align-items: end;
+        grid-template-columns: minmax(220px, 1fr) minmax(220px, 0.55fr) auto;
 
         .sw-field {
             margin-bottom: 0;
@@ -12,8 +13,10 @@
 
         .sw-button {
             min-width: 140px;
-            min-height: 64px;
+            min-height: 48px;
             font-weight: 600;
+            border-radius: 8px;
+            white-space: nowrap;
         }
     }
 
@@ -41,6 +44,11 @@
         max-width: 1060px;
         width: 100%;
         margin: 0 auto;
+    }
+
+    &__table-scroll {
+        width: 100%;
+        overflow-x: auto;
     }
 
     &__chart {
@@ -128,5 +136,58 @@
 
     .sw-button {
         min-height: 24px;
+    }
+}
+
+@media screen and (max-width: 1400px) {
+    .lieferzeiten-statistics {
+        &__filters {
+            grid-template-columns: 1fr 1fr;
+
+            .sw-button {
+                grid-column: 1 / -1;
+                justify-self: start;
+            }
+        }
+
+        &__metrics {
+            grid-template-columns: repeat(3, minmax(220px, 1fr)) !important;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        &__chart-row {
+            grid-template-columns: minmax(160px, 220px) minmax(180px, 1fr) 32px;
+        }
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .lieferzeiten-statistics {
+        &__filters {
+            grid-template-columns: 1fr;
+
+            .sw-button {
+                width: 100%;
+            }
+        }
+
+        &__metrics {
+            grid-template-columns: 1fr !important;
+            overflow-x: visible;
+        }
+
+        &__metric {
+            font-size: 44px;
+        }
+
+        &__chart-row {
+            grid-template-columns: 1fr;
+            gap: 8px;
+
+            strong {
+                justify-self: end;
+            }
+        }
     }
 }
