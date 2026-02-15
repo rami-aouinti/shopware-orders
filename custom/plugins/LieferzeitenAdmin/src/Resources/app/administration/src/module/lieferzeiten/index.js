@@ -1,84 +1,50 @@
-import './page/lieferzeiten-index';
-import './page/lieferzeiten-all';
-import './page/lieferzeiten-open';
-import './page/lieferzeiten-statistics';
-import './component/lieferzeiten-domain-selection';
-import './component/lieferzeiten-order-table';
+import './page/lieferzeiten-delivery-management';
 
 const { Module } = Shopware;
 
 Module.register('lieferzeiten', {
     type: 'plugin',
     name: 'lieferzeiten',
-    title: 'lieferzeiten.general.mainMenuItemGeneral',
+    title: 'lieferzeiten.general.mainMenuItemParent',
     description: 'lieferzeiten.general.description',
     color: '#2B8CBF',
     icon: 'regular-clock',
 
-    privileges: {
-        viewer: {
-            permissions: ['admin'],
-            dependencies: [],
-        },
-        editor: {
-            permissions: ['admin'],
-            dependencies: ['viewer'],
-        },
-    },
-
     routes: {
         index: {
-            component: 'lieferzeiten-index',
+            component: 'lieferzeiten-delivery-management',
             path: 'index',
-            redirect: { name: 'lieferzeiten.index.all' },
-            children: {
-                all: {
-                    component: 'lieferzeiten-all',
-                    path: 'all',
-                    meta: {
-                        parentPath: 'lieferzeiten.index',
-                        privilege: 'admin',
-                    },
-                },
-                open: {
-                    component: 'lieferzeiten-open',
-                    path: 'open',
-                    meta: {
-                        parentPath: 'lieferzeiten.index',
-                        privilege: 'admin',
-                    },
-                },
-                statistics: {
-                    component: 'lieferzeiten-statistics',
-                    path: 'statistics',
-                    meta: {
-                        parentPath: 'lieferzeiten.index',
-                        privilege: 'admin',
-                    },
-                },
+            meta: {
+                privilege: 'admin',
+            },
+        },
+        deliveryManagement: {
+            component: 'lieferzeiten-delivery-management',
+            path: 'delivery-management',
+            meta: {
+                privilege: 'admin',
             },
         },
     },
 
     navigation: [
         {
-            id: 'lieferzeiten',
-            label: 'lieferzeiten.general.mainMenuItemGeneral',
+            id: 'lieferzeit-parent',
+            label: 'lieferzeiten.general.mainMenuItemParent',
             color: '#2B8CBF',
-            path: 'lieferzeiten.index.all',
+            path: 'lieferzeiten.index',
             icon: 'regular-clock',
-            parent: 'sw-order',
-            position: 46,
+            position: 110,
             privilege: 'admin',
         },
         {
-            id: 'lieferzeiten-statistics',
-            label: 'lieferzeiten.general.mainMenuItemStatistics',
+            id: 'lieferzeiten-delivery-management',
+            label: 'lieferzeiten.general.mainMenuItemDeliveryManagement',
             color: '#2B8CBF',
-            path: 'lieferzeiten.index.statistics',
-            icon: 'regular-chart-bar',
-            parent: 'sw-dashboard',
-            position: 110,
+            path: 'lieferzeiten.deliveryManagement',
+            icon: 'regular-clock',
+            parent: 'lieferzeit-parent',
+            position: 10,
             privilege: 'admin',
         },
     ],
