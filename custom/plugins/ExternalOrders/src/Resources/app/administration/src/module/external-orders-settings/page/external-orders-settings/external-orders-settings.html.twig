@@ -3,7 +3,6 @@
         <h2>Externe Bestellung</h2>
     </template>
 
-
     <template #smart-bar-actions>
         <sw-button-process variant="primary" :isLoading="isSaving" @click="onSave">
             {{ $tc('global.default.save') }}
@@ -12,18 +11,6 @@
 
     <template #content>
         <sw-card-view>
-            <sw-tabs class="sw-mb-16">
-                <sw-tabs-item
-                    v-for="tab in overviewTabs"
-                    :key="tab.id"
-                    :title="tab.label"
-                    :activeTab="activeOverviewTab === tab.id"
-                    @click="activeOverviewTab = tab.id"
-                >
-                    {{ tab.label }}
-                </sw-tabs-item>
-            </sw-tabs>
-
             <sw-card :isLoading="isLoading" title="Übersichten API / Token">
                 <external-orders-channel-config />
             </sw-card>

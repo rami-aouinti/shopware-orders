@@ -22,21 +22,9 @@ Module.register('external-orders-settings', {
     },
 
     settingsItem: {
-        group: 'plugins',
+        group: 'bestellungLiefezeit',
         to: 'external.orders.settings.index',
         icon: 'regular-shopping-cart',
         privilege: 'admin',
     },
-
-    navigation: [
-        {
-            id: 'external-orders-settings',
-            label: 'Lieferzeit',
-            color: '#009ee3',
-            path: 'external.orders.settings.index',
-            icon: 'regular-shopping-cart',
-            parent: 'sw-order',
-            position: 46,
-        },
-    ],
 });
