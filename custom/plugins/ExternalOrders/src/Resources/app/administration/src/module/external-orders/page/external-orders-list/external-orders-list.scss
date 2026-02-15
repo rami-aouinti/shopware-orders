@@ -99,7 +99,7 @@
     }
 
     &__channels {
-        margin-bottom: 24px;
+        margin-bottom: 0;
         flex: 0 0 auto;
     }
 
@@ -115,7 +115,16 @@
     :global(.external-orders__page .mt-card.external-orders__channels) {
         width: 100% !important;
         max-width: none !important;
-        margin: 0 0 24px !important;
+        margin: 0 !important;
+    }
+
+    :global(.external-orders__page .sw-card.external-orders__channels) {
+        margin: 0 !important;
+    }
+
+    :global(.external-orders__page .sw-card.external-orders__filters-card),
+    :global(.external-orders__page .mt-card.external-orders__filters-card) {
+        margin: 0 !important;
     }
 
     :global(.external-orders__page .mt-card) {
