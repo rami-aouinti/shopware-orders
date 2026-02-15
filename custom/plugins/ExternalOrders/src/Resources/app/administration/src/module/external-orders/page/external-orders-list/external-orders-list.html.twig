@@ -897,17 +897,17 @@
                             </div>
                             <div class="external-orders__testmarking-card">
                                 <h4 class="external-orders__testmarking-title is--negative">
-                                    Bestellungen, die nicht als Test markieren
+                                    Bereits als Test markierte Bestellungen
                                 </h4>
                                 <ul class="external-orders__testmarking-list">
                                     <li
-                                        v-for="order in unmarkedTestOrders"
+                                        v-for="order in existingTestOrders"
                                         :key="getOrderKey(order)"
                                     >
                                         {{ getOrderDisplayLabel(order) }}
                                     </li>
-                                    <li v-if="unmarkedTestOrders.length === 0">
-                                        Keine Bestellungen ausgewählt.
+                                    <li v-if="existingTestOrders.length === 0">
+                                        Keine bereits markierten Testbestellungen im aktuellen Filter.
                                     </li>
                                 </ul>
                             </div>

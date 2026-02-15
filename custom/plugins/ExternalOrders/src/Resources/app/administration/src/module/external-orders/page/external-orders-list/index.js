@@ -288,9 +288,9 @@ Component.register('external-orders-list', {
         testMarkingOrders() {
             return this.selectedOrders;
         },
-        unmarkedTestOrders() {
+        existingTestOrders() {
             const selectedKeys = new Set(this.selectedOrders.map((order) => this.getOrderKey(order)));
-            return this.filteredOrders.filter((order) => !selectedKeys.has(this.getOrderKey(order)));
+            return this.filteredOrders.filter((order) => this.isTestOrder(order) && !selectedKeys.has(this.getOrderKey(order)));
         },
     },
 
@@ -1292,10 +1292,10 @@ Component.register('external-orders-list', {
         buildTablePdf(orders) {
             const rows = this.buildExportRows(orders);
             const summaryLine = this.buildExportSummaryLine(orders);
-            const pageWidth = 595;
-            const pageHeight = 842;
-            const marginX = 30;
-            const marginTop = 40;
+            const pageWidth = 842;
+            const pageHeight = 595;
+            const marginX = 28;
+            const marginTop = 36;
             const startY = pageHeight - marginTop;
             const availableWidth = pageWidth - marginX * 2;
             const { columnWidths, scale } = this.getPdfColumnWidths(rows, availableWidth);
@@ -1348,7 +1348,7 @@ Component.register('external-orders-list', {
             const objects = [];
             objects.push('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
             objects.push('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
-            objects.push('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 5 0 R /Resources << /Font << /F1 4 0 R >> >> >>\nendobj\n');
+            objects.push('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Contents 5 0 R /Resources << /Font << /F1 4 0 R >> >> >>\nendobj\n');
             objects.push('4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n');
             objects.push(`5 0 obj\n<< /Length ${stream.length} >>\nstream\n${stream}\nendstream\nendobj\n`);
 
@@ -1372,7 +1372,7 @@ Component.register('external-orders-list', {
         },
         getPdfColumnWidths(rows, availableWidth) {
             const maxLengths = rows[0].map((_, index) => Math.max(...rows.map((row) => String(row[index] ?? '').length)));
-            const minWidths = [60, 120, 55, 95, 65, 110, 45, 70];
+            const minWidths = [76, 165, 72, 125, 80, 150, 60, 90];
             const baseWidths = maxLengths.map((length, index) => Math.max(minWidths[index], length * 6));
             const totalWidth = baseWidths.reduce((sum, width) => sum + width, 0);
             const scale = totalWidth > availableWidth ? (availableWidth / totalWidth) : 1;
