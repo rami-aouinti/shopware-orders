@@ -241,7 +241,27 @@
         "source": "Source: `lieferzeiten_notification_toggle` with logical key",
         "emailOnlyHint": "Only the email channel is currently operational and configurable.",
         "invalidEntries": "{count} inconsistent entr(y/ies) detected (triggerKey/channel/code). They are locked in the matrix.",
-        "notificationType": "Notification type"
+        "notificationType": "Notification type",
+        "triggers": {
+          "commande.creee": "Order created",
+          "commande.changement_statut": "Order status changed",
+          "tracking.mis_a_jour": "Tracking updated",
+          "expedition.confirmee": "Shipment confirmed",
+          "changements.date_livraison": "Delivery date changed",
+          "livraison.date.attribuee": "Delivery date assigned",
+          "livraison.date.modifiee": "Delivery date modified",
+          "douane.requise": "Customs required",
+          "commande.storno": "Order canceled",
+          "livraison.impossible": "Delivery impossible",
+          "livraison.retoure": "Delivery returned",
+          "rappel.vorkasse": "Advance payment reminder",
+          "paiement.recu.vorkasse": "Advance payment received",
+          "commande.terminee.rappel_evaluation": "Order completed - review reminder",
+          "versand.datum.ueberfaellig": "Shipping date overdue",
+          "liefertermin.anfrage.zusaetzlich": "Delivery appointment request added",
+          "liefertermin.anfrage.geschlossen": "Delivery appointment request closed",
+          "liefertermin.anfrage.wiedereroeffnet": "Delivery appointment request reopened"
+        }
       }
     },
     "businessStatus": {

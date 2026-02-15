@@ -143,6 +143,14 @@ Component.register('lieferzeiten-notification-toggle-list', {
             return Boolean(this.getToggleEntity(triggerKey, channel, salesChannelId)?.enabled);
         },
 
+        getTriggerLabel(triggerKey) {
+            const translatedLabel = this.$te(`lieferzeiten.lms.notificationMatrix.triggers.${triggerKey}`)
+                ? this.$tc(`lieferzeiten.lms.notificationMatrix.triggers.${triggerKey}`)
+                : '';
+
+            return translatedLabel || triggerKey;
+        },
+
         isValidToggle(item) {
             const expectedCode = `${item.triggerKey}:${item.channel}`;
 

@@ -22,7 +22,7 @@
                 {{ $tc('lieferzeiten.lms.navigation.notificationToggles') }}
             </sw-tabs-item>
         </sw-tabs>
-        <sw-card :isLoading="isLoading" title="API / Token / SAN6" class="sw-mb-16">
+        <sw-card v-if="isIndexRoute" :isLoading="isLoading" title="API / Token / SAN6" class="sw-mb-16">
             <template v-for="field in apiConfigFields">
                 <sw-password-field
                     v-if="field.type === 'password'"
@@ -41,7 +41,7 @@
             </template>
         </sw-card>
 
-        <sw-card :isLoading="isLoading" :title="$tc('lieferzeiten.lms.dashboard.cardTitle')">
+        <sw-card v-if="isChannelSettingsRoute" :isLoading="isLoading" :title="$tc('lieferzeiten.lms.dashboard.cardTitle')">
             <sw-alert variant="info" appearance="default" :showIcon="true">
                 {{ $tc('lieferzeiten.lms.dashboard.introText') }}
             </sw-alert>
