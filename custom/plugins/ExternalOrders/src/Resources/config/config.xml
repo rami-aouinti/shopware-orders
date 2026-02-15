@@ -50,7 +50,7 @@
             <label lang="de-DE">SAN6 API Token</label>
         </input-field>
 
-        <single-select>
+        <input-field type="single-select">
             <name>externalOrdersSan6SendStrategy</name>
             <label lang="en-GB">SAN6 send strategy</label>
             <label lang="de-DE">SAN6 Sende-Strategie</label>
@@ -67,7 +67,7 @@
                 </option>
             </options>
             <defaultValue>filetransferurl</defaultValue>
-        </single-select>
+        </input-field>
 
         <input-field type="text">
             <name>externalOrdersSan6ReadFunction</name>
