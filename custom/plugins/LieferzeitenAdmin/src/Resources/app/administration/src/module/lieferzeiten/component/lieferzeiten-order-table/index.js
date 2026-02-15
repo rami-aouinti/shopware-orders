@@ -1427,14 +1427,19 @@ Shopware.Component.register('lieferzeiten-order-table', {
         resolveAdditionalRequestInitiator() {
             const contextUser = Shopware?.Context?.api?.user || null;
             const sessionUser = Shopware?.Store?.get?.('session')?.currentUser || Shopware?.State?.get?.('session')?.currentUser || null;
-            const user = contextUser || sessionUser;
+            const userCandidate = contextUser || sessionUser;
+            const user = userCandidate && typeof userCandidate === 'object' ? userCandidate : null;
 
-            const userId = typeof user?.id === 'string' ? user.id.trim() : '';
-            const fullName = [user?.firstName, user?.lastName]
+            if (!user) {
+                return null;
+            }
+
+            const userId = typeof user.id === 'string' ? user.id.trim() : '';
+            const fullName = [user.firstName, user.lastName]
                 .filter((part) => typeof part === 'string' && part.trim() !== '')
                 .join(' ')
                 .trim();
-            const readableName = fullName || String(user?.username || user?.email || '').trim();
+            const readableName = fullName || String(user.username || user.email || '').trim();
 
             if (!userId && !readableName) {
                 return null;
