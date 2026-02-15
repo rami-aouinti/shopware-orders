@@ -55,11 +55,10 @@ class ExternalToOrderMapper
         $calculatedTaxes = [['tax' => 0.0, 'taxRate' => 0.0, 'price' => $totalPrice]];
 
         $price = [
-            'unitPrice' => $unitPrice,
             'netPrice' => $totalPrice,
             'totalPrice' => $totalPrice,
             'positionPrice' => $totalPrice,
-            'quantity' => $quantity,
+            'rawTotal' => $totalPrice,
             'taxStatus' => 'gross',
             'calculatedTaxes' => $calculatedTaxes,
             'taxRules' => $taxRules,
