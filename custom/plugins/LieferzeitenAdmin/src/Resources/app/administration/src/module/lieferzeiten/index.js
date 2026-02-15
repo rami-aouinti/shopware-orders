@@ -3,7 +3,7 @@ import './page/lieferzeiten-external-orders';
 
 const { Module } = Shopware;
 
-Module.register('lieferzeiten-delivery-management', {
+Module.register('lieferzeiten', {
     type: 'plugin',
     name: 'lieferzeiten',
     title: 'lieferzeiten.general.mainMenuItemParent',
