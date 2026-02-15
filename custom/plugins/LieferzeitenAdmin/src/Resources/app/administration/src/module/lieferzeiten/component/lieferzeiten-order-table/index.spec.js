@@ -246,6 +246,26 @@ describe('lieferzeiten/component/lieferzeiten-order-table', () => {
         expect(result).toBeNull();
     });
 
+
+    it('falls back to session user when context user is malformed', () => {
+        const originalShopware = global.Shopware;
+        global.Shopware = {
+            ...originalShopware,
+            Context: { api: { user: 'invalid-context-user' } },
+            Store: { get: jest.fn(() => ({ currentUser: { id: ' session-1 ', firstName: 'Grace', lastName: 'Hopper' } })) },
+            State: { get: jest.fn(() => null) },
+        };
+
+        const result = methods.resolveAdditionalRequestInitiator.call({
+            $t: (key) => key,
+        });
+
+        expect(result).toEqual({
+            userId: 'session-1',
+            display: 'Grace Hopper',
+        });
+    });
+
     it('resolves initiator from valid Shopware context user', () => {
         const originalShopware = global.Shopware;
         global.Shopware = {
