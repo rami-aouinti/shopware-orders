@@ -144,13 +144,23 @@ Component.register('lieferzeiten-notification-toggle-list', {
         },
 
         getTriggerLabel(triggerKey) {
-            const escapedTriggerKey = triggerKey.replace(/\./g, '\\.');
-            const translationKey = `lieferzeiten.lms.notificationMatrix.triggers.${escapedTriggerKey}`;
-            const translatedLabel = this.$te(translationKey)
-                ? this.$tc(translationKey)
-                : '';
+            const fallbackLocales = this.$root?.$i18n?.fallbackLocale;
+            const localeOrder = [
+                this.$i18n?.locale,
+                ...(Array.isArray(fallbackLocales) ? fallbackLocales : [fallbackLocales]),
+                'en-GB',
+                'de-DE',
+            ].filter((locale, index, locales) => typeof locale === 'string' && locales.indexOf(locale) === index);
 
-            return translatedLabel || triggerKey;
+            for (const locale of localeOrder) {
+                const translatedLabel = this.$i18n?.messages?.[locale]?.lieferzeiten?.lms?.notificationMatrix?.triggers?.[triggerKey];
+
+                if (translatedLabel) {
+                    return translatedLabel;
+                }
+            }
+
+            return triggerKey;
         },
 
         isValidToggle(item) {
