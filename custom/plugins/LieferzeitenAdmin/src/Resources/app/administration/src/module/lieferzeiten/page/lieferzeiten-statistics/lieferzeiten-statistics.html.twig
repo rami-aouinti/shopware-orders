@@ -29,7 +29,7 @@
         />
 
         <template v-else>
-        <sw-container columns="repeat(3, 1fr)" gap="16px" class="lieferzeiten-statistics__metrics">
+        <sw-container columns="repeat(3, minmax(0, 1fr))" gap="16px" class="lieferzeiten-statistics__metrics">
             <sw-card :title="$t('lieferzeiten.statistics.open')">
                 <div class="lieferzeiten-statistics__metric">{{ metrics.open }}</div>
             </sw-card>
@@ -81,11 +81,12 @@
         </sw-card>
 
         <sw-card :title="$t('lieferzeiten.statistics.tableTitle')">
-            <sw-data-grid
-                :data-source="filteredOrders"
-                :columns="tableColumns"
-                :show-selection="false"
-            >
+            <div class="lieferzeiten-statistics__table-scroll">
+                <sw-data-grid
+                    :data-source="filteredOrders"
+                    :columns="tableColumns"
+                    :show-selection="false"
+                >
                 <template #column-status="{ item }">
                     <sw-label :appearance="item.status === $t('lieferzeiten.statistics.status.overdue') ? 'error' : 'info'">
                         {{ item.status }}
@@ -123,7 +124,8 @@
                         {{ $t('lieferzeiten.statistics.drilldown') }}
                     </sw-context-menu-item>
                 </template>
-            </sw-data-grid>
+                </sw-data-grid>
+            </div>
         </sw-card>
 
         <sw-modal
