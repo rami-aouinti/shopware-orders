@@ -1,0 +1,265 @@
+{
+  "lieferzeiten": {
+    "general": {
+      "mainMenuItemGeneral": "Lieferzeiten",
+      "description": "Delivery time monitoring in admin",
+      "infoTitle": "Notice",
+      "timezoneInfo": "Time calculations are based on timezone Europe/Berlin.",
+      "openDefinition": "\"Open\" means at least one parcel is still not closed.",
+      "mainMenuItemStatistics": "Lieferzeiten Statistiken",
+      "navigationHint": "You can find the list under Orders → Lieferzeiten. If it looks empty, first select area and channel (top right). Use “Save demo data” to generate test data."
+    },
+    "tabs": {
+      "all": "All orders",
+      "open": "Open orders",
+      "statistics": "Delivery Time Management Statistics"
+    },
+    "zones": {
+      "order": "Order",
+      "delivery": "Delivery",
+      "status": "Status"
+    },
+    "domainSelection": {
+      "placeholder": "Select channel",
+      "reset": "Reset selection",
+      "modalTitle": "Select area",
+      "modalDescription": "Step 1: Select the area. Delivery-time views will then be enabled and a matching channel will be preselected.",
+      "persistLabel": "Persist selection on this device",
+      "confirmBereich": "Apply area",
+      "groups": {
+        "firstMedicalECommerce": "First Medical - E-Commerce",
+        "medicalSolutions": "Medical Solutions"
+      },
+      "channels": {
+        "firstMedicalShop": "first-medical-shop.de",
+        "ebayDe": "ebay.de",
+        "ebayAt": "ebay.at",
+        "kaufland": "Kaufland",
+        "peg": "PEG",
+        "zonami": "Zonami",
+        "medicalSolutionsGermany": "medical-solutions-germany.de"
+      },
+      "bereichPlaceholder": "Select area",
+      "channelPlaceholder": "Select channel",
+      "steps": {
+        "bereich": "Step 1 · Area (required)",
+        "channel": "Step 2 · Channel"
+      },
+      "accessPendingTitle": "Select area",
+      "accessPendingDescription": "Please select Area (step 1) and then Channel (step 2) to unlock the main views and filters.",
+      "statisticsAccessPendingDescription": "Please select Area (step 1) and Channel (step 2) first. The “Delivery Time Management Statistics” tab stays hidden or inactive until then.",
+      "statisticsTabHint": "Select Area and Channel first to show “Delivery Time Management Statistics”."
+    },
+    "kpi": {
+      "totalOrders": "Total orders",
+      "openOrders": "Open orders",
+      "closedOrders": "Closed orders",
+      "openParcels": "Open parcels",
+      "filteredDomain": "Channel"
+    },
+    "table": {
+      "orderNumber": "Order number",
+      "san6OrderNumber": "SAN6 order number",
+      "san6Position": "SAN6 position",
+      "totalQuantity": "Quantity",
+      "orderDate": "Order date",
+      "paymentMethod": "Payment method",
+      "paymentDate": "Payment date",
+      "customerNames": "Customer name",
+      "domain": "Channel",
+      "parcels": "Open/total parcels",
+      "openParcels": "Open parcels",
+      "positions": "Positions",
+      "position": "Position",
+      "article": "Article",
+      "quantity": "Quantity",
+      "packageNumbers": "Parcels",
+      "status": "Status",
+      "businessStatus": "Business status",
+      "tracking": "Tracking",
+      "packageStatus": "Parcel status",
+      "latestShippingDeadline": "Latest shipping deadline",
+      "shippingDate": "Shipping date",
+      "latestDeliveryDeadline": "Latest delivery deadline",
+      "deliveryDate": "Delivery date"
+    },
+    "fields": {
+      "supplierDate": "Supplier delivery date (1-14 days)",
+      "supplierWeek": "Week",
+      "newDate": "New delivery date (1-4 days)",
+      "comment": "Comment",
+      "history": "History",
+      "shippingType": "Shipping type",
+      "audit": "Audit",
+      "days": "days",
+      "latestShipping": "Latest shipping",
+      "latestDelivery": "Latest delivery"
+    },
+    "shipping": {
+      "unclear": "Unklar",
+      "complete": "Complete",
+      "partial": "Partial",
+      "split": "Split",
+      "completeShipment": "Gesamt-Versand",
+      "partialShipment": "Teillieferung",
+      "splitPosition": "Trennung Auftragsposition",
+      "pieces": "Stück"
+    },
+    "audit": {
+      "savedSupplierDate": "Supplier date saved",
+      "savedNewDate": "New date saved",
+      "savedComment": "Comment saved"
+    },
+    "additionalRequest": {
+      "button": "Additional delivery date request",
+      "historyEntry": "Additional delivery date request triggered",
+      "auditCreated": "Additional delivery date request created",
+      "auditClosed": "Initiator notified on closure",
+      "notificationTitle": "Delivery date request",
+      "notificationRequested": "Request created (initiator: {initiator}).",
+      "notificationClosed": "Order closed – initiator {initiator} was notified.",
+      "defaultInitiator": "Admin"
+    },
+    "status": {
+      "open": "Open",
+      "closed": "Closed",
+      "manual": {
+        "save": "Set status",
+        "updated": "Status {status} added to push queue",
+        "invalid": "Only status 7 or 8 is allowed"
+      }
+    },
+    "emptyState": {
+      "title": "No open orders",
+      "description": "There are currently no open orders for the selected channel."
+    },
+    "tracking": {
+      "loading": "Loading tracking history …",
+      "empty": "No tracking events found.",
+      "loadError": "Unable to load tracking history.",
+      "missingCarrier": "Tracking unavailable: carrier is missing.",
+      "internalShipmentInfo": "Shipped by First Medical (internal dispatch, no external carrier tracking available)."
+    },
+    "statistics": {
+      "periodLabel": "Period",
+      "channelLabel": "Channel",
+      "allChannels": "All channels",
+      "open": "Open",
+      "activities": "Delivery-time activities",
+      "chartTitle": "Visual delivery-time activity overview",
+      "tableTitle": "Delivery-time activity table",
+      "drilldown": "Drilldown",
+      "drilldownTitle": "Delivery-time activity details",
+      "exportCsv": "Export CSV",
+      "promisedDate": "Delivery date",
+      "period": {
+        "7": "Last 7 days",
+        "30": "Last 30 days",
+        "90": "Last 90 days"
+      },
+      "status": {
+        "overdue": "Overdue"
+      },
+      "overdueShipping": "Overdue shipping",
+      "overdueDelivery": "Overdue deliveries (completed)",
+      "activityDate": "Activity at",
+      "timelineTitle": "Activities over time",
+      "timelineEmptyTitle": "No activities in selected period",
+      "timelineEmptyDescription": "No timeline activity is available for the selected filters.",
+      "actionsColumn": "Actions",
+      "actionsUnavailable": "No action available",
+      "actionUnavailableReason": "No contextual action is available for this activity.",
+      "actionSuccessTitle": "Action executed",
+      "actionErrorTitle": "Action failed",
+      "actions": {
+        "openOrder": "Open order",
+        "openTask": "Open task",
+        "openTracking": "Tracking",
+        "closeTask": "Close task",
+        "reopenTask": "Reopen task"
+      },
+      "actionReasons": {
+        "noViewAcl": "Missing permission: lieferzeiten.viewer.",
+        "noEditAcl": "Missing permission: lieferzeiten.editor.",
+        "missingOrderReference": "Order reference unavailable for this activity.",
+        "missingTaskReference": "Task reference unavailable for this activity.",
+        "missingTrackingReference": "Tracking number unavailable for this activity.",
+        "unsupportedTaskStatus": "Action unavailable for current task status."
+      },
+      "actionSuccess": {
+        "closeTask": "Task successfully closed.",
+        "reopenTask": "Task successfully reopened."
+      },
+      "actionError": {
+        "closeTask": "Task could not be closed.",
+        "reopenTask": "Task could not be reopened.",
+        "openTracking": "Tracking history could not be loaded."
+      }
+    },
+    "loading": {
+      "errorTitle": "Unable to load orders",
+      "errorDescription": "An error occurred while loading orders.",
+      "retry": "Retry"
+    },
+    "lms": {
+      "general": {
+        "mainMenuItem": "Delivery Time Management System",
+        "description": "LMS landing page to manage delay thresholds per sales channel"
+      },
+      "navigation": {
+        "thresholdsByChannel": "LMS landing page: Delay thresholds by channel",
+        "taskAssignmentRules": "Task assignment rules",
+        "notificationToggles": "Email notification settings"
+      },
+      "channelSettings": {
+        "title": "LMS · Thresholds by sales channel",
+        "create": "Create threshold"
+      },
+      "dashboard": {
+        "title": "Delivery Time Management System",
+        "cardTitle": "Manage delay thresholds by sales channel",
+        "introText": "Manage shipping and delivery delay thresholds per sales channel and PDMS delivery time.",
+        "validationError": "Please correct invalid values (only integer values ≥ 0 are allowed).",
+        "inlineValidationError": "Please enter an integer value ≥ 0.",
+        "saveSuccess": "Delay thresholds saved successfully.",
+        "seedDemoData": "Create demo data",
+        "removeDemoData": "Remove demo data",
+        "demoDataTitle": "Demo data",
+        "demoDataRemoved": "Demo data removed.",
+        "demoDataSaved": "Demo data saved.",
+        "columns": {
+          "pdmsLieferzeit": "PDMS delivery time",
+          "shippingOverdueWorkingDays": "Latest shipping timestamp - overdue after specified working days",
+          "deliveryOverdueWorkingDays": "Latest delivery timestamp - overdue after specified working days"
+        },
+        "incompleteMappingBadge": "Incomplete PDMS mapping",
+        "incompleteMappingWarning": "PDMS mapping for channel \"{channelName}\" is incomplete. Missing slots are marked below so you can complete the mapping.",
+        "incompleteMappingSlotLabel": "Slot {slot} not configured"
+      },
+      "notificationMatrix": {
+        "title": "Notification matrix (email)",
+        "source": "Source: `lieferzeiten_notification_toggle` with logical key",
+        "emailOnlyHint": "Only the email channel is currently operational and configurable.",
+        "invalidEntries": "{count} inconsistent entr(y/ies) detected (triggerKey/channel/code). They are locked in the matrix.",
+        "notificationType": "Notification type"
+      }
+    },
+    "businessStatus": {
+      "1": "New",
+      "2": "In clarification",
+      "3": "Awaiting supplier",
+      "4": "Partially available",
+      "5": "Ready for shipping",
+      "6": "Partially shipped",
+      "7": "Shipped",
+      "8": "Closed",
+      "unknown": "Unknown"
+    },
+    "statusChange": {
+      "placeholder": "Select status 7/8",
+      "save": "Save status",
+      "saved": "Status updated and queued for push.",
+      "invalidSelection": "Please select status 7 or 8."
+    }
+  }
+}

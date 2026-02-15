@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults autowire="true" autoconfigure="true" />
+
+        <service id="ExternalOrders\Entity\ExternalOrderDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="ExternalOrders\Entity\ExternalOrderDataDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="ExternalOrders\Service\FakeExternalOrderProvider" />
+        <service id="ExternalOrders\Service\ExternalOrderTestDataService">
+            <argument key="$orderRepository" type="service" id="order.repository" />
+            <argument key="$fakeExternalOrderProvider" type="service" id="ExternalOrders\Service\FakeExternalOrderProvider" />
+            <argument key="$externalToOrderMapper" type="service" id="ExternalOrders\Service\ExternalToOrderMapper" />
+            <argument key="$connection" type="service" id="Doctrine\DBAL\Connection" />
+        </service>
+        <service id="ExternalOrders\Service\ExternalOrderService">
+            <argument key="$orderRepository" type="service" id="order.repository" />
+            <argument key="$connection" type="service" id="Doctrine\DBAL\Connection" />
+        </service>
+        <service id="ExternalOrders\Service\TopmSan6OrderMapper" />
+        <service id="ExternalOrders\Service\TopmSan6Client" />
+        <service id="ExternalOrders\Service\ExternalToOrderMapper" />
+        <service id="ExternalOrders\Service\TopmSan6OrderExportService">
+            <argument type="service" id="order.repository" />
+        </service>
+        <service id="ExternalOrders\Service\ExternalOrderSyncService">
+            <argument key="$orderRepository" type="service" id="order.repository" />
+            <argument key="$httpClient" type="service" id="Symfony\Contracts\HttpClient\HttpClientInterface" />
+            <argument key="$systemConfigService" type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
+            <argument key="$logger" type="service" id="logger" />
+            <argument key="$topmSan6Client" type="service" id="ExternalOrders\Service\TopmSan6Client" />
+            <argument key="$externalToOrderMapper" type="service" id="ExternalOrders\Service\ExternalToOrderMapper" />
+        </service>
+        <service id="ExternalOrders\Controller\ExternalOrderController" public="true" />
+
+        <service id="ExternalOrders\ScheduledTask\ExternalOrdersSyncTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+        <service id="ExternalOrders\ScheduledTask\ExternalOrdersSyncTaskHandler">
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ExternalOrders\ScheduledTask\ExternalOrdersExportRetryTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+        <service id="ExternalOrders\ScheduledTask\ExternalOrdersExportRetryTaskHandler">
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ExternalOrders\Subscriber\ExternalOrdersConfigSubscriber">
+            <tag name="kernel.event_subscriber" />
+        </service>
+
+        <service id="ExternalOrders\Command\GenerateSignedExportUrlCommand" />
+    </services>
+</container>

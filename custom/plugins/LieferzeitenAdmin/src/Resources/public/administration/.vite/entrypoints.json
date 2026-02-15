@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/lieferzeitenadmin/administration/",
+  "entryPoints": {
+    "lieferzeiten-admin": {
+      "css": [
+        "/bundles/lieferzeitenadmin/administration/assets/lieferzeiten-admin-DfTV31rW.css"
+      ],
+      "dynamic": [],
+      "js": [
+        "/bundles/lieferzeitenadmin/administration/assets/lieferzeiten-admin-DTk4uktL.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}

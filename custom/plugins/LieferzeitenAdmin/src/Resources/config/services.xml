@@ -1,0 +1,232 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults autowire="true" autoconfigure="true" />
+
+        <service id="LieferzeitenAdmin\Entity\ChannelSettingsDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="LieferzeitenAdmin\Entity\ChannelPdmsThresholdDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="LieferzeitenAdmin\Entity\TaskAssignmentRuleDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="LieferzeitenAdmin\Entity\NotificationToggleDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="LieferzeitenAdmin\Entity\NotificationEventDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="LieferzeitenAdmin\Entity\NotificationTemplateDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="LieferzeitenAdmin\Entity\LieferzeitenTaskDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="LieferzeitenAdmin\Entity\PaketDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="LieferzeitenAdmin\Entity\PositionDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="LieferzeitenAdmin\Entity\LieferterminLieferantHistoryDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="LieferzeitenAdmin\Entity\NeuerLieferterminHistoryDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="LieferzeitenAdmin\Entity\NeuerLieferterminPaketHistoryDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+        <service id="LieferzeitenAdmin\Entity\SendenummerHistoryDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+
+        <service id="LieferzeitenAdmin\Sync\Adapter\ShopwareOrderAdapter">
+            <tag name="lieferzeiten.adapter" />
+        </service>
+        <service id="LieferzeitenAdmin\Sync\Adapter\GambioOrderAdapter">
+            <tag name="lieferzeiten.adapter" />
+        </service>
+        <service id="LieferzeitenAdmin\Sync\Adapter\ChannelOrderAdapterRegistry">
+            <argument type="tagged_iterator" tag="lieferzeiten.adapter" />
+        </service>
+
+
+        <service id="LieferzeitenAdmin\Service\CorrelationIdProvider" />
+        <service id="LieferzeitenAdmin\Service\Audit\AuditLogService" />
+        <service id="LieferzeitenAdmin\Service\Reliability\DeadLetterService" />
+        <service id="LieferzeitenAdmin\Service\Reliability\IntegrationReliabilityService" />
+
+        <service id="LieferzeitenAdmin\Service\Integration\IntegrationContractValidator" />
+
+        <service id="LieferzeitenAdmin\Sync\San6\San6Client" />
+        <service id="LieferzeitenAdmin\Sync\San6\San6MatchingService" />
+        <service id="LieferzeitenAdmin\Service\BaseDateResolver" />
+        <service id="LieferzeitenAdmin\Service\ChannelDateSettingsProvider" />
+        <service id="LieferzeitenAdmin\Service\ChannelPdmsThresholdResolver" />
+        <service id="LieferzeitenAdmin\Service\BusinessDayDeliveryDateCalculator" />
+        <service id="LieferzeitenAdmin\Service\Status8TrackingMappingProvider" />
+        <service id="LieferzeitenAdmin\Service\PdmsLieferzeitenClient" />
+        <service id="LieferzeitenAdmin\Service\PdmsLieferzeitenService" />
+        <service id="LieferzeitenAdmin\Service\PdmsLieferzeitenMappingService">
+            <argument key="$salesChannelRepository" type="service" id="sales_channel.repository" />
+        </service>
+        <service id="LieferzeitenAdmin\Service\PaketDeliveryDateRecalculationService">
+            <argument type="service" id="lieferzeiten_paket.repository" />
+        </service>
+        <service id="LieferzeitenAdmin\Subscriber\DeliveryDateRecalculationSubscriber">
+            <tag name="kernel.event_subscriber" />
+        </service>
+
+        <service id="LieferzeitenAdmin\Subscriber\ChannelPdmsThresholdValidationSubscriber">
+            <tag name="kernel.event_subscriber" />
+        </service>
+
+        <service id="LieferzeitenAdmin\Subscriber\AdditionalDeliveryAssigneeConfigValidationSubscriber">
+            <tag name="kernel.event_subscriber" />
+        </service>
+
+        <service id="LieferzeitenAdmin\Repository\ChannelPdmsThresholdRepository">
+            <argument type="service" id="lieferzeiten_channel_pdms_threshold.repository" />
+        </service>
+
+        <service id="LieferzeitenAdmin\Service\LieferzeitenImportService">
+            <argument type="service" id="lieferzeiten_paket.repository" />
+            <argument type="service" id="lieferzeiten_position.repository" />
+            <argument type="service" id="lieferzeiten_sendenummer_history.repository" />
+        </service>
+
+
+
+
+        <service id="LieferzeitenAdmin\Service\LieferzeitenOrderStatusWriteService">
+            <argument type="service" id="lieferzeiten_paket.repository" />
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+        </service>
+
+        <service id="LieferzeitenAdmin\Service\LieferzeitenPositionWriteService">
+            <argument key="$positionRepository" type="service" id="lieferzeiten_position.repository" />
+            <argument key="$paketRepository" type="service" id="lieferzeiten_paket.repository" />
+            <argument key="$connection" type="service" id="Doctrine\DBAL\Connection" />
+            <argument key="$lieferterminLieferantHistoryRepository" type="service" id="lieferzeiten_liefertermin_lieferant_history.repository" />
+            <argument key="$neuerLieferterminHistoryRepository" type="service" id="lieferzeiten_neuer_liefertermin_history.repository" />
+            <argument key="$neuerLieferterminPaketHistoryRepository" type="service" id="lieferzeiten_neuer_liefertermin_paket_history.repository" />
+            <argument key="$userRepository" type="service" id="user.repository" />
+            <argument key="$taskService" type="service" id="LieferzeitenAdmin\Service\LieferzeitenTaskService" />
+            <argument key="$notificationEventService" type="service" id="LieferzeitenAdmin\Service\Notification\NotificationEventService" />
+            <argument key="$taskAssignmentRuleResolver" type="service" id="LieferzeitenAdmin\Service\Notification\TaskAssignmentRuleResolver" />
+            <argument key="$systemConfigService" type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
+        </service>
+
+
+        <service id="LieferzeitenAdmin\Service\LieferzeitenTaskService">
+            <argument type="service" id="lieferzeiten_task.repository" />
+        </service>
+
+        <service id="LieferzeitenAdmin\Service\LieferzeitenOrderOverviewService">
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+        </service>
+
+        <service id="LieferzeitenAdmin\Service\LieferzeitenOrderStatusWriteService">
+            <argument type="service" id="lieferzeiten_paket.repository" />
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+        </service>
+
+        <service id="LieferzeitenAdmin\Service\LieferzeitenStatisticsService">
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+            <argument type="service" id="LieferzeitenAdmin\Service\ChannelPdmsThresholdResolver" />
+        </service>
+
+        <service id="LieferzeitenAdmin\Service\LieferzeitenExternalOrderLinkService">
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+            <argument type="service" id="logger" />
+        </service>
+
+        <service id="LieferzeitenAdmin\Service\DemoDataSeederService">
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+            <argument type="service" id="LieferzeitenAdmin\Service\LieferzeitenExternalOrderLinkService" />
+            <argument type="service" id="ExternalOrders\Service\ExternalOrderTestDataService" on-invalid="null" />
+        </service>
+
+        <service id="LieferzeitenAdmin\Service\Tracking\DhlTrackingClient">
+            <tag name="lieferzeiten.tracking_client" />
+        </service>
+        <service id="LieferzeitenAdmin\Service\Tracking\GlsTrackingClient">
+            <tag name="lieferzeiten.tracking_client" />
+        </service>
+        <service id="LieferzeitenAdmin\Service\Tracking\TrackingHistoryService">
+            <argument type="tagged_iterator" tag="lieferzeiten.tracking_client" />
+        </service>
+        <service id="LieferzeitenAdmin\Service\Tracking\TrackingDeliveryDateSyncService">
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+        </service>
+
+        <service id="LieferzeitenAdmin\Service\Notification\NotificationTriggerCatalog" />
+        <service id="LieferzeitenAdmin\Service\Notification\SalesChannelResolver">
+            <argument key="$connection" type="service" id="Doctrine\DBAL\Connection" />
+            <argument key="$systemConfigService" type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
+        </service>
+        <service id="LieferzeitenAdmin\Service\Notification\NotificationToggleResolver">
+            <argument type="service" id="lieferzeiten_notification_toggle.repository" />
+        </service>
+        <service id="LieferzeitenAdmin\Service\Notification\NotificationEventService">
+            <argument type="service" id="lieferzeiten_notification_event.repository" />
+        </service>
+        <service id="LieferzeitenAdmin\Service\Notification\NotificationTemplateResolver">
+            <argument type="service" id="lieferzeiten_notification_template.repository" />
+        </service>
+        <service id="LieferzeitenAdmin\Service\Notification\QueuedNotificationEmailProcessor">
+            <argument key="$notificationEventRepository" type="service" id="lieferzeiten_notification_event.repository" />
+            <argument key="$mailService" type="service" id="Shopware\Core\Content\Mail\Service\MailService" />
+            <argument key="$connection" type="service" id="Doctrine\DBAL\Connection" />
+        </service>
+        <service id="LieferzeitenAdmin\Service\Notification\VorkassePaymentReminderService">
+            <argument type="service" id="lieferzeiten_paket.repository" />
+            <argument type="service" id="LieferzeitenAdmin\Service\Notification\SalesChannelResolver" />
+        </service>
+        <service id="LieferzeitenAdmin\Service\Notification\TaskAssignmentRuleResolver">
+            <argument type="service" id="lieferzeiten_task_assignment_rule.repository" />
+        </service>
+        <service id="LieferzeitenAdmin\Service\Notification\ShippingDateOverdueTaskService">
+            <argument type="service" id="lieferzeiten_position.repository" />
+            <argument type="service" id="LieferzeitenAdmin\Service\Notification\TaskAssignmentRuleResolver" />
+            <argument type="service" id="lieferzeiten_task.repository" />
+            <argument type="service" id="LieferzeitenAdmin\Service\ChannelPdmsThresholdResolver" />
+        </service>
+        <service id="LieferzeitenAdmin\Controller\LieferzeitenSyncController" public="true">
+            <argument key="$externalOrderTestDataService" type="service" id="ExternalOrders\Service\ExternalOrderTestDataService" on-invalid="null" />
+        </service>
+        <service id="LieferzeitenAdmin\Controller\LieferzeitenOrderStatusController" public="true" />
+
+        <service id="LieferzeitenAdmin\ScheduledTask\LieferzeitenImportTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+        <service id="LieferzeitenAdmin\ScheduledTask\LieferzeitenImportTaskHandler">
+            <tag name="messenger.message_handler" />
+        </service>
+        <service id="LieferzeitenAdmin\ScheduledTask\VorkassePaymentReminderTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+        <service id="LieferzeitenAdmin\ScheduledTask\VorkassePaymentReminderTaskHandler">
+            <tag name="messenger.message_handler" />
+        </service>
+        <service id="LieferzeitenAdmin\ScheduledTask\NotificationDispatchTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+        <service id="LieferzeitenAdmin\ScheduledTask\NotificationDispatchTaskHandler">
+            <tag name="messenger.message_handler" />
+        </service>
+        <service id="LieferzeitenAdmin\ScheduledTask\ShippingDateOverdueTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+        <service id="LieferzeitenAdmin\ScheduledTask\ShippingDateOverdueTaskHandler">
+            <tag name="messenger.message_handler" />
+        </service>
+
+    </services>
+</container>

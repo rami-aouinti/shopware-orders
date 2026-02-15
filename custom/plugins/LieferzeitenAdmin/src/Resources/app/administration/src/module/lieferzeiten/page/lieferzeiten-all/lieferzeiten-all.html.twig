@@ -1,0 +1,20 @@
+{% block lieferzeiten_all %}
+    <div class="lieferzeiten-all">
+        <sw-container columns="repeat(auto-fit, minmax(180px, 1fr))" gap="16px">
+            <sw-card class="lieferzeiten-kpi">
+                <p class="lieferzeiten-kpi__label">{{ $t('lieferzeiten.statistics.open') }}</p>
+                <p class="lieferzeiten-kpi__value">{{ statisticsMetrics.openOrders }}</p>
+            </sw-card>
+            <sw-card class="lieferzeiten-kpi">
+                <p class="lieferzeiten-kpi__label">{{ $t('lieferzeiten.statistics.overdueShipping') }}</p>
+                <p class="lieferzeiten-kpi__value">{{ statisticsMetrics.overdueShipping }}</p>
+            </sw-card>
+            <sw-card class="lieferzeiten-kpi">
+                <p class="lieferzeiten-kpi__label">{{ $t('lieferzeiten.statistics.overdueDelivery') }}</p>
+                <p class="lieferzeiten-kpi__value">{{ statisticsMetrics.overdueDelivery }}</p>
+            </sw-card>
+        </sw-container>
+
+        <lieferzeiten-order-table :orders="orders" :on-reload-order="onReloadOrder" />
+    </div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{
+  "main.js": {
+    "file": "assets/external-orders-CLBmP3ng.js",
+    "name": "external-orders",
+    "src": "main.js",
+    "isEntry": true,
+    "css": [
+      "assets/external-orders-Bd62X_Mw.css"
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+<sw-page class="lieferzeiten-task-assignment-rule-list">
+    <template #smart-bar-header>
+        <h2>{{ $tc('lieferzeiten.lms.navigation.taskAssignmentRules') }}</h2>
+    </template>
+
+    <template #smart-bar-actions>
+        <sw-button v-if="hasEditAccess" variant="primary" @click="onCreate">Create</sw-button>
+    </template>
+
+    <template #content>
+        <div class="lza-task-rule-layout">
+            <section class="lza-task-rule-hero">
+                <div>
+                    <h3>Task rules designer</h3>
+                    <p>
+                        Règles d'assignation avec un affichage amélioré et repères clairs pour les champs obligatoires.
+                    </p>
+                </div>
+                <div class="lza-task-rule-tags">
+                    <span class="lza-tag">Trigger *</span>
+                    <span class="lza-tag">Assignee type *</span>
+                    <span class="lza-tag">Assignee *</span>
+                </div>
+            </section>
+
+            <sw-alert variant="info" appearance="notification" :showIcon="true">
+                Les données de démonstration de cette grille proviennent du seeder backend
+                <strong>DemoDataSeederService</strong> via l'endpoint
+                <code>POST /api/_action/lieferzeiten/demo-data</code>.
+                Les règles créées en démo utilisent le préfixe <code>demo_</code>.
+            </sw-alert>
+
+            <sw-card class="lza-task-rule-card">
+                <sw-entity-listing
+                    v-if="items"
+                    :items="items"
+                    :repository="repository"
+                    :columns="columns"
+                    :isLoading="isLoading"
+                    :showSelection="false"
+                    :allowInlineEdit="hasEditAccess"
+                    :allowDelete="hasEditAccess"
+                    :total="total"
+                    :page="page"
+                    :limit="limit"
+                    @page-change="onPageChange"
+                    @inline-edit-save="onInlineEditSave"
+                    @inline-edit-cancel="getList"
+                    @delete="onDelete"
+                />
+            </sw-card>
+        </div>
+    </template>
+</sw-page>
