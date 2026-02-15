@@ -39,19 +39,17 @@ Component.register('lieferzeiten-task-assignment-rule-list', {
             return aclService.can('lieferzeiten.editor') || aclService.can('admin');
         },
 
-        columns() {
-            return [
-                { property: 'name', label: 'Name', inlineEdit: 'string', primary: true },
-                { property: 'status', label: 'Status (optional)', inlineEdit: 'string' },
-                { property: 'triggerKey', label: 'Trigger *', inlineEdit: 'string' },
-                { property: 'ruleId', label: 'Rule (Rules Engine, optional)', inlineEdit: 'string' },
-                { property: 'assigneeType', label: 'Assignee type *', inlineEdit: 'string' },
-                { property: 'assigneeIdentifier', label: 'Assignee *', inlineEdit: 'string' },
-                { property: 'priority', label: 'Priority', inlineEdit: 'number' },
-                { property: 'active', label: 'Active', inlineEdit: 'boolean' },
-                { property: 'lastChangedBy', label: 'Last Changed By', inlineEdit: 'string' },
-                { property: 'lastChangedAt', label: 'Last Changed At', inlineEdit: 'date' },
-            ];
+        rules() {
+            if (!this.items || typeof this.items.forEach !== 'function') {
+                return [];
+            }
+
+            const mappedItems = [];
+            this.items.forEach((item) => {
+                mappedItems.push({ ...item });
+            });
+
+            return mappedItems;
         },
     },
 
@@ -134,12 +132,66 @@ Component.register('lieferzeiten-task-assignment-rule-list', {
                 this.isLoading = false;
             }
         },
+
         onPageChange({ page, limit }) {
             this.page = page;
             this.limit = limit;
             this.getList();
         },
-        async onInlineEditSave(item) {
+
+        async onDelete(item) {
+            if (!this.hasEditAccess) {
+                return Promise.resolve();
+            }
+
+            this.isLoading = true;
+            try {
+                await this.repository.delete(item.id, Shopware.Context.api);
+                await this.getList();
+            } catch (error) {
+                this.notifyRequestError(error, this.$tc('lieferzeiten.lms.navigation.taskAssignmentRules'));
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async onCreate() {
+            if (!this.hasEditAccess) {
+                return Promise.resolve();
+            }
+
+            const entity = this.repository.create(Shopware.Context.api);
+            entity.name = 'New rule';
+            entity.triggerKey = this.triggerOptions[0];
+            entity.assigneeType = this.assigneeTypeOptions[0];
+            entity.assigneeIdentifier = '';
+            entity.active = false;
+
+            this.isLoading = true;
+            try {
+                await this.repository.save(entity, Shopware.Context.api);
+                await this.getList();
+            } catch (error) {
+                this.notifyRequestError(error, this.$tc('lieferzeiten.lms.navigation.taskAssignmentRules'));
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        formatDate(value) {
+            if (!value) {
+                return '—';
+            }
+
+            const parsed = new Date(value);
+            if (Number.isNaN(parsed.getTime())) {
+                return '—';
+            }
+
+            return parsed.toLocaleString();
+        },
+
+        async onSaveRule(item) {
             if (!this.hasEditAccess) {
                 return Promise.resolve();
             }
@@ -156,38 +208,13 @@ Component.register('lieferzeiten-task-assignment-rule-list', {
                 await this.getList();
             } catch (error) {
                 this.notifyRequestError(error, this.$tc('lieferzeiten.lms.navigation.taskAssignmentRules'));
+            } finally {
+                this.isLoading = false;
             }
         },
-        async onDelete(item) {
-            if (!this.hasEditAccess) {
-                return Promise.resolve();
-            }
 
-            this.isLoading = true;
-            try {
-                await this.repository.delete(item.id, Shopware.Context.api);
-                await this.getList();
-            } catch (error) {
-                this.notifyRequestError(error, this.$tc('lieferzeiten.lms.navigation.taskAssignmentRules'));
-            }
-        },
-        async onCreate() {
-            if (!this.hasEditAccess) {
-                return Promise.resolve();
-            }
-
-            const entity = this.repository.create(Shopware.Context.api);
-            entity.name = 'New rule';
-            entity.triggerKey = this.triggerOptions[0];
-            entity.assigneeType = this.assigneeTypeOptions[0];
-            entity.assigneeIdentifier = '';
-            entity.active = false;
-            try {
-                await this.repository.save(entity, Shopware.Context.api);
-                await this.getList();
-            } catch (error) {
-                this.notifyRequestError(error, this.$tc('lieferzeiten.lms.navigation.taskAssignmentRules'));
-            }
+        async onDeleteRule(item) {
+            return this.onDelete(item);
         },
     },
 });
