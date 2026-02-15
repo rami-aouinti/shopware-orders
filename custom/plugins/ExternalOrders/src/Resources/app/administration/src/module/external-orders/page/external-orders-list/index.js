@@ -331,6 +331,12 @@ Component.register('external-orders-list', {
                     this.pageTitle = configuredTitle;
                 }
 
+                const configuredPerPage = Number(getConfigValue('externalOrdersPerPage'));
+                if (!Number.isNaN(configuredPerPage) && configuredPerPage > 0) {
+                    this.limit = configuredPerPage;
+                    this.limitOptions = Array.from(new Set([...this.limitOptions, configuredPerPage])).sort((left, right) => left - right);
+                }
+
                 this.channelSources = {
                     all: 'Alle External Orders',
                     b2b: getConfigValue('externalOrdersApiUrlB2b'),
