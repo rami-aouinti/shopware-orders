@@ -1,6 +1,6 @@
 {% block lieferzeiten_statistics %}
     <div class="lieferzeiten-statistics">
-        <sw-container columns="1fr auto auto" gap="16px" class="lieferzeiten-statistics__filters">
+        <sw-container columns="1fr 1fr auto" gap="16px" class="lieferzeiten-statistics__filters">
             <sw-single-select
                 v-model:value="selectedPeriod"
                 :label="$t('lieferzeiten.statistics.periodLabel')"
@@ -15,6 +15,21 @@
                 labelProperty="label"
                 valueProperty="value"
             />
+            <sw-container
+                v-if="selectedPeriod === 'custom'"
+                columns="1fr 1fr"
+                gap="12px"
+                class="lieferzeiten-statistics__custom-range"
+            >
+                <sw-datepicker
+                    v-model:value="customFrom"
+                    :label="$t('lieferzeiten.statistics.customRange.from')"
+                />
+                <sw-datepicker
+                    v-model:value="customTo"
+                    :label="$t('lieferzeiten.statistics.customRange.to')"
+                />
+            </sw-container>
             <sw-button variant="primary" @click="exportCsv">
                 {{ $t('lieferzeiten.statistics.exportCsv') }}
             </sw-button>
