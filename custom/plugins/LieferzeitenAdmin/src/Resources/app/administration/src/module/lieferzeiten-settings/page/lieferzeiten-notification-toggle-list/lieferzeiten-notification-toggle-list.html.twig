@@ -4,23 +4,6 @@
     </template>
 
     <template #content>
-        <sw-tabs class="sw-mb-16">
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.channelSettings' }" title="Lieferzeiten-Management-System">
-                Lieferzeiten-Management-System
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.syncConfiguration' }" title="Sync settings">
-                Sync settings
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.taskAssignmentRules' }" :title="$tc('lieferzeiten.lms.navigation.taskAssignmentRules')">
-                {{ $tc('lieferzeiten.lms.navigation.taskAssignmentRules') }}
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.notificationToggles' }" :title="$tc('lieferzeiten.lms.navigation.notificationToggles')">
-                {{ $tc('lieferzeiten.lms.navigation.notificationToggles') }}
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.statistics' }" title="Statistiques">
-                Statistiques
-            </sw-tabs-item>
-        </sw-tabs>
         <sw-card :isLoading="isLoading" :title="$tc('lieferzeiten.lms.notificationMatrix.title')">
             <sw-alert variant="info" appearance="default" :showIcon="true">
                 {{ $tc('lieferzeiten.lms.notificationMatrix.source') }}
