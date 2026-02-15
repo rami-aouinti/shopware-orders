@@ -326,6 +326,11 @@ Component.register('external-orders-list', {
                 const config = await this.systemConfigApiService.getValues('ExternalOrders');
                 const getConfigValue = (key) => config?.[`ExternalOrders.config.${key}`] ?? '';
 
+                const configuredLimit = Number.parseInt(getConfigValue('externalOrdersItemsPerPage'), 10);
+                if (Number.isInteger(configuredLimit) && configuredLimit > 0) {
+                    this.limit = configuredLimit;
+                }
+
                 this.channelSources = {
                     all: 'Alle External Orders',
                     b2b: getConfigValue('externalOrdersApiUrlB2b'),

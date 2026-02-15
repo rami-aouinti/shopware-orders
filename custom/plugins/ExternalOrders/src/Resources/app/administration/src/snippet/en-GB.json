@@ -1,7 +1,8 @@
 {
   "sw-settings": {
     "index": {
-      "bestellungLiefezeit": "Order & delivery time"
+      "bestellungLiefezeit": "Order & delivery time",
+      "tabBestellungLiefezeit": "Order & delivery time"
     }
   }
 }
