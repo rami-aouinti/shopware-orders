@@ -4,7 +4,7 @@
     </template>
 
     <template #smart-bar-actions>
-        <sw-button v-if="hasEditAccess" variant="primary" @click="onCreate">Create</sw-button>
+        <sw-button v-if="hasEditAccess" variant="primary" @click="onCreate">Neu</sw-button>
     </template>
 
     <template #content>
@@ -12,8 +12,8 @@
             <sw-tabs-item :route="{ name: 'lieferzeiten.settings.channelSettings' }" title="Lieferzeiten-Management-System">
                 Lieferzeiten-Management-System
             </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.syncConfiguration' }" title="Sync settings">
-                Sync settings
+            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.syncConfiguration' }" title="Synchronisations-Einstellungen">
+                Synchronisations-Einstellungen
             </sw-tabs-item>
             <sw-tabs-item :route="{ name: 'lieferzeiten.settings.taskAssignmentRules' }" :title="$tc('lieferzeiten.lms.navigation.taskAssignmentRules')">
                 {{ $tc('lieferzeiten.lms.navigation.taskAssignmentRules') }}
@@ -21,53 +21,53 @@
             <sw-tabs-item :route="{ name: 'lieferzeiten.settings.notificationToggles' }" :title="$tc('lieferzeiten.lms.navigation.notificationToggles')">
                 {{ $tc('lieferzeiten.lms.navigation.notificationToggles') }}
             </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.statistics' }" title="Statistiques">
-                Statistiques
+            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.statistics' }" title="Statistiken">
+                Statistiken
             </sw-tabs-item>
         </sw-tabs>
 
         <div class="lza-task-rule-layout">
             <section class="lza-task-rule-hero">
                 <div>
-                    <h3>Task rules designer</h3>
-                    <p>Règles d'assignation avec un affichage amélioré et repères clairs pour les champs obligatoires.</p>
+                    <h3>Regel-Designer für Aufgaben</h3>
+                    <p>Zuweisungsregeln mit verbesserter Darstellung und klaren Markierungen für Pflichtfelder.</p>
                 </div>
                 <div class="lza-task-rule-tags">
                     <span class="lza-tag">Trigger *</span>
-                    <span class="lza-tag">Assignee type *</span>
-                    <span class="lza-tag">Assignee *</span>
+                    <span class="lza-tag">Zuweisungstyp *</span>
+                    <span class="lza-tag">Zuständig *</span>
                 </div>
             </section>
 
             <sw-alert variant="info" appearance="notification" :showIcon="true">
-                Les données de démonstration de cette grille proviennent du seeder backend
+                Die Demo-Daten in dieser Tabelle stammen aus dem Backend-Seeder
                 <strong>DemoDataSeederService</strong> via l'endpoint
                 <code>POST /api/_action/lieferzeiten/demo-data</code>.
-                Les règles créées en démo utilisent le préfixe <code>demo_</code>.
+                Demo-Regeln verwenden das Präfix <code>demo_</code>.
             </sw-alert>
 
             <section class="lza-rules-panel" :class="{ 'is-loading': isLoading }">
                 <div class="lza-rules-toolbar">
-                    <div>{{ total }} règle(s)</div>
-                    <sw-button size="small" @click="getList">Refresh</sw-button>
+                    <div>{{ total }} Regel(n)</div>
+                    <sw-button size="small" @click="getList">Aktualisieren</sw-button>
                 </div>
 
                 <div v-if="!rules.length" class="lza-empty-state">
-                    Aucune règle trouvée. Vérifiez que les données de démonstration ont bien été seedées.
+                    Keine Regeln gefunden. Bitte prüfen Sie, ob die Demo-Daten erfolgreich angelegt wurden.
                 </div>
 
-                <div v-else class="lza-rule-table" role="table" aria-label="Task assignment rules">
+                <div v-else class="lza-rule-table" role="table" aria-label="Aufgaben-Zuweisungsregeln">
                     <div class="lza-rule-header" role="row">
                         <span>Name</span>
                         <span>Status</span>
                         <span>Trigger *</span>
-                        <span>Rule</span>
-                        <span>Assignee type *</span>
-                        <span>Assignee *</span>
+                        <span>Regel</span>
+                        <span>Zuweisungstyp *</span>
+                        <span>Zuständig *</span>
                         <span>Priority</span>
-                        <span>Active</span>
-                        <span>Last changed</span>
-                        <span>Actions</span>
+                        <span>Aktiv</span>
+                        <span>Zuletzt geändert</span>
+                        <span>Aktionen</span>
                     </div>
 
                     <div v-for="rule in rules" :key="rule.id" class="lza-rule-row" role="row">
@@ -80,23 +80,23 @@
                         <input v-model.number="rule.priority" type="number" :disabled="!hasEditAccess" />
                         <label class="lza-checkbox-cell">
                             <input v-model="rule.active" type="checkbox" :disabled="!hasEditAccess" />
-                            <span>{{ rule.active ? 'Yes' : 'No' }}</span>
+                            <span>{{ rule.active ? 'Ja' : 'Nein' }}</span>
                         </label>
                         <div class="lza-last-change">
                             <div>{{ formatDate(rule.lastChangedAt) }}</div>
                             <small>{{ rule.lastChangedBy || '—' }}</small>
                         </div>
                         <div class="lza-actions">
-                            <sw-button size="small" variant="primary" :disabled="!hasEditAccess" @click="onSaveRule(rule)">Save</sw-button>
-                            <sw-button size="small" variant="danger" :disabled="!hasEditAccess" @click="onDeleteRule(rule)">Delete</sw-button>
+                            <sw-button size="small" variant="primary" :disabled="!hasEditAccess" @click="onSaveRule(rule)">Speichern</sw-button>
+                            <sw-button size="small" variant="danger" :disabled="!hasEditAccess" @click="onDeleteRule(rule)">Löschen</sw-button>
                         </div>
                     </div>
                 </div>
 
                 <div class="lza-pagination">
-                    <sw-button size="small" :disabled="page <= 1 || isLoading" @click="onPageChange({ page: page - 1, limit })">Previous</sw-button>
-                    <span>Page {{ page }}</span>
-                    <sw-button size="small" :disabled="(page * limit) >= total || isLoading" @click="onPageChange({ page: page + 1, limit })">Next</sw-button>
+                    <sw-button size="small" :disabled="page <= 1 || isLoading" @click="onPageChange({ page: page - 1, limit })">Zurück</sw-button>
+                    <span>Seite {{ page }}</span>
+                    <sw-button size="small" :disabled="(page * limit) >= total || isLoading" @click="onPageChange({ page: page + 1, limit })">Weiter</sw-button>
                 </div>
             </section>
         </div>

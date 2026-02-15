@@ -177,7 +177,7 @@ Component.register('lieferzeiten-notification-toggle-list', {
             if (!this.triggerOptions.includes(triggerKey)) {
                 this.createNotificationError({
                     title: 'Validation',
-                    message: `Trigger invalide: ${triggerKey}`,
+                    message: `Ungültiger Trigger: ${triggerKey}`,
                 });
 
                 return;
@@ -186,7 +186,7 @@ Component.register('lieferzeiten-notification-toggle-list', {
             if (!this.channelOptions.includes(channel)) {
                 this.createNotificationError({
                     title: 'Validation',
-                    message: `Canal invalide: ${channel}`,
+                    message: `Ungültiger Kanal: ${channel}`,
                 });
 
                 return;
@@ -198,7 +198,7 @@ Component.register('lieferzeiten-notification-toggle-list', {
             if (entity && !this.isValidToggle(entity)) {
                 this.createNotificationError({
                     title: 'Validation',
-                    message: 'Impossible de modifier une entrée incohérente. Corrigez triggerKey/channel/code via API ou supprimez-la.',
+                    message: 'Inkonsistenter Eintrag kann nicht geändert werden. Bitte triggerKey/channel/code per API korrigieren oder den Eintrag löschen.',
                 });
 
                 return;
