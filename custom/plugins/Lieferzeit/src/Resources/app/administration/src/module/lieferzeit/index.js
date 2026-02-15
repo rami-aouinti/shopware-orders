@@ -16,7 +16,15 @@ Module.register('lieferzeit', {
             path: 'index',
             meta: {
                 parentPath: 'sw.order.index',
+                privilege: 'admin',
             },
+        },
+    },
+
+    privileges: {
+        viewer: {
+            permissions: ['admin'],
+            dependencies: [],
         },
     },
 
@@ -29,6 +37,7 @@ Module.register('lieferzeit', {
             icon: 'regular-clock',
             parent: 'sw-order',
             position: 47,
+            privilege: 'admin',
         },
     ],
 });
