@@ -32,16 +32,39 @@ readonly class LieferzeitenStatisticsService
     /**
      * @return array<string, mixed>
      */
-    public function getStatistics(int $periodDays, ?string $domain, ?string $channel, ?\DateTimeImmutable $referenceNow = null): array
+    public function getStatistics(?int $periodDays, ?string $domain, ?string $channel, mixed $from = null, mixed $to = null, ?\DateTimeImmutable $referenceNow = null): array
     {
-        $periodDays = $this->sanitizePeriod($periodDays);
+        if ($from instanceof \DateTimeImmutable && $to === null && $referenceNow === null) {
+            $referenceNow = $from;
+            $from = null;
+        }
+
+        $from = is_string($from) ? $from : null;
+        $to = is_string($to) ? $to : null;
+
+        $periodDays = $this->sanitizePeriod($periodDays ?? 30);
         $statisticsTimezone = $this->getStatisticsTimezone();
-        $now = $this->normalizeToStatisticsTimezone($referenceNow ?? new \DateTimeImmutable('now', $statisticsTimezone));
-        $periodStart = $now->setTime(0, 0)->modify(sprintf('-%d days', $periodDays - 1));
+        $window = $this->resolveWindow($periodDays, $from, $to);
+
+        $periodStart = $this->normalizeToStatisticsTimezone($window['from']);
+        $periodEnd = $this->normalizeToStatisticsTimezone($window['to']);
+
+        if ($referenceNow !== null) {
+            $periodEnd = $this->normalizeToStatisticsTimezone($referenceNow);
+        }
+
+        if ($periodStart > $periodEnd) {
+            [$periodStart, $periodEnd] = [$periodEnd, $periodStart];
+        }
+
         $periodStartSql = $periodStart->format('Y-m-d H:i:s');
+        $periodEndSql = $periodEnd->format('Y-m-d H:i:s');
+        $now = $periodEnd;
+        $periodDays = max(1, (int) $periodStart->diff($periodEnd)->days + 1);
 
         $params = [
             'periodStart' => $periodStartSql,
+            'periodEnd' => $periodEndSql,
             'now' => $now->format('Y-m-d H:i:s'),
             'statisticsTimezone' => self::STATISTICS_TIMEZONE,
         ];
@@ -74,7 +97,7 @@ readonly class LieferzeitenStatisticsService
             : [];
 
         $metrics = $this->connection->fetchAssociative($metricsSql, $params, $metricsParamTypes) ?: [];
-        $overdueCounts = $this->calculateOverdueCounts($periodStartSql, $periodEndSql, $domain, $channel, $effectiveNow);
+        $overdueCounts = $this->calculateOverdueCounts($periodStartSql, $periodEndSql, $domain, $channel, $now);
 
         $channelSql = sprintf(
             'SELECT
@@ -141,6 +164,12 @@ readonly class LieferzeitenStatisticsService
         return [
             'periodDays' => $periodDays,
             'timezone' => self::STATISTICS_TIMEZONE,
+            'window' => [
+                'mode' => $window['mode'],
+                'from' => $periodStart->format('c'),
+                'to' => $periodEnd->format('c'),
+                'timezone' => $periodStart->format('P'),
+            ],
             'metrics' => [
                 'openOrders' => (int) ($metrics['open_orders'] ?? 0),
                 'overdueShipping' => $overdueCounts['shipping'],
