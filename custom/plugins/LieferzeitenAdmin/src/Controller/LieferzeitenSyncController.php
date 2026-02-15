@@ -20,6 +20,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -223,7 +224,7 @@ class LieferzeitenSyncController extends AbstractController
         defaults: ['_acl' => ['lieferzeiten.viewer']],
         methods: [Request::METHOD_GET]
     )]
-    public function statistics(Request $request, Context $context): JsonResponse
+    public function statistics(Request $request, Context $context): JsonResponse|Response
     {
         return $this->statisticsByVersion($request, $context);
     }
@@ -234,24 +235,56 @@ class LieferzeitenSyncController extends AbstractController
         defaults: ['_acl' => ['lieferzeiten.viewer']],
         methods: [Request::METHOD_GET]
     )]
-    public function statisticsV1(Request $request, Context $context): JsonResponse
+    public function statisticsV1(Request $request, Context $context): JsonResponse|Response
     {
         return $this->statisticsByVersion($request, $context);
     }
 
-    private function statisticsByVersion(Request $request, Context $context): JsonResponse
+    private function statisticsByVersion(Request $request, Context $context): JsonResponse|Response
     {
         $period = null;
         if ($request->query->has('period')) {
             $rawPeriod = $request->query->get('period');
-            $period = is_numeric($rawPeriod) ? (int) $rawPeriod : null;
+            if (!is_numeric($rawPeriod)) {
+                return new JsonResponse(['status' => 'error', 'message' => 'period must be numeric'], Response::HTTP_BAD_REQUEST);
+            }
+            $period = (int) $rawPeriod;
         }
         $domain = $request->query->get('domain') ? (string) $request->query->get('domain') : null;
         $channel = $request->query->get('channel') ? (string) $request->query->get('channel') : null;
         $from = $request->query->get('from') ? (string) $request->query->get('from') : null;
         $to = $request->query->get('to') ? (string) $request->query->get('to') : null;
 
-        $payload = $this->statisticsService->getStatistics($period, $domain, $channel, $from, $to);
+        $limit = $this->parseOptionalIntQuery($request, 'limit');
+        if ($limit === false) {
+            return new JsonResponse(['status' => 'error', 'message' => 'limit must be a positive integer'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $page = $this->parseOptionalIntQuery($request, 'page');
+        if ($page === false) {
+            return new JsonResponse(['status' => 'error', 'message' => 'page must be a positive integer'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $offset = $this->parseOptionalIntQuery($request, 'offset', true);
+        if ($offset === false) {
+            return new JsonResponse(['status' => 'error', 'message' => 'offset must be a non-negative integer'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $sort = $request->query->get('sort') ? (string) $request->query->get('sort') : null;
+        $order = $request->query->get('order') ? (string) $request->query->get('order') : null;
+        $export = $request->query->get('export') ? mb_strtolower((string) $request->query->get('export')) : null;
+
+        if ($export === 'csv') {
+            $csv = $this->statisticsService->exportStatisticsCsv($period, $domain, $channel, $from, $to, $sort, $order);
+            $disposition = HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, 'lieferzeiten-statistiken.csv');
+
+            return new Response($csv, Response::HTTP_OK, [
+                'Content-Type' => 'text/csv; charset=utf-8',
+                'Content-Disposition' => $disposition,
+            ]);
+        }
+
+        $payload = $this->statisticsService->getStatistics($period, $domain, $channel, $from, $to, null, $limit !== null ? $limit : null, $page !== null ? $page : null, $offset !== null ? $offset : null, $sort, $order);
 
         $this->auditLogService->log('statistics_viewed', 'lieferzeiten_statistics', null, $context, [
             'period' => $period,
@@ -259,9 +292,35 @@ class LieferzeitenSyncController extends AbstractController
             'to' => $to,
             'domain' => $domain,
             'channel' => $channel,
+            'limit' => $limit,
+            'page' => $page,
+            'offset' => $offset,
+            'sort' => $sort,
+            'order' => $order,
+            'export' => $export,
         ], 'shopware');
 
         return new JsonResponse($payload);
+    }
+
+    private function parseOptionalIntQuery(Request $request, string $name, bool $allowZero = false): int|false|null
+    {
+        if (!$request->query->has($name)) {
+            return null;
+        }
+
+        $value = $request->query->get($name);
+        if (!is_numeric($value)) {
+            return false;
+        }
+
+        $parsed = (int) $value;
+
+        if ($allowZero) {
+            return $parsed >= 0 ? $parsed : false;
+        }
+
+        return $parsed > 0 ? $parsed : false;
     }
 
 

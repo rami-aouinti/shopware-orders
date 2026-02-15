@@ -158,6 +158,9 @@
                     :data-source="filteredOrders"
                     :columns="tableColumns"
                     :show-selection="false"
+                    :sort-by="sortBy"
+                    :sort-direction="sortDirection"
+                    @column-sort="onSortChange"
                 >
                 <template #column-status="{ item }">
                     <sw-label :appearance="item.status === $t('lieferzeiten.statistics.status.overdue') ? 'error' : 'info'">
@@ -197,6 +200,18 @@
                     </sw-context-menu-item>
                 </template>
                 </sw-data-grid>
+            </div>
+            <div class="lieferzeiten-statistics__table-pagination">
+                <sw-button size="small" variant="tertiary" :disabled="activitiesPage <= 1" @click="onPageChange(activitiesPage - 1)">
+                    {{ $t('global.default.previous') }}
+                </sw-button>
+                <span>{{ activitiesPage }} / {{ totalPages }} ({{ activitiesTotal }})</span>
+                <sw-button size="small" variant="tertiary" :disabled="activitiesPage >= totalPages" @click="onPageChange(activitiesPage + 1)">
+                    {{ $t('global.default.next') }}
+                </sw-button>
+                <sw-button size="small" variant="ghost" @click="reloadActivityPage">
+                    {{ $t('global.default.refresh') }}
+                </sw-button>
             </div>
         </sw-card>
 
