@@ -3,6 +3,22 @@ const { Component, Mixin } = Shopware;
 import './external-orders-channel-config.scss';
 import channelIllustration from './images/external-orders-hero.svg';
 
+function resolveAssetSource(asset) {
+    if (!asset) {
+        return '';
+    }
+
+    if (typeof asset === 'string') {
+        return asset;
+    }
+
+    if (typeof asset === 'object') {
+        return asset.default ?? asset.href ?? '';
+    }
+
+    return '';
+}
+
 Shopware.Locale.extend('de-DE', {
     'external-orders-channel-config': {
         groups: {
@@ -51,6 +67,7 @@ Component.register('external-orders-channel-config', {
                     </p>
                 </div>
                 <img
+                    v-if="channelIllustration"
                     class="external-orders-channel-config__hero-image"
                     :src="channelIllustration"
                     alt="External orders"
@@ -133,7 +150,7 @@ Component.register('external-orders-channel-config', {
 
     data() {
         return {
-            channelIllustration,
+            channelIllustration: resolveAssetSource(channelIllustration),
             showModal: false,
             selectedChannel: null,
             isSaving: false,
