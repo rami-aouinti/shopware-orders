@@ -8,6 +8,20 @@
     </template>
 
     <template #content>
+        <sw-tabs class="sw-mb-16">
+            <sw-tabs-item :to="{ name: 'lieferzeiten.settings.index' }" title="Lieferzeiten-Management-System">
+                Lieferzeiten-Management-System
+            </sw-tabs-item>
+            <sw-tabs-item :to="{ name: 'lieferzeiten.settings.syncConfiguration' }" title="Sync settings">
+                Sync settings
+            </sw-tabs-item>
+            <sw-tabs-item :to="{ name: 'lieferzeiten.settings.taskAssignmentRules' }" :title="$tc('lieferzeiten.lms.navigation.taskAssignmentRules')">
+                {{ $tc('lieferzeiten.lms.navigation.taskAssignmentRules') }}
+            </sw-tabs-item>
+            <sw-tabs-item :to="{ name: 'lieferzeiten.settings.notificationToggles' }" :title="$tc('lieferzeiten.lms.navigation.notificationToggles')">
+                {{ $tc('lieferzeiten.lms.navigation.notificationToggles') }}
+            </sw-tabs-item>
+        </sw-tabs>
         <sw-card :isLoading="isLoading" :title="$tc('lieferzeiten.lms.dashboard.cardTitle')">
             <sw-alert variant="info" appearance="default" :showIcon="true">
                 {{ $tc('lieferzeiten.lms.dashboard.introText') }}

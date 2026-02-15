@@ -15,7 +15,7 @@ Module.register('lieferzeiten-settings', {
 
     routes: {
         index: {
-            component: 'lieferzeiten-sync-settings',
+            component: 'lieferzeiten-channel-settings-list',
             path: '',
             meta: {
                 parentPath: 'sw.settings.index.bestellungLiefezeit',
