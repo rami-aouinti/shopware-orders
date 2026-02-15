@@ -12,6 +12,9 @@ class ExternalToOrderMapper
     private const FALLBACK_COUNTRY_ID = 'de4f1aaf5a284f8e8a5c8f65f68f4f41';
     private const FALLBACK_PAYMENT_METHOD_ID = '8ca10bca3ac84b87bb7f0d2f31f4f8a3';
     private const FALLBACK_SHIPPING_METHOD_ID = '0fa91ce3e96a4bc2be4bd9ce752c3425';
+    private const FALLBACK_ORDER_STATE_ID = '7f1d7c1f5b8e4d8ea80342063f1b3f5f';
+    private const FALLBACK_ORDER_DELIVERY_STATE_ID = '2df1f2d89f084f2e8373bc9f0f7f8a01';
+    private const FALLBACK_ORDER_TRANSACTION_STATE_ID = '466f1f74f7d94644b68c8cece6fbd6da';
 
     /** @var array<string, string>|null */
     private ?array $resolvedFallbacks = null;
@@ -36,6 +39,9 @@ class ExternalToOrderMapper
             ?? $fallbacks['countryId'];
         $paymentMethodId = $this->pickHexId($externalOrder, ['paymentMethodId']) ?? $fallbacks['paymentMethodId'];
         $shippingMethodId = $this->pickHexId($externalOrder, ['shippingMethodId']) ?? $fallbacks['shippingMethodId'];
+        $orderStateId = $fallbacks['orderStateId'];
+        $deliveryStateId = $fallbacks['orderDeliveryStateId'];
+        $transactionStateId = $fallbacks['orderTransactionStateId'];
 
         $orderNumber = $this->pickString($externalOrder, ['orderNumber', 'id', 'externalId']) ?? $externalId;
         $addressId = Uuid::fromStringToHex('external-order-address-' . $externalId);
@@ -49,11 +55,20 @@ class ExternalToOrderMapper
         $calculatedTaxes = [['tax' => 0.0, 'taxRate' => 0.0, 'price' => $totalPrice]];
 
         $price = [
+            'unitPrice' => $unitPrice,
             'netPrice' => $totalPrice,
             'totalPrice' => $totalPrice,
             'positionPrice' => $totalPrice,
+            'quantity' => $quantity,
             'taxStatus' => 'gross',
-            'rawTotal' => $totalPrice,
+            'calculatedTaxes' => $calculatedTaxes,
+            'taxRules' => $taxRules,
+        ];
+
+        $transactionAmount = [
+            'unitPrice' => $totalPrice,
+            'totalPrice' => $totalPrice,
+            'quantity' => 1,
             'calculatedTaxes' => $calculatedTaxes,
             'taxRules' => $taxRules,
         ];
@@ -75,6 +90,7 @@ class ExternalToOrderMapper
             'currencyId' => $currencyId,
             'salesChannelId' => $salesChannelId,
             'currencyFactor' => 1.0,
+            'stateId' => $orderStateId,
             'orderDateTime' => $this->pickString($externalOrder, ['orderDateTime', 'orderDate']) ?? (new \DateTimeImmutable())->format(DATE_ATOM),
             'itemRounding' => ['decimals' => 2, 'interval' => 0.01, 'roundForNet' => true],
             'totalRounding' => ['decimals' => 2, 'interval' => 0.01, 'roundForNet' => true],
@@ -104,6 +120,7 @@ class ExternalToOrderMapper
                 ],
             ]],
             'deliveries' => [[
+                'stateId' => $deliveryStateId,
                 'shippingMethodId' => $shippingMethodId,
                 'shippingOrderAddressId' => $addressId,
                 'shippingDateEarliest' => (new \DateTimeImmutable())->format(DATE_ATOM),
@@ -127,8 +144,9 @@ class ExternalToOrderMapper
                 ]],
             ]],
             'transactions' => [[
+                'stateId' => $transactionStateId,
                 'paymentMethodId' => $paymentMethodId,
-                'amount' => $price,
+                'amount' => $transactionAmount,
             ]],
             'price' => $price,
             'shippingCosts' => [
@@ -146,7 +164,7 @@ class ExternalToOrderMapper
     }
 
     /**
-     * @return array{currencyId: string, salesChannelId: string, countryId: string, paymentMethodId: string, shippingMethodId: string}
+     * @return array{currencyId: string, salesChannelId: string, countryId: string, paymentMethodId: string, shippingMethodId: string, orderStateId: string, orderDeliveryStateId: string, orderTransactionStateId: string}
      */
     private function resolveFallbacks(): array
     {
@@ -159,6 +177,9 @@ class ExternalToOrderMapper
         $countryId = $this->queryFirstHexId('SELECT LOWER(HEX(id)) FROM country ORDER BY created_at ASC LIMIT 1') ?? self::FALLBACK_COUNTRY_ID;
         $paymentMethodId = $this->queryFirstHexId('SELECT LOWER(HEX(id)) FROM payment_method ORDER BY created_at ASC LIMIT 1') ?? self::FALLBACK_PAYMENT_METHOD_ID;
         $shippingMethodId = $this->queryFirstHexId('SELECT LOWER(HEX(id)) FROM shipping_method ORDER BY created_at ASC LIMIT 1') ?? self::FALLBACK_SHIPPING_METHOD_ID;
+        $orderStateId = $this->queryStateMachineStateId('order.state', 'open') ?? self::FALLBACK_ORDER_STATE_ID;
+        $orderDeliveryStateId = $this->queryStateMachineStateId('order_delivery.state', 'open') ?? self::FALLBACK_ORDER_DELIVERY_STATE_ID;
+        $orderTransactionStateId = $this->queryStateMachineStateId('order_transaction.state', 'open') ?? self::FALLBACK_ORDER_TRANSACTION_STATE_ID;
 
         return $this->resolvedFallbacks = [
             'currencyId' => $currencyId,
@@ -166,12 +187,35 @@ class ExternalToOrderMapper
             'countryId' => $countryId,
             'paymentMethodId' => $paymentMethodId,
             'shippingMethodId' => $shippingMethodId,
+            'orderStateId' => $orderStateId,
+            'orderDeliveryStateId' => $orderDeliveryStateId,
+            'orderTransactionStateId' => $orderTransactionStateId,
         ];
     }
 
-    private function queryFirstHexId(string $sql): ?string
+    private function queryStateMachineStateId(string $machineTechnicalName, string $stateTechnicalName): ?string
     {
-        $value = $this->connection->fetchOne($sql);
+        return $this->queryFirstHexId(
+            'SELECT LOWER(HEX(sms.id))
+            FROM state_machine_state sms
+            INNER JOIN state_machine sm ON sm.id = sms.state_machine_id
+            WHERE sm.technical_name = :machineTechnicalName
+              AND sms.technical_name = :stateTechnicalName
+            ORDER BY sms.created_at ASC
+            LIMIT 1',
+            [
+                'machineTechnicalName' => $machineTechnicalName,
+                'stateTechnicalName' => $stateTechnicalName,
+            ]
+        );
+    }
+
+    /**
+     * @param array<string, string> $params
+     */
+    private function queryFirstHexId(string $sql, array $params = []): ?string
+    {
+        $value = $this->connection->fetchOne($sql, $params);
 
         if (!is_string($value)) {
             return null;
