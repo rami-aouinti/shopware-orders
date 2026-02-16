@@ -202,6 +202,8 @@ class ExternalOrderController extends AbstractController
         $orderId = trim((string) ($payload['orderId'] ?? ''));
         $positionId = trim((string) ($payload['positionId'] ?? ''));
         $initiatorUserId = trim((string) ($payload['initiatorUserId'] ?? ''));
+        $assigneeUserId = trim((string) ($payload['assigneeUserId'] ?? ''));
+        $correlationId = trim((string) ($payload['correlationId'] ?? ''));
 
         if ($orderId === '' || !Uuid::isValid($orderId) || $positionId === '') {
             return new JsonResponse(['message' => 'orderId und positionId sind erforderlich.'], Response::HTTP_BAD_REQUEST);
@@ -211,6 +213,8 @@ class ExternalOrderController extends AbstractController
             $orderId,
             $positionId,
             $initiatorUserId !== '' ? $initiatorUserId : null,
+            $assigneeUserId !== '' ? $assigneeUserId : null,
+            $correlationId !== '' ? $correlationId : null,
         );
 
         return new JsonResponse($task, Response::HTTP_CREATED);
@@ -231,6 +235,41 @@ class ExternalOrderController extends AbstractController
         $this->supplierRequestTaskService->completeTask($taskId, $context);
 
         return new JsonResponse(['success' => true]);
+    }
+
+
+
+    #[Route(
+        path: '/api/_action/external-orders/completed-supplier-request-tasks',
+        name: 'api.admin.external-orders.completed-supplier-request-tasks',
+        defaults: ['_acl' => ['admin']],
+        methods: [Request::METHOD_GET]
+    )]
+    public function getCompletedSupplierRequestTasks(Request $request): Response
+    {
+        $initiatorUserId = trim((string) $request->query->get('initiatorUserId', ''));
+        $completedSince = trim((string) $request->query->get('completedSince', ''));
+        $limit = (int) $request->query->get('limit', 25);
+
+        if ($initiatorUserId === '') {
+            return new JsonResponse(['message' => 'initiatorUserId ist erforderlich.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $completedSinceDate = null;
+
+        if ($completedSince !== '') {
+            try {
+                $completedSinceDate = new \DateTimeImmutable($completedSince);
+            } catch (\Throwable) {
+                return new JsonResponse(['message' => 'completedSince ist ungültig.'], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
+        $tasks = $this->supplierRequestTaskService->findCompletedTasksByInitiator($initiatorUserId, $completedSinceDate, $limit);
+
+        return new JsonResponse([
+            'tasks' => $tasks,
+        ]);
     }
 
     #[Route(

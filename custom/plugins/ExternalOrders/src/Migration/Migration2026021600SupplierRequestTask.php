@@ -21,6 +21,7 @@ class Migration2026021600SupplierRequestTask extends MigrationStep
                 `position_id` VARCHAR(128) NOT NULL,
                 `initiator_user_id` VARCHAR(32) NULL,
                 `recipient_user_id` VARCHAR(32) NULL,
+                `correlation_id` VARCHAR(64) NULL,
                 `status` VARCHAR(32) NOT NULL DEFAULT "open",
                 `due_date` DATETIME(3) NOT NULL,
                 `completed_at` DATETIME(3) NULL,
@@ -30,6 +31,7 @@ class Migration2026021600SupplierRequestTask extends MigrationStep
                 KEY `idx.external_supplier_request_task.order` (`order_id`),
                 KEY `idx.external_supplier_request_task.initiator` (`initiator_user_id`),
                 KEY `idx.external_supplier_request_task.recipient` (`recipient_user_id`),
+                KEY `idx.external_supplier_request_task.correlation` (`correlation_id`),
                 KEY `idx.external_supplier_request_task.status` (`status`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );
