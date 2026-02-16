@@ -44,20 +44,7 @@ Component.register('external-orders-list', {
                 orderCount: 0,
                 totalRevenue: 0,
                 totalItems: 0,
-                openOrdersTotal: 0,
-                overdueShippingTotal: 0,
-                overdueDeliveriesCompletedTotal: 0,
             },
-            selectedArea: null,
-            selectedMainView: 'allOrders',
-            areaOptions: [
-                { value: 'first-medical-ecommerce', label: 'first-medical-ecommerce' },
-                { value: 'medical-solutions', label: 'medical-solutions' },
-            ],
-            mainViewOptions: [
-                { value: 'allOrders', label: 'alle Bestellungen' },
-                { value: 'openOrders', label: 'offene Bestellungen (noch nicht beim Kunde angekommen)' },
-            ],
             channelSources: {},
             channels: [
                 {
@@ -329,12 +316,6 @@ Component.register('external-orders-list', {
             },
             deep: true,
         },
-        selectedArea() {
-            this.loadOrders();
-        },
-        selectedMainView() {
-            this.loadOrders();
-        },
     },
 
     created() {
@@ -344,9 +325,7 @@ Component.register('external-orders-list', {
     methods: {
         async initializePage() {
             await this.loadOverviewConfiguration();
-            if (this.selectedArea) {
-                await this.loadOrders();
-            }
+            await this.loadOrders();
         },
         async loadOverviewConfiguration() {
             try {
@@ -386,12 +365,6 @@ Component.register('external-orders-list', {
             }
         },
         async loadOrders() {
-            if (!this.selectedArea) {
-                this.orders = [];
-                this.summary = this.getEmptySummary();
-                return;
-            }
-
             this.isLoading = true;
             this.page = 1;
 
@@ -404,11 +377,7 @@ Component.register('external-orders-list', {
 
                 if (this.activeChannel === 'all') {
                     const responses = await Promise.all(
-                        channelsForAllOverview.map((channelId) => this.externalOrderService.list({
-                            channel: channelId,
-                            selectedArea: this.selectedArea,
-                            selectedMainView: this.selectedMainView,
-                        })),
+                        channelsForAllOverview.map((channelId) => this.externalOrderService.list({ channel: channelId })),
                     );
 
                     const mergedOrders = responses.flatMap((response) => {
@@ -422,23 +391,25 @@ Component.register('external-orders-list', {
                 } else {
                     const response = await this.externalOrderService.list({
                         channel: this.activeChannel,
-                        selectedArea: this.selectedArea,
-                        selectedMainView: this.selectedMainView,
                     });
                     const payload = response?.data?.data ?? response?.data ?? response;
                     apiOrders = Array.isArray(payload?.orders) ? payload.orders : [];
-
-                    this.summary = this.resolveSummaryFromPayload(payload, apiOrders);
                 }
 
                 this.orders = apiOrders;
                 this.page = 1;
-                if (this.activeChannel === 'all') {
-                    this.summary = this.buildSummaryFromOrders(apiOrders);
-                }
+                this.summary = {
+                    orderCount: apiOrders.length,
+                    totalRevenue: apiOrders.reduce((sum, order) => sum + (order.totalRevenue || 0), 0),
+                    totalItems: apiOrders.reduce((sum, order) => sum + (order.totalItems || 0), 0),
+                };
             } catch (error) {
                 this.orders = [];
-                this.summary = this.getEmptySummary();
+                this.summary = {
+                    orderCount: 0,
+                    totalRevenue: 0,
+                    totalItems: 0,
+                };
                 this.createNotificationError({
                     title: 'Bestellungen konnten nicht geladen werden',
                     message: error?.message || 'Bitte prüfen Sie die Verbindung zu den externen APIs.',
@@ -795,11 +766,8 @@ Component.register('external-orders-list', {
             return {
                 ...base,
                 customer: {
-                    number: '',
                     firstName: '',
                     lastName: '',
-                    email: '',
-                    group: '',
                     ...(base.customer ?? {}),
                     number: base.customer?.number ?? String(base.customer?.id ?? ''),
                     email: base.customer?.email ?? base.customer?.emailAddress ?? '',
@@ -815,10 +783,6 @@ Component.register('external-orders-list', {
                     ...(base.payment ?? {}),
                 },
                 billingAddress: {
-                    street: '',
-                    zip: '',
-                    city: '',
-                    country: '',
                     ...(base.billingAddress ?? {}),
                     street: base.billingAddress?.street ?? billing.streetAddress ?? '',
                     zip: base.billingAddress?.zip ?? billing.postcode ?? '',
@@ -826,10 +790,6 @@ Component.register('external-orders-list', {
                     country: base.billingAddress?.country ?? billing.country ?? '',
                 },
                 shippingAddress: {
-                    name: '',
-                    street: '',
-                    zipCity: '',
-                    country: '',
                     ...(base.shippingAddress ?? {}),
                     name: base.shippingAddress?.name ?? delivery.name ?? '',
                     street: base.shippingAddress?.street ?? delivery.streetAddress ?? '',
@@ -949,103 +909,6 @@ Component.register('external-orders-list', {
                 style: 'currency',
                 currency: 'EUR',
             }).format(value);
-        },
-        selectArea(area) {
-            this.selectedArea = area;
-        },
-        getEmptySummary() {
-            return {
-                orderCount: 0,
-                totalRevenue: 0,
-                totalItems: 0,
-                openOrdersTotal: 0,
-                overdueShippingTotal: 0,
-                overdueDeliveriesCompletedTotal: 0,
-            };
-        },
-        buildSummaryFromOrders(orders) {
-            const fallbackSummary = this.getEmptySummary();
-
-            return {
-                ...fallbackSummary,
-                orderCount: orders.length,
-                totalRevenue: orders.reduce((sum, order) => sum + Number(order?.totalRevenue || 0), 0),
-                totalItems: orders.reduce((sum, order) => sum + Number(order?.totalItems || 0), 0),
-                openOrdersTotal: orders.reduce((sum, order) => sum + (this.isOpenOrder(order) ? 1 : 0), 0),
-                overdueShippingTotal: orders.reduce((sum, order) => sum + (this.isOverdueShipping(order) ? 1 : 0), 0),
-                overdueDeliveriesCompletedTotal: orders.reduce((sum, order) => sum + (this.isOverdueCompletedDelivery(order) ? 1 : 0), 0),
-            };
-        },
-        resolveSummaryFromPayload(payload, orders) {
-            const summary = payload?.summary ?? {};
-            const fallbackSummary = this.buildSummaryFromOrders(orders);
-
-            return {
-                ...fallbackSummary,
-                orderCount: Number(summary.orderCount ?? summary.totalOrders ?? fallbackSummary.orderCount),
-                totalRevenue: Number(summary.totalRevenue ?? fallbackSummary.totalRevenue),
-                totalItems: Number(summary.totalItems ?? summary.totalQuantity ?? fallbackSummary.totalItems),
-                openOrdersTotal: Number(
-                    summary.openOrdersTotal
-                    ?? summary.totalOpenOrders
-                    ?? summary.currentOpenOrdersTotal
-                    ?? fallbackSummary.openOrdersTotal,
-                ),
-                overdueShippingTotal: Number(
-                    summary.overdueShippingTotal
-                    ?? summary.currentOverdueShipping
-                    ?? fallbackSummary.overdueShippingTotal,
-                ),
-                overdueDeliveriesCompletedTotal: Number(
-                    summary.overdueDeliveriesCompletedTotal
-                    ?? summary.currentOverdueDeliveriesCompleted
-                    ?? fallbackSummary.overdueDeliveriesCompletedTotal,
-                ),
-            };
-        },
-        isOpenOrder(order) {
-            const status = String(order?.statusLabel ?? order?.status ?? '').toLowerCase();
-            return status.includes('offen') || status.includes('open');
-        },
-        isOverdueShipping(order) {
-            return this.resolveBooleanMetric(order, [
-                'isOverdueShipping',
-                'overdueShipping',
-                'shippingOverdue',
-            ]);
-        },
-        isOverdueCompletedDelivery(order) {
-            return this.resolveBooleanMetric(order, [
-                'isOverdueCompletedDelivery',
-                'overdueCompletedDelivery',
-                'overdueDeliveryCompleted',
-            ]);
-        },
-        resolveBooleanMetric(entity, keys) {
-            for (const key of keys) {
-                const value = entity?.[key];
-
-                if (typeof value === 'boolean') {
-                    return value;
-                }
-
-                if (typeof value === 'number') {
-                    return value > 0;
-                }
-
-                if (typeof value === 'string') {
-                    const normalized = value.trim().toLowerCase();
-                    if (['1', 'true', 'yes', 'ja'].includes(normalized)) {
-                        return true;
-                    }
-
-                    if (['0', 'false', 'no', 'nein'].includes(normalized)) {
-                        return false;
-                    }
-                }
-            }
-
-            return false;
         },
 
         getItemSplitKey(item) {

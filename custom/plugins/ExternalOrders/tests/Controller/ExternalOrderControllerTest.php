@@ -7,6 +7,7 @@ use ExternalOrders\Controller\ExternalOrderController;
 use ExternalOrders\Service\ExternalOrderService;
 use ExternalOrders\Service\ExternalOrderSyncService;
 use ExternalOrders\Service\ExternalOrderTestDataService;
+use ExternalOrders\Service\SupplierRequestTaskService;
 use ExternalOrders\Service\TopmSan6OrderExportService;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Context;
@@ -36,6 +37,53 @@ class ExternalOrderControllerTest extends TestCase
         static::assertSame('/api/_action/external-orders/status/{internalOrderId}', $statusUpdateRoute['path'] ?? null);
     }
 
+
+    public function testListForwardsSan6AndStatusCodeFilters(): void
+    {
+        $externalOrderService = $this->createMock(ExternalOrderService::class);
+        $externalOrderService
+            ->expects($this->once())
+            ->method('fetchOrders')
+            ->with(
+                $this->isInstanceOf(Context::class),
+                null,
+                null,
+                1,
+                50,
+                null,
+                null,
+                $this->equalTo([
+                    'san6' => 'SAN6-123',
+                    'san6OrderNumber' => 'SAN6-123',
+                    'statusCode' => 'shipped',
+                    'status' => 'Versendet',
+                ]),
+                null,
+                null,
+            )
+            ->willReturn(['orders' => []]);
+
+        $controller = new ExternalOrderController(
+            $externalOrderService,
+            $this->createMock(ExternalOrderTestDataService::class),
+            $this->createMock(ExternalOrderSyncService::class),
+            $this->createMock(TopmSan6OrderExportService::class),
+            $this->createMock(SupplierRequestTaskService::class),
+            $this->createMock(Connection::class),
+        );
+
+        $request = new Request(query: [
+            'san6' => ' SAN6-123 ',
+            'san6OrderNumber' => ' SAN6-123 ',
+            'statusCode' => ' shipped ',
+            'status' => ' Versendet ',
+        ]);
+
+        $response = $controller->list($request, Context::createDefaultContext());
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+    }
+
     public function testMarkTestPrefersInternalOrderIdsPayload(): void
     {
         $externalOrderService = $this->createMock(ExternalOrderService::class);
@@ -50,6 +98,7 @@ class ExternalOrderControllerTest extends TestCase
             $this->createMock(ExternalOrderTestDataService::class),
             $this->createMock(ExternalOrderSyncService::class),
             $this->createMock(TopmSan6OrderExportService::class),
+            $this->createMock(SupplierRequestTaskService::class),
             $this->createMock(Connection::class),
         );
 
