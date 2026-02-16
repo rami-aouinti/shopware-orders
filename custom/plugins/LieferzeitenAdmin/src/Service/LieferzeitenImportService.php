@@ -60,6 +60,7 @@ class LieferzeitenImportService
         private readonly ChannelDateSettingsProvider $settingsProvider,
         private readonly BusinessDayDeliveryDateCalculator $deliveryDateCalculator,
         private readonly Status8TrackingMappingProvider $status8TrackingMappingProvider,
+        private readonly ParcelStatusAggregationPolicy $parcelStatusAggregationPolicy,
         private readonly LockFactory $lockFactory,
         private readonly NotificationEventService $notificationEventService,
         private readonly SalesChannelResolver $salesChannelResolver,
@@ -1040,23 +1041,7 @@ class LieferzeitenImportService
 
         $parcels = $order['parcels'] ?? $san6Payload['parcels'] ?? [];
         if (is_array($parcels) && $parcels !== []) {
-            $finalDeliveredParcels = 0;
-            foreach ($parcels as $parcel) {
-                if (!is_array($parcel)) {
-                    continue;
-                }
-
-                $parcelState = $this->normalizeParcelState($parcel);
-                if (OrderStatusModel::isBlockingParcelState($parcelState)) {
-                    return false;
-                }
-
-                if ($this->isFinalDeliveredParcelStatusForStatus8($parcel, $order)) {
-                    ++$finalDeliveredParcels;
-                }
-            }
-
-            return $finalDeliveredParcels > 0 && $finalDeliveredParcels === count($parcels);
+            return $this->parcelStatusAggregationPolicy->areAllParcelsCompleted($parcels, $order, $this->status8TrackingMappingProvider);
         }
 
         return $this->isSan6InternalDeliveryCompleted($order, $san6Payload);
@@ -1112,23 +1097,13 @@ class LieferzeitenImportService
             return $mapped;
         }
 
-        $state = $this->normalizeParcelState($parcel);
-
-        $closed = $parcel['closed'] ?? null;
-        if ($closed !== null) {
-            return (bool) $closed;
-        }
-
-        return OrderStatusModel::isFinalDeliveredParcelState($state);
+        return $this->parcelStatusAggregationPolicy->isFinalState($parcel, $order, $this->status8TrackingMappingProvider);
     }
 
     /** @param array<string,mixed> $parcel */
     private function normalizeParcelState(array $parcel): string
     {
-        $rawState = (string) ($parcel['trackingStatus'] ?? $parcel['san6Status'] ?? $parcel['status'] ?? $parcel['state'] ?? '');
-        $state = mb_strtolower(trim($rawState));
-
-        return str_replace([' ', '-', '/'], '_', $state);
+        return $this->parcelStatusAggregationPolicy->normalizeState($parcel);
     }
 
 
