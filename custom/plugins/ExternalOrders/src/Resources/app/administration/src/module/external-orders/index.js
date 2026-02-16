@@ -21,7 +21,7 @@ Module.register('external-orders', {
         },
         lieferzeit: {
             component: 'external-orders-lieferzeit-empty',
-            path: 'lieferzeit',
+            path: '/external/orders/lieferzeit',
             meta: {
                 privilege: 'admin',
             },
