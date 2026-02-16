@@ -1,4 +1,5 @@
 import './page/external-orders-list';
+import './page/external-orders-lieferzeit-empty';
 
 const { Module } = Shopware;
 
