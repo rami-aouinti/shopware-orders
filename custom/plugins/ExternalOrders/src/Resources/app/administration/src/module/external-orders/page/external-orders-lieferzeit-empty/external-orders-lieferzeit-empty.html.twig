@@ -13,26 +13,27 @@
         </div>
     </header>
 
-    <div class="external-orders-lieferzeit-empty__summary">
-        <div class="external-orders-lieferzeit-empty__summary-item">
-            <span class="external-orders-lieferzeit-empty__summary-label">Treffer</span>
-            <span class="external-orders-lieferzeit-empty__summary-value">{{ paginationTotal }}</span>
+    <main id="main" class="sw-page__main-content external-orders-lieferzeit-empty__main" tabindex="-1">
+        <div class="external-orders-lieferzeit-empty__summary">
+            <div class="external-orders-lieferzeit-empty__summary-item">
+                <span class="external-orders-lieferzeit-empty__summary-label">Treffer</span>
+                <span class="external-orders-lieferzeit-empty__summary-value">{{ paginationTotal }}</span>
+            </div>
+            <div class="external-orders-lieferzeit-empty__summary-item">
+                <span class="external-orders-lieferzeit-empty__summary-label">Offene Aufträge</span>
+                <span class="external-orders-lieferzeit-empty__summary-value">{{ statisticsMetrics.openOrders }}</span>
+            </div>
+            <div class="external-orders-lieferzeit-empty__summary-item">
+                <span class="external-orders-lieferzeit-empty__summary-label">Versand überfällig</span>
+                <span class="external-orders-lieferzeit-empty__summary-value">{{ statisticsMetrics.overdueShipping }}</span>
+            </div>
+            <div class="external-orders-lieferzeit-empty__summary-item">
+                <span class="external-orders-lieferzeit-empty__summary-label">Lieferung überfällig</span>
+                <span class="external-orders-lieferzeit-empty__summary-value">{{ statisticsMetrics.overdueDelivery }}</span>
+            </div>
         </div>
-        <div class="external-orders-lieferzeit-empty__summary-item">
-            <span class="external-orders-lieferzeit-empty__summary-label">Offene Aufträge</span>
-            <span class="external-orders-lieferzeit-empty__summary-value">{{ statisticsMetrics.openOrders }}</span>
-        </div>
-        <div class="external-orders-lieferzeit-empty__summary-item">
-            <span class="external-orders-lieferzeit-empty__summary-label">Versand überfällig</span>
-            <span class="external-orders-lieferzeit-empty__summary-value">{{ statisticsMetrics.overdueShipping }}</span>
-        </div>
-        <div class="external-orders-lieferzeit-empty__summary-item">
-            <span class="external-orders-lieferzeit-empty__summary-label">Lieferung überfällig</span>
-            <span class="external-orders-lieferzeit-empty__summary-value">{{ statisticsMetrics.overdueDelivery }}</span>
-        </div>
-    </div>
 
-    <sw-card class="external-orders-lieferzeit-empty__channels">
+        <sw-card class="external-orders-lieferzeit-empty__channels">
         <div class="external-orders-lieferzeit-empty__channel-tabs">
             <button
                 v-for="channel in channels"
@@ -188,7 +189,8 @@
             title="Keine Lieferzeiten gefunden"
             subline="Für die aktuellen Filter gibt es keine Ergebnisse."
         />
-    </sw-card>
+        </sw-card>
+    </main>
 
     <div v-if="showDetailModal && selectedOrder" class="external-orders-lieferzeit-empty__detail-overlay" @click.self="closeDetail">
         <div class="external-orders-lieferzeit-empty__detail-dialog" role="dialog" aria-modal="true">

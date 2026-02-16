@@ -37,6 +37,14 @@
         background: #f7f9fb;
     }
 
+
+    &__main {
+        height: calc(100vh - 180px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 2px;
+    }
+
     &__summary {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -274,6 +282,7 @@
             font-weight: 600;
             color: #52667a;
         }
+    }
 
         dd {
             margin: 0;
