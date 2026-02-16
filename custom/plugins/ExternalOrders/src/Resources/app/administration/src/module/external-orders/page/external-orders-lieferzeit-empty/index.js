@@ -55,6 +55,48 @@ export const tableColumnsMeta = Object.freeze([
         filterType: 'none',
     },
     {
+        key: 'paymentMethod',
+        label: 'Zahlungsart',
+        group: 'Bestellung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'paymentMethod',
+    },
+    {
+        key: 'paymentReceivedDate',
+        label: 'Datum Zahlungseingang',
+        group: 'Bestellung',
+        type: 'date',
+        filterable: true,
+        filterType: 'dateRange',
+        filterFromKey: 'paymentReceivedDateFrom',
+        filterToKey: 'paymentReceivedDateTo',
+    },
+    {
+        key: 'customerFirstName',
+        label: 'Vorname',
+        group: 'Bestellung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'customerFirstName',
+    },
+    {
+        key: 'customerLastName',
+        label: 'Nachname',
+        group: 'Bestellung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'customerLastName',
+    },
+    {
+        key: 'customerAdditionalNames',
+        label: 'Weitere Namen',
+        group: 'Bestellung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'customerAdditionalNames',
+    },
+    {
         key: 'user',
         label: 'Änderung durch User',
         group: 'Bestellung',
@@ -69,6 +111,30 @@ export const tableColumnsMeta = Object.freeze([
         filterable: true,
         filterType: 'text',
         filterKey: 'sendenummer',
+    },
+    {
+        key: 'packageId',
+        label: 'Paket-ID',
+        group: 'Lieferung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'packageId',
+    },
+    {
+        key: 'trackingNumberPerPackage',
+        label: 'Trackingnummer pro Paket',
+        group: 'Lieferung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'trackingNumberPerPackage',
+    },
+    {
+        key: 'shippedQuantity',
+        label: 'Versandmenge je Paket',
+        group: 'Lieferung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'shippedQuantity',
     },
     {
         key: 'shippingDate',
@@ -89,6 +155,14 @@ export const tableColumnsMeta = Object.freeze([
         filterType: 'dateRange',
         filterFromKey: 'deliveryDateFrom',
         filterToKey: 'deliveryDateTo',
+    },
+    {
+        key: 'packageStatus',
+        label: 'Paket-Status',
+        group: 'Lieferung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'packageStatus',
     },
     {
         key: 'lieferterminLieferant',
@@ -497,22 +571,119 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             return [];
         },
 
+        normalizePackageStatus(rawStatus, packageCount, shippedQuantity, orderedQuantity) {
+            const normalizedRawStatus = String(rawStatus || '').trim().toLowerCase();
+            const statusByRawValue = {
+                unklar: 'Unklar',
+                unknown: 'Unklar',
+                gesamt_versand: 'Gesamt-Versand',
+                gesamtversand: 'Gesamt-Versand',
+                full_shipment: 'Gesamt-Versand',
+                teillieferung: 'Teillieferung',
+                partial_shipment: 'Teillieferung',
+                trennung_auftragsposition: 'Trennung Auftragsposition',
+                split_position: 'Trennung Auftragsposition',
+            };
+
+            if (statusByRawValue[normalizedRawStatus]) {
+                return statusByRawValue[normalizedRawStatus];
+            }
+
+            if (packageCount > 1) {
+                return 'Trennung Auftragsposition';
+            }
+
+            if (orderedQuantity > 0 && shippedQuantity >= orderedQuantity) {
+                return 'Gesamt-Versand';
+            }
+
+            if (shippedQuantity > 0) {
+                return 'Teillieferung';
+            }
+
+            return 'Unklar';
+        },
+
         expandOrdersByPosition(orders) {
             return orders.flatMap((order) => {
-                const positions = Array.isArray(order?.positions) ? order.positions : [];
+                const orderId = order?.id || order?.orderId || order?.orderNumber || 'order';
+                const positions = Array.isArray(order?.positions)
+                    ? order.positions
+                    : (Array.isArray(order?.items) ? order.items : []);
 
                 if (!positions.length) {
-                    return [order];
+                    return [{
+                        ...order,
+                        rowId: `${orderId}-order`,
+                        rowType: 'order',
+                        positionId: '',
+                        positionNumber: '',
+                        packageId: '',
+                        trackingNumberPerPackage: '',
+                        shippedQuantity: '',
+                        packageStatus: '',
+                    }];
                 }
 
-                return positions.map((position, index) => ({
-                    ...order,
-                    rowId: `${order?.id || order?.orderId || order?.orderNumber || 'order'}-${position?.positionId || index}`,
-                    positionId: position?.positionId ?? position?.id ?? `${index + 1}`,
-                    positionNumber: position?.positionNumber ?? `${index + 1}`,
-                    productLabel: position?.productLabel ?? position?.label ?? '',
-                    lieferterminLieferant: position?.lieferterminLieferant ?? order?.lieferterminLieferant,
-                }));
+                return positions.flatMap((position, positionIndex) => {
+                    const positionId = position?.positionId ?? position?.id ?? `${positionIndex + 1}`;
+                    const positionPackages = Array.isArray(position?.packages)
+                        ? position.packages
+                        : (Array.isArray(position?.packageItems) ? position.packageItems : []);
+                    const orderedQuantity = Number(position?.orderedQuantity ?? position?.quantity ?? 0);
+
+                    const positionRow = {
+                        ...order,
+                        rowId: `${orderId}-${positionId}-position`,
+                        rowType: 'position',
+                        positionId,
+                        positionNumber: position?.positionNumber ?? `${positionIndex + 1}`,
+                        productLabel: position?.productLabel ?? position?.label ?? position?.name ?? '',
+                        lieferterminLieferant: position?.lieferterminLieferant ?? order?.lieferterminLieferant,
+                        shippingDate: position?.shippingDate ?? order?.shippingDate ?? '',
+                        deliveryDate: position?.deliveryDate ?? order?.deliveryDate ?? '',
+                        packageId: '',
+                        trackingNumberPerPackage: '',
+                        shippedQuantity: '',
+                        packageStatus: '',
+                    };
+
+                    if (!positionPackages.length) {
+                        return [positionRow];
+                    }
+
+                    const packageRows = positionPackages.map((pkg, packageIndex) => {
+                        const packageId = pkg?.packageId ?? pkg?.id ?? pkg?.packageNumber ?? `PKG-${packageIndex + 1}`;
+                        const shippedQuantity = Number(pkg?.shippedQuantity ?? pkg?.quantity ?? 0);
+                        const packageTrackingNumber = pkg?.trackingNumberPerPackage
+                            ?? pkg?.trackingNumber
+                            ?? pkg?.trackingCode
+                            ?? '';
+
+                        return {
+                            ...order,
+                            rowId: `${orderId}-${positionId}-${packageId}`,
+                            rowType: 'package',
+                            positionId,
+                            positionNumber: position?.positionNumber ?? `${positionIndex + 1}`,
+                            productLabel: position?.productLabel ?? position?.label ?? position?.name ?? '',
+                            lieferterminLieferant: position?.lieferterminLieferant ?? order?.lieferterminLieferant,
+                            packageId,
+                            trackingNumberPerPackage: packageTrackingNumber,
+                            shippedQuantity,
+                            packageStatus: this.normalizePackageStatus(
+                                pkg?.packageStatus ?? pkg?.status,
+                                positionPackages.length,
+                                shippedQuantity,
+                                orderedQuantity,
+                            ),
+                            shippingDate: pkg?.shippingDate ?? pkg?.versandDatum ?? position?.shippingDate ?? order?.shippingDate ?? '',
+                            deliveryDate: pkg?.deliveryDate ?? pkg?.lieferDatum ?? position?.deliveryDate ?? order?.deliveryDate ?? '',
+                        };
+                    });
+
+                    return [positionRow, ...packageRows];
+                });
             });
         },
 
@@ -526,6 +697,8 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 ?? order?.ordersStatusName
                 ?? order?.aggregatedStatus
             );
+            const customer = order?.customer ?? {};
+            const payment = order?.payment ?? {};
 
             return {
                 ...order,
@@ -538,6 +711,11 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 user: order?.user ?? order?.customerName ?? order?.customersName ?? '',
                 sendenummer: order?.sendenummer ?? order?.trackingNumber ?? trackingNumbers.join(', '),
                 domain: order?.domain ?? order?.sourceSystem ?? order?.channel ?? '',
+                paymentMethod: order?.paymentMethod ?? payment?.method ?? payment?.name ?? '',
+                paymentReceivedDate: order?.paymentReceivedDate ?? order?.zahlungseingangDate ?? payment?.receivedDate ?? payment?.paidAt ?? '',
+                customerFirstName: order?.customerFirstName ?? customer?.firstName ?? order?.firstname ?? '',
+                customerLastName: order?.customerLastName ?? customer?.lastName ?? order?.lastname ?? '',
+                customerAdditionalNames: order?.customerAdditionalNames ?? customer?.additionalName ?? customer?.middleName ?? '',
                 shippingDate: order?.shippingDate ?? order?.versandDatum ?? order?.shippingAt ?? '',
                 deliveryDate: order?.deliveryDate ?? order?.lieferDatum ?? order?.deliveredAt ?? '',
                 lieferterminLieferant: order?.lieferterminLieferant ?? order?.supplierDeliveryDate ?? '',
@@ -545,6 +723,10 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 neuerLiefertermin: order?.neuerLiefertermin ?? order?.newDeliveryDate ?? order?.lieferterminAuftragsbearbeitung ?? '',
                 latestShippingDate: order?.latestShippingDate ?? order?.shippingDateLatest ?? '',
                 latestDeliveryDate: order?.latestDeliveryDate ?? order?.lieferzeitpunktLatest ?? order?.lieferterminLieferant ?? '',
+                packageId: order?.packageId ?? '',
+                packageStatus: order?.packageStatus ?? '',
+                shippedQuantity: order?.shippedQuantity ?? '',
+                trackingNumberPerPackage: order?.trackingNumberPerPackage ?? '',
                 positionId: order?.positionId ?? order?.orderLineItemId ?? order?.lineItemId ?? '',
                 positionNumber: order?.positionNumber ?? order?.lineItemNumber ?? '',
             };
@@ -695,10 +877,19 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 bestellnummer: order?.bestellnummer ?? order?.orderNumber,
                 san6: order?.san6 ?? order?.san6OrderNumber,
                 san6Auftragsposition: order?.san6Auftragsposition ?? order?.positionNumber ?? order?.positionId,
+                paymentMethod: order?.paymentMethod,
+                paymentReceivedDate: order?.paymentReceivedDate,
+                customerFirstName: order?.customerFirstName,
+                customerLastName: order?.customerLastName,
+                customerAdditionalNames: order?.customerAdditionalNames,
                 user: order?.user,
                 sendenummer: order?.sendenummer,
+                packageId: order?.packageId,
+                trackingNumberPerPackage: order?.trackingNumberPerPackage,
+                shippedQuantity: order?.shippedQuantity,
                 shippingDate: order?.shippingDate,
                 deliveryDate: order?.deliveryDate,
+                packageStatus: order?.packageStatus,
                 lieferterminLieferant: order?.lieferterminLieferant ?? order?.supplierDeliveryDate,
                 neuerLiefertermin: order?.neuerLiefertermin ?? order?.newDeliveryDate,
                 latestShippingDate: order?.latestShippingDate,

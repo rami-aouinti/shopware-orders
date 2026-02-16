@@ -35,6 +35,9 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(metaByKey.bestellnummer).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
         expect(metaByKey.status).toEqual(expect.objectContaining({ filterable: true, filterType: 'select' }));
         expect(metaByKey.shippingDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
+        expect(metaByKey.paymentMethod).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
+        expect(metaByKey.paymentReceivedDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
+        expect(metaByKey.packageStatus).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
 
         expect(metaByKey.san6Auftragsposition).toEqual(expect.objectContaining({ filterable: false, filterType: 'none' }));
         expect(metaByKey.kommentar).toEqual(expect.objectContaining({ filterable: false, filterType: 'none' }));
@@ -52,8 +55,23 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         const primaryKeys = primaryFilters.map((column) => column.key);
         const dateRangeKeys = dateRangeFilters.map((column) => column.key);
 
-        expect(primaryKeys).toEqual(expect.arrayContaining(['bestellnummer', 'san6', 'user', 'sendenummer', 'status']));
+        expect(primaryKeys).toEqual(expect.arrayContaining([
+            'bestellnummer',
+            'san6',
+            'paymentMethod',
+            'customerFirstName',
+            'customerLastName',
+            'customerAdditionalNames',
+            'user',
+            'sendenummer',
+            'packageId',
+            'trackingNumberPerPackage',
+            'shippedQuantity',
+            'packageStatus',
+            'status',
+        ]));
         expect(dateRangeKeys).toEqual(expect.arrayContaining([
+            'paymentReceivedDate',
             'latestShippingDate',
             'shippingDate',
             'latestDeliveryDate',
@@ -69,6 +87,64 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
 
         expect(state.filters).not.toHaveProperty('san6Auftragsposition');
         expect(state.filters).not.toHaveProperty('kommentar');
+    });
+
+
+
+    it('expands package rows and applies field priority for position/package/order scopes', () => {
+        const state = componentConfig.data();
+        const context = {
+            ...state,
+            normalizePackageStatus: componentConfig.methods.normalizePackageStatus,
+        };
+
+        const [expanded] = componentConfig.methods.expandOrdersByPosition.call(context, [{
+            id: 'order-1',
+            bestellnummer: '10001',
+            latestShippingDate: '2026-02-20',
+            positions: [{
+                positionId: '10',
+                positionNumber: '1',
+                label: 'Artikel A',
+                shippingDate: '2026-02-11',
+                deliveryDate: '2026-02-14',
+                orderedQuantity: 5,
+                packages: [{
+                    packageId: 'PKG-1',
+                    shippedQuantity: 2,
+                    trackingNumber: 'TRK-1',
+                    shippingDate: '2026-02-12',
+                    deliveryDate: '2026-02-15',
+                }],
+            }],
+        }]);
+
+        expect(expanded.rowType).toBe('position');
+
+        const rows = componentConfig.methods.expandOrdersByPosition.call(context, [{
+            id: 'order-1',
+            positions: [{
+                positionId: '10',
+                orderedQuantity: 5,
+                packages: [{ packageId: 'PKG-1', shippedQuantity: 2, trackingNumber: 'TRK-1' }],
+            }],
+        }]);
+
+        expect(rows).toHaveLength(2);
+        expect(rows[0]).toEqual(expect.objectContaining({
+            rowType: 'position',
+            positionId: '10',
+            packageId: '',
+            trackingNumberPerPackage: '',
+        }));
+        expect(rows[1]).toEqual(expect.objectContaining({
+            rowType: 'package',
+            positionId: '10',
+            packageId: 'PKG-1',
+            trackingNumberPerPackage: 'TRK-1',
+            shippedQuantity: 2,
+            packageStatus: 'Teillieferung',
+        }));
     });
 
     it('maps normalized filter params to externalOrderService.list', async () => {
