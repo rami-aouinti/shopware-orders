@@ -54,24 +54,6 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         this.loadStatistics();
     },
 
-    watch: {
-        selectedDomain() {
-            this.loadOrders();
-            this.loadStatistics();
-        },
-    },
-
-    computed: {
-        filteredOrders() {
-            const domainKey = normalizeDomainKey(this.selectedDomain);
-            if (!domainKey) {
-                return this.orders;
-            }
-
-            return this.orders.filter((order) => order.domainKey === domainKey);
-        },
-    },
-
     methods: {
         async loadStatistics() {
             return DEFAULT_STATISTICS_METRICS;
