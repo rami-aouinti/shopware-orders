@@ -1,5 +1,11 @@
 # External Orders (Externe Bestellungen)
 
+## Verbindliche Lieferzeit-Governance
+
+Für fachliche Lieferzeit-Entscheidungen (Kernregeln, Datenmodelle, API-Verträge) ist `LieferzeitenAdmin` führend.
+Die verbindliche Regelung steht in `../LieferzeitenAdmin/docs/plugin-governance.md`.
+
+
 ## Überblick
 Das Plugin **External Orders** erweitert die Shopware-Administration um eine zentrale Übersicht für externe Bestellungen aus Marktplätzen. Es bietet Kanalauswahl, Filter und eine Detailansicht, um Bestellungen schnell zu finden und zu analysieren.
 

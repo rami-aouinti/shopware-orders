@@ -1,5 +1,10 @@
 # LieferzeitenAdmin
 
+## 0. Verbindliche Governance
+
+Die verbindliche Zuständigkeit für Lieferzeit-Logik, Datenmodelle, APIs und pluginübergreifende Erweiterungen ist in `docs/plugin-governance.md` festgelegt.
+
+
 ## 1. Übersicht
 
 ### Ziel des Plugins
