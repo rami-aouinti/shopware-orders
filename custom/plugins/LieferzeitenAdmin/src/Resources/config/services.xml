@@ -70,7 +70,6 @@
         <service id="LieferzeitenAdmin\Service\ChannelDateSettingsProvider" />
         <service id="LieferzeitenAdmin\Service\ChannelPdmsThresholdResolver" />
         <service id="LieferzeitenAdmin\Service\BusinessDayDeliveryDateCalculator" />
-        <service id="LieferzeitenAdmin\Service\LatestDeadlineCalculator" />
         <service id="LieferzeitenAdmin\Service\ParcelStatusAggregationPolicy" />
         <service id="LieferzeitenAdmin\Service\Status8TrackingMappingProvider" />
         <service id="LieferzeitenAdmin\Service\PdmsLieferzeitenClient" />
@@ -132,7 +131,9 @@
 
         <service id="LieferzeitenAdmin\Service\LieferzeitenOrderOverviewService">
             <argument type="service" id="Doctrine\DBAL\Connection" />
-            <argument type="service" id="LieferzeitenAdmin\Service\LatestDeadlineCalculator" />
+            <argument type="service" id="LieferzeitenAdmin\Service\BaseDateResolver" />
+            <argument type="service" id="LieferzeitenAdmin\Service\ChannelDateSettingsProvider" />
+            <argument type="service" id="LieferzeitenAdmin\Service\BusinessDayDeliveryDateCalculator" />
         </service>
 
         <service id="LieferzeitenAdmin\Service\LieferzeitenOrderStatusWriteService">

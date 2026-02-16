@@ -56,7 +56,9 @@ class LieferzeitenImportService
         private readonly ChannelOrderAdapterRegistry $adapterRegistry,
         private readonly San6Client $san6Client,
         private readonly San6MatchingService $matchingService,
-        private readonly LatestDeadlineCalculator $latestDeadlineCalculator,
+        private readonly BaseDateResolver $baseDateResolver,
+        private readonly ChannelDateSettingsProvider $settingsProvider,
+        private readonly BusinessDayDeliveryDateCalculator $deliveryDateCalculator,
         private readonly Status8TrackingMappingProvider $status8TrackingMappingProvider,
         private readonly ParcelStatusAggregationPolicy $parcelStatusAggregationPolicy,
         private readonly LockFactory $lockFactory,
@@ -149,6 +151,8 @@ class LieferzeitenImportService
 
                     $matched = $this->matchingService->match($normalized, $san6);
 
+                    [$matched, $resolution] = $this->resolveAndApplyBusinessDates($matched, $channel);
+
                     $matched['sourceSystem'] = $this->contractValidator->resolveValueByPriority(
                         $matched['sourceSystem'] ?? $channel,
                         null,
@@ -156,7 +160,7 @@ class LieferzeitenImportService
                     ) ?? $channel;
 
                     if (($resolution['missingPaymentDate'] ?? false) === true) {
-                        $this->logger->warning('Missing payment date for prepayment order, latest deadlines remain unset.', [
+                        $this->logger->warning('Missing payment date for prepayment order, using order date fallback.', [
                             'externalOrderId' => $externalId,
                             'channel' => $channel,
                         ]);
@@ -177,8 +181,6 @@ class LieferzeitenImportService
                         is_string($matched['paketNumber'] ?? null) ? (string) $matched['paketNumber'] : null,
                         is_string($matched['salesChannelId'] ?? null) ? (string) $matched['salesChannelId'] : $existingPaket?->getSalesChannelId(),
                     );
-
-                    [$matched, $resolution] = $this->resolveAndApplyBusinessDates($matched);
 
                     $mappedStatus = $this->resolveMappedStatus($matched, $san6, $existingStatus);
 
@@ -240,33 +242,25 @@ class LieferzeitenImportService
 
     /**
      * @param array<string,mixed> $payload
-     * @return array{0: array<string,mixed>, 1: array{baseDateType: string, missingPaymentDate: bool}}
+     * @return array{0: array<string,mixed>, 1: array{baseDate: ?\DateTimeImmutable, baseDateType: string, missingPaymentDate: bool}}
      */
-    private function resolveAndApplyBusinessDates(array $payload): array
+    private function resolveAndApplyBusinessDates(array $payload, string $channel): array
     {
-        $calculation = $this->latestDeadlineCalculator->calculate(
-            $payload,
-            is_string($payload['salesChannelId'] ?? null) ? (string) $payload['salesChannelId'] : null,
-            (string) ($payload['sourceSystem'] ?? 'shopware'),
-        );
-
-        $resolution = [
-            'baseDateType' => $calculation['baseDateType'],
-            'missingPaymentDate' => $calculation['missingPaymentDate'],
-        ];
+        $resolution = $this->baseDateResolver->resolve($payload);
 
         $payload['baseDateType'] = $resolution['baseDateType'];
         $payload['paymentDate'] = $payload['paymentDate'] ?? null;
 
-        if ($calculation['latestShipping'] === null && $calculation['latestDelivery'] === null) {
+        if ($resolution['baseDate'] === null) {
             $payload['calculatedShippingDate'] = null;
             $payload['calculatedDeliveryDate'] = null;
 
             return [$payload, $resolution];
         }
 
-        $calculatedShippingDate = $calculation['latestShipping'];
-        $calculatedDeliveryDate = $calculation['latestDelivery'];
+        $settings = $this->settingsProvider->getForChannel($channel);
+        $calculatedShippingDate = $this->deliveryDateCalculator->calculate($resolution['baseDate'], $settings['shipping']);
+        $calculatedDeliveryDate = $this->deliveryDateCalculator->calculate($resolution['baseDate'], $settings['delivery']);
 
         $payload['calculatedShippingDate'] = $calculatedShippingDate?->format(DATE_ATOM);
         $payload['calculatedDeliveryDate'] = $calculatedDeliveryDate?->format(DATE_ATOM);
