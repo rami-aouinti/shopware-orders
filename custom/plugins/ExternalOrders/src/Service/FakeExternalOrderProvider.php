@@ -434,13 +434,6 @@ class FakeExternalOrderProvider
         ['code' => 'internal_unconfirmed', 'label' => 'INTERN (Nicht bestätigt)', 'color' => null],
     ];
 
-    private const DELIVERY_MODE_TYPES = [
-        'Unklar',
-        'Gesamt-Versand',
-        'Teillieferung',
-        'Trennung Auftragsposition',
-    ];
-
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -487,7 +480,6 @@ class FakeExternalOrderProvider
                 $orderId = 1008000 + ($index * 10) + $this->randomInt($id, 1, 9, 6);
                 $auftragNumber = 446000 + $index;
                 $isTestOrder = $this->randomInt($id, 0, 19, 7) === 0;
-                $shippingScenario = $this->buildShippingScenario($id, $status, $statusLabel, $totalItems, (string) $orderNumber);
 
                 $orders[] = [
                     'id' => $id,
@@ -510,25 +502,6 @@ class FakeExternalOrderProvider
                     'isTestOrder' => $isTestOrder,
                     'totalItems' => $totalItems,
                     'totalRevenue' => $totalRevenue,
-                    'zahlart' => $shippingScenario['paymentMethod'],
-                    'paymentMethod' => $shippingScenario['paymentMethod'],
-                    'paymentReceivedDate' => $shippingScenario['paymentReceivedDate'],
-                    'latestShippingDate' => $shippingScenario['latestShippingDate'],
-                    'shippingDate' => $shippingScenario['shippingDate'],
-                    'latestDeliveryDate' => $shippingScenario['latestDeliveryDate'],
-                    'deliveryDate' => $shippingScenario['deliveryDate'],
-                    'lieferterminLieferant' => $shippingScenario['lieferterminLieferant'],
-                    'lieferterminAuftragsbearbeitung' => $shippingScenario['lieferterminAuftragsbearbeitung'],
-                    'neuerLiefertermin' => $shippingScenario['neuerLiefertermin'],
-                    'sendenummer' => implode(', ', $shippingScenario['trackingNumbers']),
-                    'trackingNumber' => implode(', ', $shippingScenario['trackingNumbers']),
-                    'trackingNumbers' => $shippingScenario['trackingNumbers'],
-                    'trackingEvents' => $shippingScenario['trackingEvents'],
-                    'deliveryMode' => $shippingScenario['deliveryMode'],
-                    'packages' => $shippingScenario['packages'],
-                    'changedByUser' => sprintf('User %s', $this->pickValue(self::LAST_NAMES, $id, 44)),
-                    'kommentar' => sprintf('Demo-Kommentar für %s (%s)', $orderNumber, $shippingScenario['deliveryMode']),
-                    'positions' => $shippingScenario['positions'],
                 ];
             }
         }
@@ -558,9 +531,6 @@ class FakeExternalOrderProvider
             (string) ($order['channel'] ?? 'ebay'),
             (string) ($order['auftragNumber'] ?? 'N/A')
         );
-        $detailItems = $this->buildDetailItems($order, $detailTemplate['items']);
-        $trackingNumbers = $order['trackingNumbers'] ?? [];
-        $trackingEvents = $order['trackingEvents'] ?? [];
 
         return [
             'orderId' => (int) ($order['orderId'] ?? 0),
@@ -568,223 +538,14 @@ class FakeExternalOrderProvider
             'paymentMethod' => (string) $detailTemplate['paymentMethod'],
             'orderStatus' => $statusLabel,
             'orderStatusColor' => $statusColor,
-            'shippingMethod' => (string) ($order['deliveryMode'] ?? $detailTemplate['shippingMethod']),
+            'shippingMethod' => (string) $detailTemplate['shippingMethod'],
             'auftragNumber' => (int) ($order['auftragNumber'] ?? 0),
-            'items' => $detailItems,
+            'items' => $detailTemplate['items'],
             'totals' => $detailTemplate['totals'],
             'statusHistory' => $statusHistory,
-            'additional' => [
-                'status' => $statusLabel,
-                'statusColor' => $statusColor,
-                'latestShippingDate' => $order['latestShippingDate'] ?? null,
-                'shippingDate' => $order['shippingDate'] ?? null,
-                'latestDeliveryDate' => $order['latestDeliveryDate'] ?? null,
-                'deliveryDate' => $order['deliveryDate'] ?? null,
-                'lieferterminLieferant' => $order['lieferterminLieferant'] ?? null,
-                'lieferterminAuftragsbearbeitung' => $order['lieferterminAuftragsbearbeitung'] ?? null,
-                'zahlart' => $order['paymentMethod'] ?? null,
-                'paymentReceivedDate' => $order['paymentReceivedDate'] ?? null,
-                'deliveryMode' => $order['deliveryMode'] ?? null,
-                'kommentar' => $order['kommentar'] ?? null,
-            ],
-            'shipping' => [
-                'trackingNumbers' => is_array($trackingNumbers) ? $trackingNumbers : [],
-                'events' => is_array($trackingEvents) ? $trackingEvents : [],
-                'packages' => is_array($order['packages'] ?? null) ? $order['packages'] : [],
-            ],
             'customer' => array_merge($customer, ['emailAddress' => $email]),
             'billing' => $detailTemplate['billing'],
             'delivery' => $detailTemplate['delivery'],
-        ];
-    }
-
-    /**
-     * @param array<string, mixed> $order
-     * @param array<int, array<string, mixed>> $templateItems
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function buildDetailItems(array $order, array $templateItems): array
-    {
-        $positions = $order['positions'] ?? [];
-        if (!is_array($positions) || $positions === []) {
-            return $templateItems;
-        }
-
-        $items = [];
-        $templateCount = count($templateItems);
-
-        foreach ($positions as $index => $position) {
-            if (!is_array($position)) {
-                continue;
-            }
-
-            $templateItem = $templateItems[$templateCount > 0 ? ($index % $templateCount) : 0] ?? [];
-
-            $items[] = array_merge($templateItem, [
-                'positionId' => (string) ($position['positionId'] ?? ($index + 1)),
-                'positionNumber' => (string) ($position['positionNumber'] ?? ($index + 1)),
-                'name' => $position['productLabel'] ?? ($templateItem['productName'] ?? sprintf('Artikel %d', $index + 1)),
-                'productName' => $position['productLabel'] ?? ($templateItem['productName'] ?? sprintf('Artikel %d', $index + 1)),
-                'quantity' => (int) ($position['orderedQuantity'] ?? 1),
-                'orderedQuantity' => (int) ($position['orderedQuantity'] ?? 1),
-                'shippedQuantity' => (int) ($position['shippedQuantity'] ?? 0),
-                'lieferterminLieferant' => $position['lieferterminLieferant'] ?? ($order['lieferterminLieferant'] ?? null),
-                'newDeliveryDate' => $position['neuerLiefertermin'] ?? ($order['neuerLiefertermin'] ?? null),
-                'trackingNumber' => $position['trackingNumber'] ?? null,
-            ]);
-        }
-
-        return $items;
-    }
-
-    /**
-     * @return array{
-     *   paymentMethod:string,
-     *   paymentReceivedDate:string|null,
-     *   latestShippingDate:string,
-     *   shippingDate:string|null,
-     *   latestDeliveryDate:string,
-     *   deliveryDate:string|null,
-     *   lieferterminLieferant:string,
-     *   lieferterminAuftragsbearbeitung:string,
-     *   neuerLiefertermin:string,
-     *   trackingNumbers:array<int,string>,
-     *   trackingEvents:array<int,array<string,mixed>>,
-     *   deliveryMode:string,
-     *   packages:array<int,array<string,mixed>>,
-     *   positions:array<int,array<string,mixed>>
-     * }
-     */
-    private function buildShippingScenario(string $seed, string $statusCode, string $statusLabel, int $totalItems, string $orderNumber): array
-    {
-        $baseOrderDate = new \DateTimeImmutable($this->randomOrderDateIso8601($seed));
-        $paymentMethod = $this->pickValue(self::PAYMENT_METHODS, $seed, 41);
-        $paymentReceivedDate = $paymentMethod === 'Vorkasse'
-            ? $baseOrderDate->modify(sprintf('+%d day', $this->randomInt($seed, 1, 4, 42)))->format('Y-m-d')
-            : $baseOrderDate->format('Y-m-d');
-
-        $basisDate = $paymentMethod === 'Vorkasse' && $paymentReceivedDate !== null
-            ? new \DateTimeImmutable($paymentReceivedDate)
-            : $baseOrderDate;
-
-        $latestShippingDate = $basisDate->modify(sprintf('+%d day', $this->randomInt($seed, 1, 5, 43)))->format('Y-m-d');
-        $shippingDate = in_array($statusCode, ['shipped', 'order_completed'], true)
-            ? (new \DateTimeImmutable($latestShippingDate))->modify(sprintf('-%d day', $this->randomInt($seed, 0, 2, 45)))->format('Y-m-d')
-            : null;
-
-        $latestDeliveryDate = (new \DateTimeImmutable($latestShippingDate))
-            ->modify(sprintf('+%d day', $this->randomInt($seed, 1, 6, 46)))
-            ->format('Y-m-d');
-
-        $deliveryDate = $statusCode === 'order_completed'
-            ? (new \DateTimeImmutable($latestDeliveryDate))->modify(sprintf('-%d day', $this->randomInt($seed, 0, 2, 47)))->format('Y-m-d')
-            : null;
-
-        $lieferterminLieferant = (new \DateTimeImmutable($latestShippingDate))
-            ->modify(sprintf('+%d day', $this->randomInt($seed, 0, 3, 48)))
-            ->format('Y-m-d');
-        $lieferterminAuftragsbearbeitung = (new \DateTimeImmutable($lieferterminLieferant))
-            ->modify(sprintf('+%d day', $this->randomInt($seed, 1, 4, 49)))
-            ->format('Y-m-d');
-        $neuerLiefertermin = $lieferterminAuftragsbearbeitung;
-
-        $packageCount = $this->randomInt($seed, 1, 3, 50);
-        $deliveryMode = self::DELIVERY_MODE_TYPES[$this->randomInt($seed, 0, count(self::DELIVERY_MODE_TYPES) - 1, 51)] ?? self::DELIVERY_MODE_TYPES[0];
-
-        if ($packageCount === 1) {
-            $deliveryMode = 'Gesamt-Versand';
-        }
-
-        $trackingNumbers = [];
-        $trackingEvents = [];
-        $packages = [];
-
-        for ($packageIndex = 1; $packageIndex <= $packageCount; $packageIndex += 1) {
-            $carrier = $this->pickValue(['DHL', 'GLS', 'FIRST_MEDICAL'], $seed, 60 + $packageIndex);
-            $trackingNumber = $carrier === 'FIRST_MEDICAL'
-                ? 'Versand durch First Medical'
-                : sprintf('%s-%s-%02d', $carrier, $this->randomInt($seed, 100000, 999999, 70 + $packageIndex), $packageIndex);
-
-            $trackingNumbers[] = $trackingNumber;
-            $packageShippedAt = $shippingDate !== null
-                ? (new \DateTimeImmutable($shippingDate))->modify(sprintf('+%d day', $packageIndex - 1))->format('Y-m-d')
-                : null;
-            $packageDeliveredAt = $deliveryDate !== null
-                ? (new \DateTimeImmutable($deliveryDate))->modify(sprintf('+%d day', $packageIndex - 1))->format('Y-m-d')
-                : null;
-
-            $events = [
-                [
-                    'trackingNumber' => $trackingNumber,
-                    'eventTime' => $latestShippingDate . 'T08:30:00+00:00',
-                    'status' => 'in_transit',
-                    'description' => 'Paket im Start-Paketzentrum bearbeitet',
-                ],
-            ];
-
-            if ($packageDeliveredAt !== null) {
-                $events[] = [
-                    'trackingNumber' => $trackingNumber,
-                    'eventTime' => $packageDeliveredAt . 'T13:10:00+00:00',
-                    'status' => 'delivered',
-                    'description' => 'Paket zugestellt',
-                ];
-            }
-
-            foreach ($events as $event) {
-                $trackingEvents[] = $event;
-            }
-
-            $packages[] = [
-                'packageId' => sprintf('PKG-%s-%02d', $orderNumber, $packageIndex),
-                'trackingNumber' => $trackingNumber,
-                'status' => $packageDeliveredAt !== null ? 'delivered' : 'in_transit',
-                'shippingDate' => $packageShippedAt,
-                'deliveryDate' => $packageDeliveredAt,
-                'events' => $events,
-            ];
-        }
-
-        $positionCount = max(1, $this->randomInt($seed, 1, 3, 80));
-        $positions = [];
-
-        for ($positionIndex = 1; $positionIndex <= $positionCount; $positionIndex += 1) {
-            $orderedQuantity = max(1, intdiv($totalItems, $positionCount) + (($positionIndex === 1) ? ($totalItems % $positionCount) : 0));
-            $shippedQuantity = $statusCode === 'order_completed'
-                ? $orderedQuantity
-                : ($statusCode === 'shipped' ? max(1, min($orderedQuantity, $orderedQuantity - ($positionIndex % 2))) : 0);
-
-            $trackingReference = $trackingNumbers[($positionIndex - 1) % count($trackingNumbers)] ?? null;
-
-            $positions[] = [
-                'positionId' => sprintf('POS-%s-%02d', $orderNumber, $positionIndex),
-                'positionNumber' => (string) $positionIndex,
-                'productLabel' => sprintf('Demo Artikel %02d für %s', $positionIndex, $orderNumber),
-                'orderedQuantity' => $orderedQuantity,
-                'shippedQuantity' => $shippedQuantity,
-                'lieferterminLieferant' => $lieferterminLieferant,
-                'neuerLiefertermin' => $neuerLiefertermin,
-                'trackingNumber' => $trackingReference,
-                'deliveryMode' => $deliveryMode,
-            ];
-        }
-
-        return [
-            'paymentMethod' => $paymentMethod,
-            'paymentReceivedDate' => $paymentReceivedDate,
-            'latestShippingDate' => $latestShippingDate,
-            'shippingDate' => $shippingDate,
-            'latestDeliveryDate' => $latestDeliveryDate,
-            'deliveryDate' => $deliveryDate,
-            'lieferterminLieferant' => $lieferterminLieferant,
-            'lieferterminAuftragsbearbeitung' => $lieferterminAuftragsbearbeitung,
-            'neuerLiefertermin' => $neuerLiefertermin,
-            'trackingNumbers' => $trackingNumbers,
-            'trackingEvents' => $trackingEvents,
-            'deliveryMode' => $deliveryMode,
-            'packages' => $packages,
-            'positions' => $positions,
         ];
     }
 
