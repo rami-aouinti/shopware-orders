@@ -35,6 +35,12 @@ class ExternalOrderControllerTest extends TestCase
 
         $statusUpdateRoute = $reflection->getMethod('updateStatus')->getAttributes(Route::class)[0]->getArguments();
         static::assertSame('/api/_action/external-orders/status/{internalOrderId}', $statusUpdateRoute['path'] ?? null);
+
+        $commentUpdateRoute = $reflection->getMethod('updateComment')->getAttributes(Route::class)[0]->getArguments();
+        static::assertSame('/api/_action/external-orders/comment/{internalOrderId}', $commentUpdateRoute['path'] ?? null);
+
+        $commentHistoryRoute = $reflection->getMethod('commentHistory')->getAttributes(Route::class)[0]->getArguments();
+        static::assertSame('/api/_action/external-orders/comment-history/{internalOrderId}', $commentHistoryRoute['path'] ?? null);
     }
 
 
@@ -111,6 +117,68 @@ class ExternalOrderControllerTest extends TestCase
 
         static::assertSame(Response::HTTP_OK, $response->getStatusCode());
         static::assertSame('{"updated":1,"alreadyMarked":0,"notFound":0}', $response->getContent());
+    }
+
+
+
+    public function testUpdateCommentValidatesPositionId(): void
+    {
+        $externalOrderService = $this->createMock(ExternalOrderService::class);
+        $externalOrderService
+            ->expects($this->never())
+            ->method('updatePositionOrPackageComment');
+
+        $controller = new ExternalOrderController(
+            $externalOrderService,
+            $this->createMock(ExternalOrderTestDataService::class),
+            $this->createMock(ExternalOrderSyncService::class),
+            $this->createMock(TopmSan6OrderExportService::class),
+            $this->createMock(SupplierRequestTaskService::class),
+            $this->createMock(Connection::class),
+        );
+
+        $request = new Request(content: json_encode([
+            'comment' => 'x',
+        ], JSON_THROW_ON_ERROR));
+
+        $response = $controller->updateComment('order-id', $request, Context::createDefaultContext());
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
+    }
+
+    public function testCommentHistoryReturnsServicePayload(): void
+    {
+        $externalOrderService = $this->createMock(ExternalOrderService::class);
+        $externalOrderService
+            ->expects($this->once())
+            ->method('fetchCommentHistory')
+            ->with(
+                $this->isInstanceOf(Context::class),
+                'order-id',
+                'pos-1',
+                null,
+            )
+            ->willReturn([
+                ['changedBy' => 'user-1', 'oldComment' => '', 'newComment' => 'Neu', 'changedAt' => '2026-01-01 10:00:00.000', 'positionId' => 'pos-1', 'packageId' => null],
+            ]);
+
+        $controller = new ExternalOrderController(
+            $externalOrderService,
+            $this->createMock(ExternalOrderTestDataService::class),
+            $this->createMock(ExternalOrderSyncService::class),
+            $this->createMock(TopmSan6OrderExportService::class),
+            $this->createMock(SupplierRequestTaskService::class),
+            $this->createMock(Connection::class),
+        );
+
+        $request = new Request(query: [
+            'positionId' => 'pos-1',
+        ]);
+
+        $response = $controller->commentHistory('order-id', $request, Context::createDefaultContext());
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        static::assertStringContainsString('"changedBy":"user-1"', (string) $response->getContent());
     }
 
     public function testFileTransferRouteIsExplicitlyPublicWithoutAcl(): void

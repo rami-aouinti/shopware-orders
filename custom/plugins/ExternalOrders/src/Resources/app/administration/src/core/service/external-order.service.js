@@ -59,6 +59,27 @@ class ExternalOrderService extends ApiService {
 
 
 
+
+
+    async updateComment(orderId, payload) {
+        const response = await this.httpClient.post(`_action/${this.getApiBasePath()}/comment/${orderId}`, payload, {
+            headers: this.getBasicHeaders(),
+        });
+
+        const data = ApiService.handleResponse(response) ?? response?.data;
+        return data?.data ?? data;
+    }
+
+    async getCommentHistory(orderId, params) {
+        const response = await this.httpClient.get(`_action/${this.getApiBasePath()}/comment-history/${orderId}`, {
+            headers: this.getBasicHeaders(),
+            params,
+        });
+
+        const data = ApiService.handleResponse(response) ?? response?.data;
+        return data?.data ?? data;
+    }
+
     async markOrdersAsTest(orderIds) {
         const response = await this.httpClient.post(`_action/${this.getApiBasePath()}/mark-test`, {
             orderIds,

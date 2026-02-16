@@ -772,6 +772,7 @@
                                                     <th>Steuersatz des Artikels - Shopware</th>
                                                     <th>Bruttowert des Artikels - Shopware</th>
                                                     <th>Gesamtwert des Artikels - Shopware</th>
+                                                    <th>Kommentar</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -792,6 +793,46 @@
                                                     <td>{{ row.taxRate }}%</td>
                                                     <td>{{ formatCurrency(row.grossPrice) }}</td>
                                                     <td>{{ formatCurrency(row.totalPrice) }}</td>
+                                                    <td>
+                                                        <template v-if="isCommentRowEditing(row)">
+                                                            <sw-textarea-field
+                                                                v-model:value="commentDraft"
+                                                                class="external-orders__comment-textarea"
+                                                                placeholder="Kommentar eingeben"
+                                                            />
+                                                            <div class="external-orders__comment-actions">
+                                                                <sw-button size="small" variant="primary" :is-loading="isCommentSaving" @click="saveComment(row)">
+                                                                    Speichern
+                                                                </sw-button>
+                                                                <sw-button size="small" variant="secondary" @click="cancelCommentEditor">
+                                                                    Abbrechen
+                                                                </sw-button>
+                                                            </div>
+                                                            <div class="external-orders__comment-history">
+                                                                <p class="external-orders__comment-history-title">Historie</p>
+                                                                <div v-if="isCommentHistoryLoading">Lade Historie …</div>
+                                                                <ul v-else-if="commentHistoryEntries.length > 0" class="external-orders__comment-history-list">
+                                                                    <li v-for="(entry, historyIndex) in commentHistoryEntries" :key="`${row.rowKey}-history-${historyIndex}`">
+                                                                        <strong>{{ entry.changedBy }}</strong>
+                                                                        <span>{{ formatHistoryDate(entry.changedAt) }}</span>
+                                                                        <div>
+                                                                            <small>Alt:</small> {{ entry.oldComment || '—' }}
+                                                                        </div>
+                                                                        <div>
+                                                                            <small>Neu:</small> {{ entry.newComment || '—' }}
+                                                                        </div>
+                                                                    </li>
+                                                                </ul>
+                                                                <p v-else>Keine Historie vorhanden.</p>
+                                                            </div>
+                                                        </template>
+                                                        <template v-else>
+                                                            <div>{{ getRowComment(row) || '—' }}</div>
+                                                            <sw-button size="small" variant="secondary" @click="openCommentEditor(row)">
+                                                                Bearbeiten
+                                                            </sw-button>
+                                                        </template>
+                                                    </td>
                                                 </tr>
                                             </tbody>
                                         </table>

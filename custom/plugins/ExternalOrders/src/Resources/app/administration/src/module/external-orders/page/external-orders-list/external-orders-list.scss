@@ -761,6 +761,39 @@
         }
     }
 
+
+
+    &__comment-textarea {
+        margin-bottom: 8px;
+    }
+
+    &__comment-actions {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    &__comment-history {
+        padding: 8px;
+        border: 1px solid #e5eaf1;
+        border-radius: 6px;
+        background: #f8fafc;
+    }
+
+    &__comment-history-title {
+        margin: 0 0 6px;
+        font-weight: 600;
+    }
+
+    &__comment-history-list {
+        margin: 0;
+        padding-left: 16px;
+
+        li {
+            margin-bottom: 8px;
+        }
+    }
+
     &__totals {
         display: flex;
         flex-direction: column;

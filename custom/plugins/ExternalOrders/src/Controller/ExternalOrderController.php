@@ -7,6 +7,7 @@ use ExternalOrders\Service\ExternalOrderSyncService;
 use ExternalOrders\Service\ExternalOrderTestDataService;
 use ExternalOrders\Service\SupplierRequestTaskService;
 use ExternalOrders\Service\TopmSan6OrderExportService;
+use Shopware\Core\Framework\Api\Context\AdminApiSource;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -160,6 +161,83 @@ class ExternalOrderController extends AbstractController
         }
 
         return new JsonResponse($result);
+    }
+
+
+
+    #[Route(
+        path: '/api/_action/external-orders/comment/{internalOrderId}',
+        name: 'api.admin.external-orders.comment-update',
+        defaults: ['_acl' => ['admin']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function updateComment(string $internalOrderId, Request $request, Context $context): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        $positionId = trim((string) ($payload['positionId'] ?? ''));
+        $packageId = trim((string) ($payload['packageId'] ?? ''));
+        $comment = trim((string) ($payload['comment'] ?? ''));
+        $changedBy = trim((string) ($payload['changedBy'] ?? ''));
+
+        if ($positionId === '') {
+            return new JsonResponse(['message' => 'positionId ist erforderlich.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($changedBy === '') {
+            $source = $context->getSource();
+            if ($source instanceof AdminApiSource && $source->getUserId() !== null) {
+                $changedBy = $source->getUserId();
+            }
+        }
+
+        if ($changedBy === '') {
+            $changedBy = 'system';
+        }
+
+        try {
+            $result = $this->externalOrderService->updatePositionOrPackageComment(
+                $context,
+                $internalOrderId,
+                $positionId,
+                $packageId !== '' ? $packageId : null,
+                $comment,
+                $changedBy
+            );
+        } catch (\RuntimeException $exception) {
+            return new JsonResponse(['message' => $exception->getMessage()], Response::HTTP_NOT_FOUND);
+        }
+
+        return new JsonResponse($result);
+    }
+
+    #[Route(
+        path: '/api/_action/external-orders/comment-history/{internalOrderId}',
+        name: 'api.admin.external-orders.comment-history',
+        defaults: ['_acl' => ['admin']],
+        methods: [Request::METHOD_GET]
+    )]
+    public function commentHistory(string $internalOrderId, Request $request, Context $context): Response
+    {
+        $positionId = trim((string) $request->query->get('positionId', ''));
+        $packageId = trim((string) $request->query->get('packageId', ''));
+
+        if ($positionId === '') {
+            return new JsonResponse(['message' => 'positionId ist erforderlich.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $history = $this->externalOrderService->fetchCommentHistory(
+                $context,
+                $internalOrderId,
+                $positionId,
+                $packageId !== '' ? $packageId : null
+            );
+        } catch (\RuntimeException $exception) {
+            return new JsonResponse(['message' => $exception->getMessage()], Response::HTTP_NOT_FOUND);
+        }
+
+        return new JsonResponse(['history' => $history]);
     }
 
     #[Route(

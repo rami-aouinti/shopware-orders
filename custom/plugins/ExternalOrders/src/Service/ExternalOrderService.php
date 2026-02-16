@@ -11,6 +11,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -205,6 +206,133 @@ readonly class ExternalOrderService
             ],
             'aggregatedStatus' => $aggregatedStatus,
         ];
+    }
+
+
+
+    public function updatePositionOrPackageComment(
+        Context $context,
+        string $orderId,
+        string $positionId,
+        ?string $packageId,
+        string $newComment,
+        string $changedBy
+    ): array {
+        $criteria = new Criteria([$orderId]);
+        $entity = $this->orderRepository->search($criteria, $context)->first();
+        if ($entity === null) {
+            throw new \RuntimeException('Order not found.');
+        }
+
+        $metadataByOrderId = $this->fetchMetadataByOrderIds([$entity->getId()]);
+        $metadata = $metadataByOrderId[$entity->getId()] ?? null;
+        if ($metadata === null) {
+            throw new \RuntimeException('Order metadata not found.');
+        }
+
+        $payload = $metadata['rawPayload'] ?? [];
+        $detail = isset($payload['detail']) && is_array($payload['detail']) ? $payload['detail'] : [];
+        $items = isset($detail['items']) && is_array($detail['items']) ? $detail['items'] : [];
+
+        $match = $this->findCommentTargetIndex($items, $positionId, $packageId);
+        if ($match === null) {
+            throw new \RuntimeException('Position/package context not found.');
+        }
+
+        $itemIndex = $match['itemIndex'];
+        $oldComment = '';
+
+        if ($match['isPackage']) {
+            $packageIndex = $match['packageIndex'];
+            $oldComment = trim((string) (($items[$itemIndex]['packages'][$packageIndex]['comment'] ?? '')));
+            $items[$itemIndex]['packages'][$packageIndex]['comment'] = $newComment;
+        } else {
+            $oldComment = trim((string) (($items[$itemIndex]['comment'] ?? '')));
+            $items[$itemIndex]['comment'] = $newComment;
+        }
+
+        $detail['items'] = $items;
+        $payload['detail'] = $detail;
+
+        $now = new \DateTimeImmutable();
+
+        $this->connection->update('external_order_data', [
+            'raw_payload' => json_encode($payload, JSON_THROW_ON_ERROR),
+            'updated_at' => $now->format('Y-m-d H:i:s.v'),
+        ], ['id' => hex2bin($metadata['id'])]);
+
+        $historyId = Uuid::randomBytes();
+        $this->connection->insert('external_order_comment_history', [
+            'id' => $historyId,
+            'external_order_data_id' => hex2bin($metadata['id']),
+            'order_id' => hex2bin($entity->getId()),
+            'position_id' => $positionId,
+            'package_id' => $packageId,
+            'old_comment' => $oldComment,
+            'new_comment' => $newComment,
+            'changed_by' => $changedBy,
+            'created_at' => $now->format('Y-m-d H:i:s.v'),
+        ]);
+
+        return [
+            'orderId' => $orderId,
+            'positionId' => $positionId,
+            'packageId' => $packageId,
+            'oldComment' => $oldComment,
+            'newComment' => $newComment,
+            'changedBy' => $changedBy,
+            'changedAt' => $now->format(DATE_ATOM),
+        ];
+    }
+
+    /**
+     * @return array<int, array{changedBy:string, changedAt:string, oldComment:string, newComment:string, positionId:string, packageId:?string}>
+     */
+    public function fetchCommentHistory(Context $context, string $orderId, string $positionId, ?string $packageId): array
+    {
+        $criteria = new Criteria([$orderId]);
+        $entity = $this->orderRepository->search($criteria, $context)->first();
+        if ($entity === null) {
+            throw new \RuntimeException('Order not found.');
+        }
+
+        $packageClause = $packageId === null ? 'package_id IS NULL' : 'package_id = :packageId';
+        $parameters = [
+            'orderId' => hex2bin($entity->getId()),
+            'positionId' => $positionId,
+        ];
+        $types = [
+            'orderId' => \PDO::PARAM_LOB,
+            'positionId' => \PDO::PARAM_STR,
+        ];
+
+        if ($packageId !== null) {
+            $parameters['packageId'] = $packageId;
+            $types['packageId'] = \PDO::PARAM_STR;
+        }
+
+        $rows = $this->connection->fetchAllAssociative(
+            sprintf(
+                'SELECT changed_by, created_at, old_comment, new_comment, position_id, package_id
+                 FROM external_order_comment_history
+                 WHERE order_id = :orderId
+                   AND position_id = :positionId
+                   AND %s
+                 ORDER BY created_at DESC',
+                $packageClause
+            ),
+            $parameters,
+            $types
+        );
+
+        return array_map(static fn (array $row): array => [
+            'changedBy' => (string) ($row['changed_by'] ?? ''),
+            'changedAt' => (string) ($row['created_at'] ?? ''),
+            'oldComment' => (string) ($row['old_comment'] ?? ''),
+            'newComment' => (string) ($row['new_comment'] ?? ''),
+            'positionId' => (string) ($row['position_id'] ?? ''),
+            'packageId' => isset($row['package_id']) ? (string) $row['package_id'] : null,
+        ], $rows);
     }
 
     public function updateModifiableStatus(Context $context, string $orderId, string $targetStatus): array
@@ -650,11 +778,63 @@ readonly class ExternalOrderService
             $item['quantity'] = $orderedQuantity;
             $item['orderedQuantity'] = $orderedQuantity;
             $item['shippedQuantity'] = $shippedQuantity;
+            $item['comment'] = trim((string) ($item['comment'] ?? ''));
+
+            $packages = is_array($item['packages'] ?? null) ? $item['packages'] : [];
+            $item['packages'] = array_map(static function (mixed $package): array {
+                if (!is_array($package)) {
+                    return [];
+                }
+
+                $package['comment'] = trim((string) ($package['comment'] ?? ''));
+
+                return $package;
+            }, $packages);
 
             $normalizedItems[] = $item;
         }
 
         return $normalizedItems;
+    }
+
+
+
+    /**
+     * @param array<int, array<string, mixed>> $items
+     * @return array{itemIndex:int, packageIndex:int|null, isPackage:bool}|null
+     */
+    private function findCommentTargetIndex(array $items, string $positionId, ?string $packageId): ?array
+    {
+        foreach ($items as $itemIndex => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $resolvedPositionId = trim((string) ($item['positionId'] ?? $item['id'] ?? $item['lineItemId'] ?? ''));
+            if ($resolvedPositionId !== $positionId) {
+                continue;
+            }
+
+            if ($packageId === null) {
+                return ['itemIndex' => $itemIndex, 'packageIndex' => null, 'isPackage' => false];
+            }
+
+            $packages = is_array($item['packages'] ?? null) ? $item['packages'] : [];
+            foreach ($packages as $packageIndex => $package) {
+                if (!is_array($package)) {
+                    continue;
+                }
+
+                $resolvedPackageId = trim((string) ($package['packageId'] ?? $package['id'] ?? $package['trackingNumber'] ?? ''));
+                if ($resolvedPackageId === $packageId) {
+                    return ['itemIndex' => $itemIndex, 'packageIndex' => $packageIndex, 'isPackage' => true];
+                }
+            }
+
+            return null;
+        }
+
+        return null;
     }
 
     private function countDetailItems(?array $detail): int

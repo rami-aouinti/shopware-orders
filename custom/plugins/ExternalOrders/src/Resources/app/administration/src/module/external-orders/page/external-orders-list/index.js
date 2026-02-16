@@ -112,6 +112,11 @@ Component.register('external-orders-list', {
             selectedOrders: [],
             showDetailModal: false,
             showTestMarkingModal: false,
+            activeCommentRowKey: null,
+            commentDraft: '',
+            commentHistoryEntries: [],
+            isCommentHistoryLoading: false,
+            isCommentSaving: false,
             dateFilters: {
                 start: null,
                 end: null,
@@ -718,7 +723,137 @@ Component.register('external-orders-list', {
         closeDetail() {
             this.showDetailModal = false;
             this.selectedOrder = null;
+            this.activeCommentRowKey = null;
+            this.commentDraft = '';
+            this.commentHistoryEntries = [];
         },
+
+        getRowComment(row) {
+            return String(row?.comment ?? '').trim();
+        },
+        isCommentRowEditing(row) {
+            return this.activeCommentRowKey === row?.rowKey;
+        },
+        async openCommentEditor(row) {
+            this.activeCommentRowKey = row?.rowKey ?? null;
+            this.commentDraft = this.getRowComment(row);
+            await this.loadCommentHistory(row);
+        },
+        cancelCommentEditor() {
+            this.activeCommentRowKey = null;
+            this.commentDraft = '';
+            this.commentHistoryEntries = [];
+        },
+        async saveComment(row) {
+            if (!this.selectedOrder?.id || !row?.positionId || this.isCommentSaving) {
+                return;
+            }
+
+            this.isCommentSaving = true;
+
+            try {
+                const result = await this.externalOrderService.updateComment(this.selectedOrder.id, {
+                    positionId: row.positionId,
+                    packageId: row.rowType === 'package' ? row.packageId : null,
+                    comment: this.commentDraft,
+                });
+
+                this.applyCommentUpdateToSelectedOrder(row, result?.newComment ?? this.commentDraft);
+                await this.loadCommentHistory(row);
+
+                this.createNotificationSuccess({
+                    title: 'Kommentar gespeichert',
+                    message: 'Der Kommentar wurde erfolgreich aktualisiert.',
+                });
+            } catch (error) {
+                this.createNotificationError({
+                    title: 'Kommentar konnte nicht gespeichert werden',
+                    message: error?.message || 'Bitte später erneut versuchen.',
+                });
+            } finally {
+                this.isCommentSaving = false;
+            }
+        },
+        async loadCommentHistory(row) {
+            if (!this.selectedOrder?.id || !row?.positionId) {
+                this.commentHistoryEntries = [];
+                return;
+            }
+
+            this.isCommentHistoryLoading = true;
+
+            try {
+                const response = await this.externalOrderService.getCommentHistory(this.selectedOrder.id, {
+                    positionId: row.positionId,
+                    packageId: row.rowType === 'package' ? row.packageId : null,
+                });
+                this.commentHistoryEntries = Array.isArray(response?.history) ? response.history : [];
+            } catch (error) {
+                this.commentHistoryEntries = [];
+                this.createNotificationError({
+                    title: 'Kommentarthistorie konnte nicht geladen werden',
+                    message: error?.message || 'Bitte später erneut versuchen.',
+                });
+            } finally {
+                this.isCommentHistoryLoading = false;
+            }
+        },
+        applyCommentUpdateToSelectedOrder(row, newComment) {
+            if (!Array.isArray(this.selectedOrder?.items)) {
+                return;
+            }
+
+            const normalizedComment = String(newComment ?? '');
+            const updatedItems = this.selectedOrder.items.map((item) => {
+                if (!item || item.positionId !== row.positionId) {
+                    return item;
+                }
+
+                if (row.rowType === 'package') {
+                    const packages = Array.isArray(item.packages)
+                        ? item.packages.map((pkg) => {
+                            const pkgId = String(pkg?.packageId ?? pkg?.id ?? '');
+                            if (pkgId !== String(row.packageId ?? '')) {
+                                return pkg;
+                            }
+
+                            return {
+                                ...pkg,
+                                comment: normalizedComment,
+                            };
+                        })
+                        : [];
+
+                    return {
+                        ...item,
+                        packages,
+                    };
+                }
+
+                return {
+                    ...item,
+                    comment: normalizedComment,
+                };
+            });
+
+            this.selectedOrder = {
+                ...this.selectedOrder,
+                items: updatedItems,
+            };
+        },
+        formatHistoryDate(value) {
+            if (!value) {
+                return '-';
+            }
+
+            const parsed = this.parseOrderDate(value);
+            if (Number.isNaN(parsed)) {
+                return String(value);
+            }
+
+            return new Date(parsed).toLocaleString('de-DE');
+        },
+
         normalizeOrderDetail(order) {
             const base = order ?? {};
             const billing = base.billing ?? {};
@@ -759,6 +894,7 @@ Component.register('external-orders-list', {
                         taxRate: Number(item?.taxRate ?? 19),
                         grossPrice: Number(item?.grossPrice ?? item?.finalPrice ?? 0),
                         totalPrice: Number(item?.totalPrice ?? item?.finalPrice ?? 0),
+                        comment: String(item?.comment ?? ''),
                     };
                 })
                 : [];
@@ -975,6 +1111,7 @@ Component.register('external-orders-list', {
                     ?? `Paket ${packageIndex + 1}`,
                 shippedQuantity: Number(pkg?.shippedQuantity ?? pkg?.quantity ?? 0),
                 orderedQuantity: Number(pkg?.orderedQuantity ?? item?.orderedQuantity ?? item?.quantity ?? 0),
+                comment: String(pkg?.comment ?? ''),
             }));
         },
         buildDeliveryRows(items, orderId) {
@@ -1024,6 +1161,7 @@ Component.register('external-orders-list', {
                 taxRate: Number(item?.taxRate ?? 0),
                 grossPrice: Number(item?.grossPrice ?? 0),
                 totalPrice: Number(item?.totalPrice ?? 0),
+                comment: String(item?.comment ?? ''),
             };
         },
         createPackageDeliveryRow(item, pkg, orderId, positionId, packageIndex) {
@@ -1048,6 +1186,7 @@ Component.register('external-orders-list', {
                 taxRate: Number(item?.taxRate ?? 0),
                 grossPrice: Number(item?.grossPrice ?? 0),
                 totalPrice: Number(item?.totalPrice ?? 0),
+                comment: String(pkg?.comment ?? ''),
             };
         },
         deliveryRowStatus(row) {
