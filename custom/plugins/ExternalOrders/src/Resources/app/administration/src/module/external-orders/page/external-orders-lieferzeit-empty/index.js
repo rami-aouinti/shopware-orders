@@ -158,7 +158,7 @@ export const tableColumnsMeta = Object.freeze([
     },
     {
         key: 'shippedQuantity',
-        label: 'Versandmenge je Paket',
+        label: 'Versandmenge je Paket (versendet/bestellt)',
         group: 'Lieferung',
         filterable: true,
         filterType: 'text',
@@ -642,7 +642,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             return [];
         },
 
-        normalizePackageStatus(rawStatus, packageCount, shippedQuantity, orderedQuantity) {
+        normalizePackageStatus(rawStatus, packageCount, shippedQuantity, orderedQuantity, totalShippedQuantity, hasPackageAssignment) {
             const normalizedRawStatus = String(rawStatus || '').trim().toLowerCase();
             const statusByRawValue = {
                 unklar: 'Unklar',
@@ -660,16 +660,29 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 return statusByRawValue[normalizedRawStatus];
             }
 
-            if (packageCount > 1) {
+            const ordered = Number(orderedQuantity);
+            const shipped = Number(shippedQuantity);
+            const shippedTotal = Number(totalShippedQuantity);
+            const normalizedPackageCount = Number(packageCount);
+
+            if (!hasPackageAssignment || !Number.isFinite(ordered) || ordered <= 0) {
+                return 'Unklar';
+            }
+
+            if (Number.isFinite(shippedTotal) && shippedTotal > 0 && shippedTotal < ordered) {
                 return 'Trennung Auftragsposition';
             }
 
-            if (orderedQuantity > 0 && shippedQuantity >= orderedQuantity) {
+            if (Number.isFinite(shippedTotal) && shippedTotal >= ordered) {
+                if (normalizedPackageCount > 1) {
+                    return 'Teillieferung';
+                }
+
                 return 'Gesamt-Versand';
             }
 
-            if (shippedQuantity > 0) {
-                return 'Teillieferung';
+            if (Number.isFinite(shipped) && shipped > 0 && shipped < ordered) {
+                return 'Trennung Auftragsposition';
             }
 
             return 'Unklar';
@@ -703,29 +716,39 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                         ? position.packages
                         : (Array.isArray(position?.packageItems) ? position.packageItems : []);
                     const orderedQuantity = Number(position?.orderedQuantity ?? position?.quantity ?? 0);
+                    const hasPackageAssignment = positionPackages.length > 0;
+                    const totalShippedQuantity = hasPackageAssignment
+                        ? positionPackages.reduce((total, pkg) => total + Number(pkg?.shippedQuantity ?? pkg?.quantity ?? 0), 0)
+                        : Number(position?.shippedQuantity ?? order?.shippedQuantity ?? 0);
 
-                    const positionRow = {
-                        ...order,
-                        rowId: `${orderId}-${positionId}-position`,
-                        rowType: 'position',
-                        positionId,
-                        positionNumber: position?.positionNumber ?? `${positionIndex + 1}`,
-                        productLabel: position?.productLabel ?? position?.label ?? position?.name ?? '',
-                        lieferterminLieferant: position?.lieferterminLieferant ?? order?.lieferterminLieferant,
-                        shippingDate: position?.shippingDate ?? order?.shippingDate ?? '',
-                        deliveryDate: position?.deliveryDate ?? order?.deliveryDate ?? '',
-                        orderedQuantity,
-                        packageId: '',
-                        trackingNumberPerPackage: '',
-                        shippedQuantity: '',
-                        packageStatus: '',
-                    };
-
-                    if (!positionPackages.length) {
-                        return [positionRow];
+                    if (!hasPackageAssignment) {
+                        return [{
+                            ...order,
+                            rowId: `${orderId}-${positionId}-single`,
+                            rowType: 'position-package',
+                            positionId,
+                            positionNumber: position?.positionNumber ?? `${positionIndex + 1}`,
+                            productLabel: position?.productLabel ?? position?.label ?? position?.name ?? '',
+                            lieferterminLieferant: position?.lieferterminLieferant ?? order?.lieferterminLieferant,
+                            shippingDate: position?.shippingDate ?? order?.shippingDate ?? '',
+                            deliveryDate: position?.deliveryDate ?? order?.deliveryDate ?? '',
+                            packageId: '',
+                            trackingNumberPerPackage: '',
+                            orderedQuantity,
+                            shippedQuantity: totalShippedQuantity,
+                            shippedOrderedRatio: `${totalShippedQuantity}/${orderedQuantity || 0}`,
+                            packageStatus: this.normalizePackageStatus(
+                                position?.packageStatus ?? order?.packageStatus,
+                                1,
+                                totalShippedQuantity,
+                                orderedQuantity,
+                                totalShippedQuantity,
+                                false,
+                            ),
+                        }];
                     }
 
-                    const packageRows = positionPackages.map((pkg, packageIndex) => {
+                    return positionPackages.map((pkg, packageIndex) => {
                         const packageId = pkg?.packageId ?? pkg?.id ?? pkg?.packageNumber ?? `PKG-${packageIndex + 1}`;
                         const shippedQuantity = Number(pkg?.shippedQuantity ?? pkg?.quantity ?? 0);
                         const packageTrackingNumber = pkg?.trackingNumberPerPackage
@@ -745,18 +768,19 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                             trackingNumberPerPackage: packageTrackingNumber,
                             orderedQuantity,
                             shippedQuantity,
+                            shippedOrderedRatio: `${shippedQuantity}/${orderedQuantity || 0}`,
                             packageStatus: this.normalizePackageStatus(
                                 pkg?.packageStatus ?? pkg?.status,
                                 positionPackages.length,
                                 shippedQuantity,
                                 orderedQuantity,
+                                totalShippedQuantity,
+                                true,
                             ),
                             shippingDate: pkg?.shippingDate ?? pkg?.versandDatum ?? position?.shippingDate ?? order?.shippingDate ?? '',
                             deliveryDate: pkg?.deliveryDate ?? pkg?.lieferDatum ?? position?.deliveryDate ?? order?.deliveryDate ?? '',
                         };
                     });
-
-                    return [positionRow, ...packageRows];
                 });
             });
         },
@@ -991,8 +1015,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 sendenummer: order?.sendenummer,
                 packageId: order?.packageId,
                 trackingNumberPerPackage: order?.trackingNumberPerPackage,
-                orderedQuantity: order?.orderedQuantity ?? order?.quantity,
-                shippedQuantity: order?.shippedQuantity,
+                shippedQuantity: order?.shippedOrderedRatio ?? order?.shippedQuantity,
                 shippingDate: order?.shippingDate,
                 deliveryDate: order?.deliveryDate,
                 packageStatus: order?.packageStatus,
