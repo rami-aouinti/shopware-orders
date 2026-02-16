@@ -26,6 +26,15 @@ Module.register('external-orders', {
                 privilege: 'admin',
             },
         },
+        lieferzeitLegacy: {
+            path: '/external/orders/lieferzeit',
+            redirect: {
+                name: 'external.orders.lieferzeit',
+            },
+            meta: {
+                privilege: 'admin',
+            },
+        },
     },
 
     navigation: [
