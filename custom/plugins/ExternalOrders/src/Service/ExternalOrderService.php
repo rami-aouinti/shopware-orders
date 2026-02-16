@@ -4,20 +4,31 @@ namespace ExternalOrders\Service;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 readonly class ExternalOrderService
 {
     public function __construct(
         private EntityRepository $orderRepository,
         private Connection $connection,
+        private ?HttpClientInterface $httpClient = null,
+        private ?SystemConfigService $systemConfigService = null,
+        private ?LoggerInterface $logger = null,
     ) {
     }
+
+    private const MODIFIABLE_STATUS_TARGETS = [
+        'versendet' => 'Versendet',
+        'bestellung_abgeschlossen' => 'Bestellung abgeschlossen',
+    ];
 
     public function fetchOrders(
         Context $context,
@@ -130,6 +141,104 @@ readonly class ExternalOrderService
         }
 
         return $this->mapOrderToDetail($entity, $externalId, $metadata);
+    }
+
+    public function fetchOrderStatuses(Context $context, string $orderId): ?array
+    {
+        $criteria = new Criteria([$orderId]);
+        $entity = $this->orderRepository->search($criteria, $context)->first();
+        if ($entity === null) {
+            return null;
+        }
+
+        $metadataByOrderId = $this->fetchMetadataByOrderIds([$entity->getId()]);
+        $metadata = $metadataByOrderId[$entity->getId()] ?? null;
+        if ($metadata === null) {
+            return null;
+        }
+
+        $payload = $metadata['rawPayload'] ?? [];
+        $trackingEvents = $this->extractTrackingEvents($payload);
+        $trackingAggregation = $this->aggregateTrackingEvents($trackingEvents);
+
+        $shopwareStatus = $this->extractStatusFromSource($payload, ['shopwareStatus', 'shopware_status', 'shopware']);
+        $san6Status = $this->extractStatusFromSource($payload, ['san6Status', 'san6_status', 'ordersStatusName', 'statusLabel']);
+        $trackingStatus = $trackingAggregation['trackingStatus'];
+        $aggregatedStatus = $this->resolveAggregatedBusinessStatus($shopwareStatus, $san6Status, $trackingStatus, $trackingAggregation['allPackagesDelivered']);
+
+        return [
+            'internalOrderId' => $orderId,
+            'externalId' => $metadata['externalId'],
+            'channel' => $metadata['channel'],
+            'sources' => [
+                'shopware' => $shopwareStatus,
+                'san6' => $san6Status,
+                'tracking' => $trackingStatus,
+            ],
+            'tracking' => [
+                'events' => $trackingEvents,
+                'allPackagesDelivered' => $trackingAggregation['allPackagesDelivered'],
+                'deliveredPackages' => $trackingAggregation['deliveredPackages'],
+                'totalPackages' => $trackingAggregation['totalPackages'],
+            ],
+            'aggregatedStatus' => $aggregatedStatus,
+        ];
+    }
+
+    public function updateModifiableStatus(Context $context, string $orderId, string $targetStatus): array
+    {
+        $normalizedTarget = strtolower(str_replace([' ', '-'], '_', trim($targetStatus)));
+        $businessTarget = self::MODIFIABLE_STATUS_TARGETS[$normalizedTarget] ?? null;
+
+        if ($businessTarget === null) {
+            throw new \InvalidArgumentException('Unsupported status target. Allowed: Versendet, Bestellung abgeschlossen.');
+        }
+
+        $statuses = $this->fetchOrderStatuses($context, $orderId);
+        if ($statuses === null) {
+            throw new \RuntimeException('Order not found.');
+        }
+
+        if ($businessTarget === 'Bestellung abgeschlossen' && ($statuses['tracking']['allPackagesDelivered'] ?? false) !== true) {
+            throw new \InvalidArgumentException('Bestellung abgeschlossen is only allowed when all packages are delivered.');
+        }
+
+        $metadataByOrderId = $this->fetchMetadataByOrderIds([$orderId]);
+        $metadata = $metadataByOrderId[$orderId] ?? null;
+        if ($metadata === null) {
+            throw new \RuntimeException('Order metadata not found.');
+        }
+
+        $payload = $metadata['rawPayload'];
+        $payload['status'] = $this->normalizeStatusCode($businessTarget);
+        $payload['statusLabel'] = $businessTarget;
+        $payload['ordersStatusName'] = $businessTarget;
+        $payload['aggregatedStatus'] = $businessTarget;
+        $payload['statusSources'] = [
+            'shopware' => $statuses['sources']['shopware'] ?? null,
+            'san6' => $statuses['sources']['san6'] ?? null,
+            'tracking' => $statuses['sources']['tracking'] ?? null,
+        ];
+
+        if (isset($payload['detail']) && is_array($payload['detail'])) {
+            $payload['detail']['additional']['status'] = $businessTarget;
+        }
+
+        $this->connection->update('external_order_data', [
+            'raw_payload' => json_encode($payload, JSON_THROW_ON_ERROR),
+            'source_status' => $this->normalizeStatusCode($businessTarget),
+            'updated_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s.v'),
+        ], ['id' => hex2bin($metadata['id'])]);
+
+        $propagation = $this->propagateStatusUpdate($metadata['externalId'], $businessTarget, $statuses);
+
+        return [
+            'internalOrderId' => $orderId,
+            'externalId' => $metadata['externalId'],
+            'status' => $businessTarget,
+            'propagation' => $propagation,
+            'tracking' => $statuses['tracking'],
+        ];
     }
 
     /**
@@ -466,6 +575,194 @@ readonly class ExternalOrderService
         }
 
         return $total;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function extractTrackingEvents(array $payload): array
+    {
+        $candidates = [
+            $payload['trackingEvents'] ?? null,
+            $payload['tracking']['events'] ?? null,
+            $payload['detail']['shipping']['trackingEvents'] ?? null,
+            $payload['detail']['shipping']['events'] ?? null,
+            $payload['detail']['shipping']['packages'] ?? null,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (!is_array($candidate)) {
+                continue;
+            }
+
+            if (isset($candidate[0]) && is_array($candidate[0])) {
+                if (isset($candidate[0]['events']) && is_array($candidate[0]['events'])) {
+                    $events = [];
+                    foreach ($candidate as $package) {
+                        if (!is_array($package) || !is_array($package['events'] ?? null)) {
+                            continue;
+                        }
+                        foreach ($package['events'] as $event) {
+                            if (is_array($event)) {
+                                $events[] = $event;
+                            }
+                        }
+                    }
+
+                    return $events;
+                }
+
+                return array_values(array_filter($candidate, static fn (mixed $item): bool => is_array($item)));
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $trackingEvents
+     *
+     * @return array{trackingStatus:?string, allPackagesDelivered:bool, deliveredPackages:int, totalPackages:int}
+     */
+    private function aggregateTrackingEvents(array $trackingEvents): array
+    {
+        if ($trackingEvents === []) {
+            return [
+                'trackingStatus' => null,
+                'allPackagesDelivered' => false,
+                'deliveredPackages' => 0,
+                'totalPackages' => 0,
+            ];
+        }
+
+        $perPackageDelivered = [];
+        $fallbackDelivered = 0;
+
+        foreach ($trackingEvents as $event) {
+            $status = strtolower((string) ($event['status'] ?? $event['statusCode'] ?? $event['event'] ?? ''));
+            $normalizedStatus = str_replace([' ', '-'], '_', $status);
+            $packageKey = (string) ($event['trackingNumber'] ?? $event['packageId'] ?? '');
+            $isDelivered = in_array($normalizedStatus, ['delivered', 'zugestellt', 'livree'], true);
+
+            if ($packageKey !== '') {
+                $perPackageDelivered[$packageKey] = ($perPackageDelivered[$packageKey] ?? false) || $isDelivered;
+            } elseif ($isDelivered) {
+                $fallbackDelivered++;
+            }
+        }
+
+        $totalPackages = count($perPackageDelivered);
+        $deliveredPackages = count(array_filter($perPackageDelivered, static fn (bool $delivered): bool => $delivered));
+
+        if ($totalPackages === 0) {
+            $totalPackages = max(1, $fallbackDelivered);
+            $deliveredPackages = $fallbackDelivered;
+        }
+
+        $allPackagesDelivered = $totalPackages > 0 && $deliveredPackages === $totalPackages;
+
+        return [
+            'trackingStatus' => $allPackagesDelivered ? 'delivered' : 'in_transit',
+            'allPackagesDelivered' => $allPackagesDelivered,
+            'deliveredPackages' => $deliveredPackages,
+            'totalPackages' => $totalPackages,
+        ];
+    }
+
+    /**
+     * @param array<int, string> $candidateKeys
+     */
+    private function extractStatusFromSource(array $payload, array $candidateKeys): ?string
+    {
+        foreach ($candidateKeys as $key) {
+            $value = $payload[$key] ?? null;
+            if (is_string($value) && trim($value) !== '') {
+                return trim($value);
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveAggregatedBusinessStatus(?string $shopwareStatus, ?string $san6Status, ?string $trackingStatus, bool $allPackagesDelivered): string
+    {
+        if ($allPackagesDelivered) {
+            return 'Bestellung abgeschlossen';
+        }
+
+        $normalizedCandidates = array_map(
+            static fn (?string $status): string => strtolower(str_replace([' ', '-'], '_', (string) $status)),
+            [$trackingStatus, $shopwareStatus, $san6Status]
+        );
+
+        if (in_array('shipped', $normalizedCandidates, true) || in_array('versendet', $normalizedCandidates, true) || in_array('in_transit', $normalizedCandidates, true)) {
+            return 'Versendet';
+        }
+
+        return 'Bezahlt / in Bearbeitung';
+    }
+
+    private function normalizeStatusCode(string $statusLabel): string
+    {
+        return match ($statusLabel) {
+            'Versendet' => 'shipped',
+            'Bestellung abgeschlossen' => 'completed',
+            default => 'processing',
+        };
+    }
+
+    /**
+     * @return array<string, array{success:bool,message:string|null}>
+     */
+    private function propagateStatusUpdate(string $externalId, string $status, array $statuses): array
+    {
+        $results = [
+            'shopware' => ['success' => false, 'message' => 'Not configured'],
+            'gambio' => ['success' => false, 'message' => 'Not configured'],
+        ];
+
+        if ($this->httpClient === null || $this->systemConfigService === null) {
+            $results['shopware']['message'] = 'HTTP/SystemConfig service unavailable';
+            $results['gambio']['message'] = 'HTTP/SystemConfig service unavailable';
+
+            return $results;
+        }
+
+        foreach (['shopware', 'gambio'] as $target) {
+            $url = trim((string) ($this->systemConfigService->get(sprintf('ExternalOrders.config.externalOrdersStatusUpdateUrl%s', ucfirst($target))) ?? ''));
+            $token = trim((string) ($this->systemConfigService->get(sprintf('ExternalOrders.config.externalOrdersStatusUpdateToken%s', ucfirst($target))) ?? ''));
+
+            if ($url === '') {
+                continue;
+            }
+
+            try {
+                $headers = ['Content-Type' => 'application/json'];
+                if ($token !== '') {
+                    $headers['Authorization'] = sprintf('Bearer %s', $token);
+                }
+
+                $this->httpClient->request('POST', $url, [
+                    'headers' => $headers,
+                    'json' => [
+                        'externalId' => $externalId,
+                        'status' => $status,
+                        'tracking' => $statuses['tracking'] ?? [],
+                    ],
+                ]);
+
+                $results[$target] = ['success' => true, 'message' => null];
+            } catch (\Throwable $exception) {
+                $results[$target] = ['success' => false, 'message' => $exception->getMessage()];
+                $this->logger?->warning('External order status propagation failed.', [
+                    'target' => $target,
+                    'externalId' => $externalId,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        return $results;
     }
 
     private function resolveSortField(?string $sort): string

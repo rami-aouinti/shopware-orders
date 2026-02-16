@@ -49,6 +49,55 @@ const DATE_COLUMN_KEYS = COLUMN_DEFINITIONS
     .filter((column) => column.type === 'date')
     .map((column) => column.key);
 
+const BUSINESS_STATUS_LABELS = Object.freeze({
+    processing: 'Bezahlt / in Bearbeitung',
+    shipped: 'Versendet',
+    completed: 'Bestellung abgeschlossen',
+    cancelled: 'Stornierung abgeschlossen',
+    test: 'Test',
+});
+
+const STATUS_SOURCE_TO_BUSINESS_STATUS = Object.freeze({
+    open: 'processing',
+    in_progress: 'processing',
+    paid: 'processing',
+    partially_shipped: 'shipped',
+    shipped: 'shipped',
+    completed: 'completed',
+    done: 'completed',
+    cancelled: 'cancelled',
+    versendet: 'shipped',
+    versandbereit: 'processing',
+    bestellung_abgeschlossen: 'completed',
+    bezahlt: 'processing',
+    in_transit: 'shipped',
+    out_for_delivery: 'shipped',
+    delivered: 'completed',
+    test: 'test',
+});
+
+function normalizeBusinessStatus(statusValue) {
+    const normalizedSourceStatus = String(statusValue ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/[\s-]+/g, '_');
+
+    if (!normalizedSourceStatus) {
+        return { code: 'processing', label: BUSINESS_STATUS_LABELS.processing };
+    }
+
+    const businessStatus = STATUS_SOURCE_TO_BUSINESS_STATUS[normalizedSourceStatus] ?? null;
+
+    if (!businessStatus) {
+        return { code: 'processing', label: BUSINESS_STATUS_LABELS.processing };
+    }
+
+    return {
+        code: businessStatus,
+        label: BUSINESS_STATUS_LABELS[businessStatus] ?? BUSINESS_STATUS_LABELS.processing,
+    };
+}
+
 const createDefaultFilters = () => ({
     bestellnummer: '',
     san6: '',
@@ -304,12 +353,19 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             const trackingNumbers = Array.isArray(order?.trackingNumbers)
                 ? order.trackingNumbers.filter((trackingNumber) => String(trackingNumber || '').trim() !== '')
                 : [];
+            const normalizedBusinessStatus = normalizeBusinessStatus(
+                order?.status
+                ?? order?.statusLabel
+                ?? order?.ordersStatusName
+                ?? order?.aggregatedStatus
+            );
 
             return {
                 ...order,
                 bestellnummer: order?.bestellnummer ?? order?.orderNumber ?? order?.orderId ?? '',
                 san6: order?.san6 ?? order?.san6OrderNumber ?? order?.orderReference ?? order?.auftragNumber ?? '',
-                status: order?.status ?? order?.statusLabel ?? order?.ordersStatusName ?? '',
+                status: normalizedBusinessStatus.label,
+                statusCode: normalizedBusinessStatus.code,
                 user: order?.user ?? order?.customerName ?? order?.customersName ?? '',
                 sendenummer: order?.sendenummer ?? order?.trackingNumber ?? trackingNumbers.join(', '),
                 domain: order?.domain ?? order?.sourceSystem ?? order?.channel ?? '',

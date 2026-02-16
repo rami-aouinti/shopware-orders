@@ -75,6 +75,49 @@ class ExternalOrderController extends AbstractController
     }
 
     #[Route(
+        path: '/api/_action/external-orders/status/{internalOrderId}',
+        name: 'api.admin.external-orders.status',
+        defaults: ['_acl' => ['admin']],
+        methods: [Request::METHOD_GET]
+    )]
+    public function status(string $internalOrderId, Context $context): Response
+    {
+        $status = $this->externalOrderService->fetchOrderStatuses($context, $internalOrderId);
+
+        if ($status === null) {
+            return new JsonResponse(['message' => 'Order not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        return new JsonResponse($status);
+    }
+
+    #[Route(
+        path: '/api/_action/external-orders/status/{internalOrderId}',
+        name: 'api.admin.external-orders.status-update',
+        defaults: ['_acl' => ['admin']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function updateStatus(string $internalOrderId, Request $request, Context $context): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+        $targetStatus = trim((string) ($payload['status'] ?? ''));
+
+        if ($targetStatus === '') {
+            return new JsonResponse(['message' => 'Missing status'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $result = $this->externalOrderService->updateModifiableStatus($context, $internalOrderId, $targetStatus);
+        } catch (\InvalidArgumentException $exception) {
+            return new JsonResponse(['message' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
+        } catch (\RuntimeException $exception) {
+            return new JsonResponse(['message' => $exception->getMessage()], Response::HTTP_NOT_FOUND);
+        }
+
+        return new JsonResponse($result);
+    }
+
+    #[Route(
         path: '/api/_action/external-orders/test-data',
         name: 'api.admin.external-orders.test-data',
         defaults: ['_acl' => ['admin']],

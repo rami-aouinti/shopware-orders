@@ -28,6 +28,12 @@ class ExternalOrderControllerTest extends TestCase
 
         $exportStatusRoute = $reflection->getMethod('exportStatus')->getAttributes(Route::class)[0]->getArguments();
         static::assertSame('/api/_action/external-orders/export-status/{internalOrderId}', $exportStatusRoute['path'] ?? null);
+
+        $statusRoute = $reflection->getMethod('status')->getAttributes(Route::class)[0]->getArguments();
+        static::assertSame('/api/_action/external-orders/status/{internalOrderId}', $statusRoute['path'] ?? null);
+
+        $statusUpdateRoute = $reflection->getMethod('updateStatus')->getAttributes(Route::class)[0]->getArguments();
+        static::assertSame('/api/_action/external-orders/status/{internalOrderId}', $statusUpdateRoute['path'] ?? null);
     }
 
     public function testMarkTestPrefersInternalOrderIdsPayload(): void
