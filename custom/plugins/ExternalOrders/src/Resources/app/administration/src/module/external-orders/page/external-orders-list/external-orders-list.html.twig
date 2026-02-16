@@ -1,4 +1,7 @@
 <div class="external-orders">
+    <external-orders-lieferzeit-empty v-if="isLieferzeitRoute" />
+
+    <template v-else>
     <header class="external-orders__header">
         <div class="external-orders__header-content">
             <h2>{{ pageTitle }}</h2>
@@ -927,4 +930,6 @@
             
         </div>
     </main>
+</div>
+    </template>
 </div>
