@@ -88,6 +88,13 @@
                         >
                             {{ $t('lieferzeiten.tabs.statistics') }}
                         </sw-tabs-item>
+
+                        <sw-tabs-item
+                            :route="{ name: 'lieferzeiten.index.lieferzeit' }"
+                            title="Lieferzeit"
+                        >
+                            Lieferzeit
+                        </sw-tabs-item>
                     </sw-tabs>
 
                     <router-view
