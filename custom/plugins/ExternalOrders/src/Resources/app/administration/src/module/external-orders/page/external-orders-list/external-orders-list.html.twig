@@ -775,15 +775,23 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <tr v-for="(item, index) in selectedOrder.items" :key="`detail-item-${index}`">
-                                                    <td>{{ item.name }}</td>
-                                                    <td>{{ item.orderedQuantity ?? item.quantity }}</td>
-                                                    <td>{{ itemDisplayStatus(item, selectedOrder.items) }}</td>
-                                                    <td>{{ itemShipmentRatio(item) }}</td>
-                                                    <td>{{ formatCurrency(item.netPrice) }}</td>
-                                                    <td>{{ item.taxRate }}%</td>
-                                                    <td>{{ formatCurrency(item.grossPrice) }}</td>
-                                                    <td>{{ formatCurrency(item.totalPrice) }}</td>
+                                                <tr v-for="row in deliveryRows" :key="row.rowKey">
+                                                    <td>
+                                                        {{ row.name }}
+                                                        <small v-if="row.rowType === 'package'" class="external-orders__detail-subline">
+                                                            Paket: {{ row.packageLabel }}
+                                                        </small>
+                                                        <small v-else class="external-orders__detail-subline">
+                                                            Position: {{ row.positionId }}
+                                                        </small>
+                                                    </td>
+                                                    <td>{{ row.rowQuantity }}</td>
+                                                    <td>{{ deliveryRowStatus(row) }}</td>
+                                                    <td>{{ deliveryRowShipmentRatio(row) }}</td>
+                                                    <td>{{ formatCurrency(row.netPrice) }}</td>
+                                                    <td>{{ row.taxRate }}%</td>
+                                                    <td>{{ formatCurrency(row.grossPrice) }}</td>
+                                                    <td>{{ formatCurrency(row.totalPrice) }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
