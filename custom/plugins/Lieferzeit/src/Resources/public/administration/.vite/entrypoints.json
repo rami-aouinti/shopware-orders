@@ -1,0 +1,23 @@
+{
+  "base": "/bundles/lieferzeit/administration/",
+  "entryPoints": {
+    "lieferzeit": {
+      "css": [],
+      "dynamic": [],
+      "js": [
+        "/bundles/lieferzeit/administration/assets/lieferzeit-BwZi3kPu.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}
