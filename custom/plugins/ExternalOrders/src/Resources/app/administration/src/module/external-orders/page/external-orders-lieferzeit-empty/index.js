@@ -29,7 +29,12 @@ const createDefaultFilters = () => ({
 Shopware.Component.register('external-orders-lieferzeit-empty', {
     template,
 
-    inject: ['lieferzeitenOrdersService'],
+    inject: {
+        lieferzeitenOrdersService: {
+            from: 'lieferzeitenOrdersService',
+            default: null,
+        },
+    },
 
     data() {
         return {
@@ -106,16 +111,51 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             }, {});
         },
 
+        extractOrders(result) {
+            if (Array.isArray(result)) {
+                return result;
+            }
+
+            const rows = result?.data;
+            if (Array.isArray(rows)) {
+                return rows;
+            }
+
+            return [];
+        },
+
+        async fetchOrdersFallback(params) {
+            const initContainer = Shopware.Application.getContainer('init');
+            const httpClient = initContainer?.httpClient;
+            const loginService = Shopware.Service('loginService');
+
+            if (!httpClient || !loginService) {
+                throw new Error('Lieferzeiten service is unavailable.');
+            }
+
+            const response = await httpClient.get('_action/lieferzeiten/orders', {
+                params,
+                headers: {
+                    Authorization: `Bearer ${loginService.getToken()}`,
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+            });
+
+            return response?.data ?? {};
+        },
+
         async loadOrders() {
             this.isLoading = true;
             this.loadError = null;
 
             try {
-                const result = await this.lieferzeitenOrdersService.getOrders({
-                    ...this.buildFilterParams(),
-                });
+                const params = this.buildFilterParams();
+                const result = this.lieferzeitenOrdersService
+                    ? await this.lieferzeitenOrdersService.getOrders(params)
+                    : await this.fetchOrdersFallback(params);
 
-                this.orders = Array.isArray(result) ? result : [];
+                this.orders = this.extractOrders(result);
             } catch (error) {
                 this.orders = [];
                 this.loadError = error;
