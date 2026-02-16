@@ -16,6 +16,19 @@
             </sw-label>
             <div v-if="historicalMetaText" class="lieferzeiten-tracking-modal__historical-meta">{{ historicalMetaText }}</div>
 
+            <div v-if="sortedTrackingHistory.length > 1" class="lieferzeiten-tracking-modal__history-list-wrapper">
+                <strong>{{ $t('lieferzeiten.fields.history') }}</strong>
+                <ul class="lieferzeiten-tracking-modal__history-list">
+                    <li
+                        v-for="(historyEntry, index) in sortedTrackingHistory"
+                        :key="`${historyEntry.number}-${index}`"
+                    >
+                        {{ historyEntry.number }}
+                        <span v-if="historyEntry.isCurrent">({{ $t('lieferzeiten.tracking.current') }})</span>
+                    </li>
+                </ul>
+            </div>
+
             <div v-if="isLoading">{{ $t('lieferzeiten.tracking.loading') }}</div>
             <div v-else-if="error" class="lieferzeiten-order-table__tracking-error">{{ error }}</div>
             <div v-else-if="!events.length">{{ $t('lieferzeiten.tracking.empty') }}</div>

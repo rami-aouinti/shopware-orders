@@ -192,6 +192,54 @@ describe('lieferzeiten/component/lieferzeiten-order-table', () => {
         expect(methods.shippingLabel.call(context, { shippingAssignmentType: 'trennung' })).toBe('Trennung');
     });
 
+
+    it('stores clicked tracking history for modal display', () => {
+        const context = {
+            showTrackingModal: false,
+            activeTracking: null,
+            activeTrackingHistory: [],
+        };
+
+        methods.openTrackingHistory.call(context, { number: 'NEW-1', carrier: 'dhl' }, [
+            { number: 'NEW-1', carrier: 'dhl', isCurrent: true },
+            { number: 'OLD-1', carrier: 'dhl', isCurrent: false },
+        ]);
+
+        expect(context.showTrackingModal).toBe(true);
+        expect(context.activeTracking.number).toBe('NEW-1');
+        expect(context.activeTrackingHistory).toHaveLength(2);
+    });
+
+    it('enforces 14-day business bounds for supplier range save', () => {
+        const context = {
+            supplierBusinessBounds: methods.supplierBusinessBounds,
+            isRangeValid: methods.isRangeValid,
+            rangeToDays: methods.rangeToDays,
+            isRangeChanged: methods.isRangeChanged,
+            hasValidNeuerLieferterminRange: () => true,
+        };
+
+        const today = new Date();
+        const plus = (d) => {
+            const c = new Date(today);
+            c.setDate(c.getDate() + d);
+            return c.toISOString().slice(0, 10);
+        };
+
+        const order = {};
+        const validTarget = {
+            lieferterminLieferantRange: { from: plus(1), to: plus(14) },
+            originalLieferterminLieferantRange: { from: null, to: null },
+        };
+        const invalidTarget = {
+            lieferterminLieferantRange: { from: plus(0), to: plus(14) },
+            originalLieferterminLieferantRange: { from: null, to: null },
+        };
+
+        expect(methods.canSaveLiefertermin.call(context, order, validTarget)).toBe(true);
+        expect(methods.canSaveLiefertermin.call(context, order, invalidTarget)).toBe(false);
+    });
+
     it('does not notify on initial task snapshot to avoid false positives on reload', () => {
         const createNotificationInfo = jest.fn();
         const context = {

@@ -144,7 +144,8 @@
       "openNumber": "Tracking number {number}",
       "historical": "Historical tracking number (reshipment)",
       "historicalMeta": "Replaced on {changedAt}",
-      "historicalMetaWithActor": "Replaced by {actor} on {changedAt}"
+      "historicalMetaWithActor": "Replaced by {actor} on {changedAt}",
+      "current": "Current"
     },
     "validation": {
       "supplierSaveRequiresCombinedRange": "Supplier delivery date can only be saved when at least one new delivery date (1-4 days) exists.",

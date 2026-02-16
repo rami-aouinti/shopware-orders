@@ -16,6 +16,11 @@ Shopware.Component.register('lieferzeiten-tracking-modal', {
             required: false,
             default: null,
         },
+        trackingHistory: {
+            type: Array,
+            required: false,
+            default: () => [],
+        },
     },
 
     emits: ['close'],
@@ -42,6 +47,20 @@ Shopware.Component.register('lieferzeiten-tracking-modal', {
 
         isHistoricalTrackingNumber() {
             return this.trackingEntry?.isCurrent === false;
+        },
+
+        sortedTrackingHistory() {
+            const history = Array.isArray(this.trackingHistory) ? this.trackingHistory : [];
+
+            return history
+                .filter((entry) => entry?.number)
+                .slice()
+                .sort((left, right) => {
+                    const leftDate = new Date(left?.lastChangedAt || left?.createdAt || 0).getTime();
+                    const rightDate = new Date(right?.lastChangedAt || right?.createdAt || 0).getTime();
+
+                    return rightDate - leftDate;
+                });
         },
 
         historicalMetaText() {
@@ -79,6 +98,15 @@ Shopware.Component.register('lieferzeiten-tracking-modal', {
         },
 
         trackingEntry: {
+            deep: true,
+            handler() {
+                if (this.visible) {
+                    this.loadTrackingHistory();
+                }
+            },
+        },
+
+        trackingHistory: {
             deep: true,
             handler() {
                 if (this.visible) {

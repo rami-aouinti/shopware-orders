@@ -62,7 +62,7 @@
                                     :key="`${row.key}-${entry.carrier}-${entry.number}`"
                                     type="button"
                                     class="lieferzeiten-order-table__tracking-link"
-                                    @click="openTrackingHistory(entry)"
+                                    @click="openTrackingHistory(entry, row.trackingEntries)"
                                 >
                                     {{ $t('lieferzeiten.tracking.openNumber', { number: entry.number }) }}
                                 </button>
@@ -164,7 +164,7 @@
                                                     :key="`${position.id}-${entry.number}`"
                                                     type="button"
                                                     class="lieferzeiten-order-table__tracking-link"
-                                                    @click="openTrackingHistory(entry)"
+                                                    @click="openTrackingHistory(entry, resolveTrackingEntries(row.order, position))"
                                                 >
                                                     {{ $t('lieferzeiten.tracking.openNumber', { number: entry.number }) }}
                                                 </button>
@@ -172,8 +172,8 @@
                                         </td>
                                         <td>{{ resolvePackageStatusField(row.order, position) }}</td>
                                         <td>
-                                            <sw-datepicker v-model:value="position.lieferterminLieferantRange.from" :disabled="!hasEditAccess()" size="small" :max-date="position.lieferterminLieferantRange.to" />
-                                            <sw-datepicker v-model:value="position.lieferterminLieferantRange.to" :disabled="!hasEditAccess()" size="small" :min-date="position.lieferterminLieferantRange.from" />
+                                            <sw-datepicker v-model:value="position.lieferterminLieferantRange.from" :disabled="!hasEditAccess()" size="small" :min-date="supplierFromMinDate()" :max-date="supplierFromMaxDate(position)" />
+                                            <sw-datepicker v-model:value="position.lieferterminLieferantRange.to" :disabled="!hasEditAccess()" size="small" :min-date="supplierToMinDate(position)" :max-date="supplierToMaxDate()" />
                                             <sw-button v-if="hasEditAccess()" size="small" variant="primary" :disabled="!canSaveLiefertermin(row.order, position)" @click="saveLiefertermin(row.order, position)">
                                                 {{ $t('global.default.save') }}
                                             </sw-button>
@@ -204,8 +204,8 @@
                                         <td>{{ displayOrDash(parcel.shippingDateDisplay) }}</td>
                                         <td>{{ displayOrDash(parcel.deliveryDateDisplay) }}</td>
                                         <td>
-                                            <sw-datepicker v-model:value="parcel.neuerLieferterminRange.from" :disabled="!hasEditAccess() || !parcel.supplierRange.from || !isParcelEditableByStatus(parcel)" size="small" :min-date="parcel.supplierRange.from" :max-date="parcel.neuerLieferterminRange.to || parcel.supplierRange.to" />
-                                            <sw-datepicker v-model:value="parcel.neuerLieferterminRange.to" :disabled="!hasEditAccess() || !parcel.supplierRange.to || !isParcelEditableByStatus(parcel)" size="small" :min-date="parcel.neuerLieferterminRange.from || parcel.supplierRange.from" :max-date="parcel.supplierRange.to" />
+                                            <sw-datepicker v-model:value="parcel.neuerLieferterminRange.from" :disabled="!hasEditAccess() || !parcel.supplierRange.from || !isParcelEditableByStatus(parcel)" size="small" :min-date="parcel.supplierRange.from" :max-date="newDateFromMaxDate(parcel)" />
+                                            <sw-datepicker v-model:value="parcel.neuerLieferterminRange.to" :disabled="!hasEditAccess() || !parcel.supplierRange.to || !isParcelEditableByStatus(parcel)" size="small" :min-date="parcel.neuerLieferterminRange.from || parcel.supplierRange.from" :max-date="newDateToMaxDate(parcel)" />
                                             <sw-button v-if="hasEditAccess()" size="small" variant="primary" :disabled="!canSaveNeuerLiefertermin(parcel)" @click="saveNeuerLiefertermin(row.order, parcel)">
                                                 {{ $t('global.default.save') }}
                                             </sw-button>
@@ -225,6 +225,7 @@
         <lieferzeiten-tracking-modal
             :visible="showTrackingModal"
             :tracking-entry="activeTracking"
+            :tracking-history="activeTrackingHistory"
             @close="closeTrackingModal"
         />
 
