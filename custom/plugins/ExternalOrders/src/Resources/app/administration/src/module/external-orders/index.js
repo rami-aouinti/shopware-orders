@@ -18,6 +18,13 @@ Module.register('external-orders', {
                 privilege: 'admin',
             },
         },
+        lieferzeit: {
+            component: 'lieferzeiten-index',
+            path: 'lieferzeit',
+            meta: {
+                privilege: 'admin',
+            },
+        },
     },
 
     navigation: [
@@ -29,6 +36,15 @@ Module.register('external-orders', {
             icon: 'regular-shopping-cart',
             parent: 'sw-order',
             position: 45,
+        },
+        {
+            id: 'external-orders-lieferzeit',
+            label: 'Lieferzeit',
+            color: '#009ee3',
+            path: 'external.orders.lieferzeit',
+            icon: 'regular-clock',
+            parent: 'sw-order',
+            position: 46,
         },
     ],
 });

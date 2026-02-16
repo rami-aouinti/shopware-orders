@@ -1,0 +1,27 @@
+{
+    "name": "custom/lieferzeit",
+    "description": "Lieferzeit administration module.",
+    "type": "shopware-platform-plugin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Custom"
+        }
+    ],
+    "require": {
+        "shopware/core": "^6.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Lieferzeit\\": "src/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "Lieferzeit\\Lieferzeit",
+        "label": {
+            "en-GB": "Lieferzeit",
+            "de-DE": "Lieferzeit",
+            "fr-FR": "Lieferzeit"
+        }
+    }
+}
