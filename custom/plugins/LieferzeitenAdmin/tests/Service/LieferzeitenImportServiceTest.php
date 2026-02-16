@@ -12,6 +12,7 @@ use LieferzeitenAdmin\Service\LieferzeitenImportService;
 use LieferzeitenAdmin\Service\Notification\NotificationEventService;
 use LieferzeitenAdmin\Service\Notification\SalesChannelResolver;
 use LieferzeitenAdmin\Service\Notification\NotificationTriggerCatalog;
+use LieferzeitenAdmin\Service\ParcelStatusAggregationPolicy;
 use LieferzeitenAdmin\Service\Reliability\IntegrationReliabilityService;
 use LieferzeitenAdmin\Sync\Adapter\ChannelOrderAdapterRegistry;
 use LieferzeitenAdmin\Sync\San6\San6Client;
@@ -1097,6 +1098,7 @@ class LieferzeitenImportServiceTest extends TestCase
             $settingsProvider ?? $this->createMock(ChannelDateSettingsProvider::class),
             $deliveryDateCalculator ?? $this->createMock(BusinessDayDeliveryDateCalculator::class),
             $status8TrackingMappingProvider ?? new Status8TrackingMappingProvider($config),
+            new ParcelStatusAggregationPolicy(),
             $this->createMock(LockFactory::class),
             $notificationEventService ?? $this->createMock(NotificationEventService::class),
             $this->createMock(SalesChannelResolver::class),
