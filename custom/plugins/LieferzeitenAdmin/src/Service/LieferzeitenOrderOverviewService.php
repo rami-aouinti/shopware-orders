@@ -2,7 +2,6 @@
 
 namespace LieferzeitenAdmin\Service;
 
-use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 
 readonly class LieferzeitenOrderOverviewService
@@ -148,9 +147,7 @@ readonly class LieferzeitenOrderOverviewService
             $where,
         );
 
-        $paramTypes = isset($params['sourceSystems'])
-            ? ['sourceSystems' => ArrayParameterType::STRING]
-            : [];
+        $paramTypes = [];
 
         $total = (int) $this->connection->fetchOne($totalSql, $params, $paramTypes);
 
@@ -368,10 +365,16 @@ readonly class LieferzeitenOrderOverviewService
             $params['shippingAssignmentType'] = $value;
         }
 
-        $domainSources = $this->resolveDomainSources(trim((string) ($filters['domain'] ?? '')));
-        if ($domainSources !== []) {
-            $conditions[] = 'p.source_system IN (:sourceSystems)';
-            $params['sourceSystems'] = $domainSources;
+        $domainFilter = $this->resolveDomainFilter((string) ($filters['domain'] ?? ''));
+        if ($domainFilter !== []) {
+            $placeholders = [];
+            foreach ($domainFilter as $index => $sourceSystem) {
+                $paramName = sprintf('domainSource%d', $index);
+                $params[$paramName] = $sourceSystem;
+                $placeholders[] = ':' . $paramName;
+            }
+
+            $conditions[] = sprintf('LOWER(COALESCE(p.source_system, "")) IN (%s)', implode(', ', $placeholders));
         }
 
         $joins[] = 'LEFT JOIN `lieferzeiten_position` pos ON pos.paket_id = p.id';
@@ -420,19 +423,6 @@ readonly class LieferzeitenOrderOverviewService
             $filters,
             'nlh',
         );
-
-
-        $domainFilter = $this->resolveDomainFilter((string) ($filters['domain'] ?? ''));
-        if ($domainFilter !== []) {
-            $placeholders = [];
-            foreach ($domainFilter as $index => $sourceSystem) {
-                $paramName = sprintf('domainSource%d', $index);
-                $params[$paramName] = $sourceSystem;
-                $placeholders[] = ':' . $paramName;
-            }
-
-            $conditions[] = sprintf('LOWER(COALESCE(p.source_system, "")) IN (%s)', implode(', ', $placeholders));
-        }
 
         if ($conditions === []) {
             return '';
@@ -556,6 +546,25 @@ readonly class LieferzeitenOrderOverviewService
         $domainKey = self::DOMAIN_ALIASES[$domain] ?? strtolower($domain);
 
         return self::DOMAIN_SOURCE_MAPPING[$domainKey] ?? [$domain];
+    }
+
+
+    /**
+     * @return list<string>
+     */
+    private function resolveDomainFilter(string $domain): array
+    {
+        $normalizedDomain = trim($domain);
+        if ($normalizedDomain === '') {
+            return [];
+        }
+
+        $sourceSystems = $this->resolveDomainSources($normalizedDomain);
+
+        return array_values(array_unique(array_map(
+            static fn (string $value): string => strtolower(trim($value)),
+            $sourceSystems,
+        )));
     }
 
     private function resolveSortField(?string $sort): string
