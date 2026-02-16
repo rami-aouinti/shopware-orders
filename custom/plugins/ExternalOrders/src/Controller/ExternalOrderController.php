@@ -43,6 +43,8 @@ class ExternalOrderController extends AbstractController
         $limit = (int) $request->query->get('limit', 50);
         $sort = $request->query->get('sort');
         $order = $request->query->get('order');
+        $selectedArea = $request->query->get('selectedArea');
+        $selectedMainView = $request->query->get('selectedMainView');
 
         $allowedFilters = [
             'bestellnummer',
@@ -88,7 +90,9 @@ class ExternalOrderController extends AbstractController
                 $limit,
                 $sort ? (string) $sort : null,
                 $order ? (string) $order : null,
-                $filters
+                $filters,
+                $selectedArea ? (string) $selectedArea : null,
+                $selectedMainView ? (string) $selectedMainView : null
             )
         );
     }
