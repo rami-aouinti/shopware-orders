@@ -54,10 +54,37 @@
                         </template>
                     </sw-empty-state>
 
-                    <lieferzeiten-order-table
-                        v-if="!isLoading && !loadError"
-                        :orders="orders"
-                        :on-reload-order="loadOrders"
+                    <table v-if="!isLoading && !loadError && orders.length" class="sw-data-grid__table">
+                        <thead>
+                            <tr>
+                                <th>Bestellnummer</th>
+                                <th>SAN6</th>
+                                <th>Status</th>
+                                <th>User</th>
+                                <th>Sendenummer</th>
+                                <th>Domain</th>
+                                <th>Spätester Versand</th>
+                                <th>Späteste Lieferung</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="order in orders" :key="order.id">
+                                <td>{{ displayOrDash(order.bestellnummer || order.orderNumber) }}</td>
+                                <td>{{ displayOrDash(order.san6 || order.san6OrderNumber) }}</td>
+                                <td>{{ displayOrDash(order.status) }}</td>
+                                <td>{{ displayOrDash(order.user) }}</td>
+                                <td>{{ displayOrDash(order.sendenummer) }}</td>
+                                <td>{{ displayOrDash(order.domain || order.sourceSystem) }}</td>
+                                <td>{{ formatDate(order.latestShippingDate || order.shippingDate) }}</td>
+                                <td>{{ formatDate(order.latestDeliveryDate || order.deliveryDate) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <sw-empty-state
+                        v-if="!isLoading && !loadError && orders.length === 0"
+                        title="Keine Lieferzeiten gefunden"
+                        subline="Für die aktuellen Filter gibt es keine Ergebnisse."
                     />
                 </sw-card>
             </sw-card-view>

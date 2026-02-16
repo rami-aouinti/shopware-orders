@@ -69,7 +69,24 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
     methods: {
         async loadStatistics() {
-            return null;
+            return DEFAULT_STATISTICS_METRICS;
+        },
+
+        displayOrDash(value) {
+            if (value === null || value === undefined) {
+                return '-';
+            }
+
+            const normalizedValue = String(value).trim();
+            return normalizedValue === '' ? '-' : normalizedValue;
+        },
+
+        formatDate(value) {
+            if (!value) {
+                return '-';
+            }
+
+            return this.displayOrDash(value);
         },
 
         buildFilterParams() {
