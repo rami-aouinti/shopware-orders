@@ -25,5 +25,13 @@
             <label lang="de-DE">Demo-Daten</label>
         </component>
 
+        <input-field type="text">
+            <name>supplierRequestRecipientUserId</name>
+            <label lang="en-GB">Recipient user ID for supplier requests</label>
+            <label lang="de-DE">Empfänger User-ID für Liefertermin-Anfragen</label>
+            <helpText lang="en-GB">If empty, the initiator is used as recipient.</helpText>
+            <helpText lang="de-DE">Wenn leer, wird der Initiator als Empfänger verwendet.</helpText>
+        </input-field>
+
     </card>
 </config>

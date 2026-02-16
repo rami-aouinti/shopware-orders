@@ -367,6 +367,7 @@ readonly class ExternalOrderService
         $lieferterminLieferant = $payload['lieferterminLieferant'] ?? $payload['supplierDeliveryDate'] ?? ($additional['lieferterminLieferant'] ?? null);
         $lieferterminAuftragsbearbeitung = $payload['lieferterminAuftragsbearbeitung'] ?? $payload['neuerLiefertermin'] ?? $payload['newDeliveryDate'] ?? ($additional['lieferterminAuftragsbearbeitung'] ?? null);
         $changedByUser = $payload['changedByUser'] ?? $payload['user'] ?? $customerName;
+        $positions = $this->extractPositions($detail);
 
         $totalItems = $payload['totalItems'] ?? $this->countDetailItems($detail);
         $totalRevenue = $payload['totalRevenue'] ?? ($totals['sum'] ?? $order->getAmountTotal() ?? 0.0);
@@ -408,7 +409,45 @@ readonly class ExternalOrderService
             'neuerLiefertermin' => $lieferterminAuftragsbearbeitung,
             'totalItems' => (int) $totalItems,
             'totalRevenue' => (float) $totalRevenue,
+            'positions' => $positions,
         ];
+    }
+
+    /**
+     * @return array<int, array{positionId:string, positionNumber:string, productLabel:string, lieferterminLieferant:?string}>
+     */
+    private function extractPositions(?array $detail): array
+    {
+        if (!is_array($detail) || !is_array($detail['items'] ?? null)) {
+            return [];
+        }
+
+        $positions = [];
+
+        foreach ($detail['items'] as $index => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $positionId = trim((string) ($item['positionId'] ?? $item['id'] ?? $item['lineItemId'] ?? $item['identifier'] ?? ''));
+            if ($positionId === '') {
+                $positionId = (string) ($index + 1);
+            }
+
+            $positionNumber = trim((string) ($item['positionNumber'] ?? $item['itemNumber'] ?? $item['number'] ?? ''));
+            if ($positionNumber === '') {
+                $positionNumber = (string) ($index + 1);
+            }
+
+            $positions[] = [
+                'positionId' => $positionId,
+                'positionNumber' => $positionNumber,
+                'productLabel' => (string) ($item['name'] ?? $item['label'] ?? $item['title'] ?? ''),
+                'lieferterminLieferant' => isset($item['lieferterminLieferant']) ? (string) $item['lieferterminLieferant'] : null,
+            ];
+        }
+
+        return $positions;
     }
 
     private function mapOrderToDetail(OrderEntity $order, string $externalId, ?array $metadata): array

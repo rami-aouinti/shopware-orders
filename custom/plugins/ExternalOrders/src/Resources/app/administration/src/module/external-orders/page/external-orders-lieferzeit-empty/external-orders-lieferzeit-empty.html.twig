@@ -161,9 +161,22 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="order in paginatedOrders" :key="order.id || order.orderNumber">
-                            <td v-for="column in tableColumns" :key="`${order.id || order.orderNumber}-${column.key}`">
-                                {{ isDateColumn(column.key) ? formatDate(getColumnValue(order, column.key)) : displayOrDash(getColumnValue(order, column.key)) }}
+                        <tr v-for="order in paginatedOrders" :key="getRowKey(order)">
+                            <td v-for="column in tableColumns" :key="`${getRowKey(order)}-${column.key}`">
+                                <template v-if="column.key === 'lieferterminLieferant'">
+                                    <div>{{ formatDate(getColumnValue(order, column.key)) }}</div>
+                                    <button
+                                        class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--primary external-orders-lieferzeit-empty__button--small"
+                                        type="button"
+                                        :disabled="isSupplierRequestPending(order)"
+                                        @click="requestAdditionalSupplierDeliveryDate(order)"
+                                    >
+                                        Zusätzliche Liefertermin-Anfrage
+                                    </button>
+                                </template>
+                                <template v-else>
+                                    {{ isDateColumn(column.key) ? formatDate(getColumnValue(order, column.key)) : displayOrDash(getColumnValue(order, column.key)) }}
+                                </template>
                             </td>
                             <td>
                                 <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small" type="button" @click="openDetail(order)">
