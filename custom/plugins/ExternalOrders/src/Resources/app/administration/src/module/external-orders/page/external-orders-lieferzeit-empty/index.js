@@ -102,7 +102,6 @@ const createDefaultFilters = () => ({
     bestellnummer: '',
     san6OrderNumber: '',
     changedByUser: '',
-    domain: '',
     sendenummer: '',
     status: '',
     latestShippingDateFrom: null,
