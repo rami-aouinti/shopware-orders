@@ -20,7 +20,7 @@ Module.register('external-orders', {
             },
         },
         lieferzeit: {
-            component: 'lieferzeiten-index',
+            component: 'external-orders-lieferzeit-empty',
             path: 'lieferzeit',
             meta: {
                 privilege: 'admin',
@@ -33,7 +33,7 @@ Module.register('external-orders', {
             id: 'external-orders',
             label: 'Bestellübersichten',
             color: '#009ee3',
-            path: 'external.orders.index',
+            path: 'external-orders.index',
             icon: 'regular-shopping-cart',
             parent: 'sw-order',
             position: 45,
@@ -42,7 +42,7 @@ Module.register('external-orders', {
             id: 'external-orders-lieferzeit',
             label: 'Lieferzeit',
             color: '#009ee3',
-            path: 'external.orders.lieferzeit',
+            path: 'external-orders.lieferzeit',
             icon: 'regular-clock',
             parent: 'sw-order',
             position: 46,

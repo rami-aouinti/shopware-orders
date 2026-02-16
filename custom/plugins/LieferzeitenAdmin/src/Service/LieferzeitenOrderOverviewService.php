@@ -2,7 +2,9 @@
 
 namespace LieferzeitenAdmin\Service;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 
 readonly class LieferzeitenOrderOverviewService
 {
@@ -244,6 +246,8 @@ readonly class LieferzeitenOrderOverviewService
         $dataParams = $params;
         $dataParams['limit'] = $limit;
         $dataParams['offset'] = ($page - 1) * $limit;
+        $paramTypes['limit'] = ParameterType::INTEGER;
+        $paramTypes['offset'] = ParameterType::INTEGER;
 
         $rows = $this->connection->fetchAllAssociative($dataSql, $dataParams, $paramTypes);
         $rows = array_map(fn (array $row): array => $this->appendBusinessStatus($row), $rows);
