@@ -140,7 +140,16 @@
       "empty": "Keine Tracking-Ereignisse gefunden.",
       "loadError": "Tracking konnte nicht geladen werden.",
       "missingCarrier": "Tracking nicht möglich: Kein Versanddienstleister hinterlegt.",
-      "internalShipmentInfo": "Versand durch First Medical (interne Expedition, kein externes Lieferanten-Tracking verfügbar)."
+      "internalShipmentInfo": "Versand durch First Medical (interne Expedition, kein externes Lieferanten-Tracking verfügbar).",
+      "openNumber": "Sendenummer {number}",
+      "historical": "Historische Sendenummer (Reexpedition)",
+      "historicalMeta": "Ersetzt am {changedAt}",
+      "historicalMetaWithActor": "Ersetzt von {actor} am {changedAt}",
+      "current": "Aktuell"
+    },
+    "validation": {
+      "supplierSaveRequiresCombinedRange": "Liefertermin Lieferant kann nur gespeichert werden, wenn mindestens ein neuer Liefertermin (1–4 Tage) vorhanden ist.",
+      "newDeliveryRangeInvalid": "Neuer Liefertermin muss 1–4 Tage umfassen und innerhalb des Liefertermins Lieferant liegen."
     },
     "statistics": {
       "periodLabel": "Periode",

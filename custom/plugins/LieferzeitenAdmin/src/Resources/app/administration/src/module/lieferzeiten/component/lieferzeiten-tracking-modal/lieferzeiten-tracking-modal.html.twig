@@ -1,0 +1,44 @@
+<div
+    v-if="visible"
+    class="lieferzeiten-order-table__tracking-overlay"
+    role="dialog"
+    aria-modal="true"
+>
+    <div class="lieferzeiten-order-table__tracking-dialog">
+        <header class="lieferzeiten-order-table__tracking-header">
+            <h3>{{ headerTitle }}</h3>
+            <button type="button" class="lieferzeiten-order-table__tracking-close" @click="close">×</button>
+        </header>
+
+        <div class="lieferzeiten-order-table__tracking-body">
+            <sw-label v-if="isHistoricalTrackingNumber" variant="warning" class="lieferzeiten-tracking-modal__historical-badge">
+                {{ $t('lieferzeiten.tracking.historical') }}
+            </sw-label>
+            <div v-if="historicalMetaText" class="lieferzeiten-tracking-modal__historical-meta">{{ historicalMetaText }}</div>
+
+            <div v-if="sortedTrackingHistory.length > 1" class="lieferzeiten-tracking-modal__history-list-wrapper">
+                <strong>{{ $t('lieferzeiten.fields.history') }}</strong>
+                <ul class="lieferzeiten-tracking-modal__history-list">
+                    <li
+                        v-for="(historyEntry, index) in sortedTrackingHistory"
+                        :key="`${historyEntry.number}-${index}`"
+                    >
+                        {{ historyEntry.number }}
+                        <span v-if="historyEntry.isCurrent">({{ $t('lieferzeiten.tracking.current') }})</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div v-if="isLoading">{{ $t('lieferzeiten.tracking.loading') }}</div>
+            <div v-else-if="error" class="lieferzeiten-order-table__tracking-error">{{ error }}</div>
+            <div v-else-if="!events.length">{{ $t('lieferzeiten.tracking.empty') }}</div>
+            <ul v-else class="lieferzeiten-order-table__tracking-list">
+                <li v-for="(event, index) in events" :key="`${event.timestamp}-${index}`">
+                    <strong>{{ event.status }}</strong>
+                    <div>{{ event.label }}</div>
+                    <small>{{ event.timestamp }}<span v-if="event.location"> · {{ event.location }}</span></small>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
