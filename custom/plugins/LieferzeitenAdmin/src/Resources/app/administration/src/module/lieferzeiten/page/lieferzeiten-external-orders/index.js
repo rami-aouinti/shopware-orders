@@ -28,6 +28,10 @@ function createInlineChannelLogo(shortLabel, backgroundColor) {
 Component.register('lieferzeiten-external-orders', {
     template,
 
+    inject: [
+        'lieferzeitenOrdersService',
+    ],
+
     mixins: [
         Mixin.getByName('notification'),
     ],
@@ -38,10 +42,12 @@ Component.register('lieferzeiten-external-orders', {
             isSeedingTestData: false,
             pageTitle: 'Bestellübersichten',
             orders: [],
-            summary: {
-                orderCount: 0,
-                totalRevenue: 0,
-                totalItems: 0,
+            statistics: {
+                metrics: {
+                    openOrders: 0,
+                    overdueShipping: 0,
+                    overdueDelivery: 0,
+                },
             },
             channelSources: {},
             channels: [
@@ -122,6 +128,10 @@ Component.register('lieferzeiten-external-orders', {
         };
     },
 
+    created() {
+        this.initializePage();
+    },
+
     computed: {
         detailOrder() {
             return this.normalizeOrderDetail(this.selectedOrder ?? {});
@@ -188,13 +198,6 @@ Component.register('lieferzeiten-external-orders', {
         },
         filteredOrders() {
             const searchTerm = this.tableSearchTerm.trim().toLowerCase();
-            const channelOrders = this.orders.filter((order) => {
-                if (!order.channel) {
-                    return true;
-                }
-                return order.channel === this.activeChannel;
-            });
-
             const channelFilter = this.activeChannel === 'all' ? null : this.activeChannel;
             const filtered = this.orders.filter((order) => {
                 if (!channelFilter) {
@@ -247,6 +250,15 @@ Component.register('lieferzeiten-external-orders', {
         paginatedOrders() {
             const start = (this.page - 1) * this.limit;
             return this.sortedOrders.slice(start, start + this.limit);
+        },
+        metricsSummary() {
+            const scopedOrders = this.filteredOrders;
+
+            return {
+                orderCount: scopedOrders.length,
+                totalRevenue: scopedOrders.reduce((sum, order) => sum + this.getOrderTotal(order), 0),
+                totalItems: scopedOrders.reduce((sum, order) => sum + this.getOrderItemCount(order), 0),
+            };
         },
         paginationTotal() {
             return this.sortedOrders.length;
@@ -301,6 +313,7 @@ Component.register('lieferzeiten-external-orders', {
         },
         activeChannel() {
             this.page = 1;
+            this.loadStatistics();
         },
         columnFilterMatchMode() {
             this.page = 1;
@@ -318,25 +331,67 @@ Component.register('lieferzeiten-external-orders', {
             this.channelSources = {};
             this.page = 1;
             this.orders = [];
-            this.summary = {
-                orderCount: 0,
-                totalRevenue: 0,
-                totalItems: 0,
-            };
+            await Promise.all([
+                this.loadOverviewConfiguration(),
+                this.loadOrders(),
+                this.loadStatistics(),
+            ]);
         },
         async loadOverviewConfiguration() {
             this.channelSources = {};
         },
         async loadOrders() {
             this.isLoading = true;
-            this.page = 1;
-            this.orders = [];
-            this.summary = {
-                orderCount: 0,
-                totalRevenue: 0,
-                totalItems: 0,
-            };
-            this.isLoading = false;
+            this.selectedOrders = [];
+
+            try {
+                const sort = this.sortBy || 'date';
+                const order = this.sortDirection || 'DESC';
+                const response = await this.lieferzeitenOrdersService.getOrders({ sort, order, limit: 200 });
+                const rows = Array.isArray(response) ? response : [];
+
+                this.orders = rows.map((orderRow) => this.normalizeOrderRow(orderRow));
+                this.page = 1;
+            } catch (error) {
+                this.orders = [];
+                this.createNotificationError({
+                    title: 'Bestellungen konnten nicht geladen werden',
+                    message: error?.message || 'Bitte prüfen Sie die Verbindung zu den externen APIs.',
+                });
+            } finally {
+                this.isLoading = false;
+            }
+        },
+        async loadStatistics() {
+            try {
+                const payload = await this.lieferzeitenOrdersService.getStatistics({
+                    period: 30,
+                    channel: this.activeChannel,
+                });
+                const metrics = payload?.metrics ?? payload?.data?.metrics ?? {};
+
+                this.statistics = {
+                    ...this.statistics,
+                    metrics: {
+                        openOrders: Number(metrics.openOrders ?? metrics.open_orders ?? 0),
+                        overdueShipping: Number(metrics.overdueShipping ?? metrics.overdue_shipping ?? 0),
+                        overdueDelivery: Number(metrics.overdueDelivery ?? metrics.overdue_delivery ?? 0),
+                    },
+                };
+            } catch (error) {
+                this.statistics = {
+                    ...this.statistics,
+                    metrics: {
+                        openOrders: 0,
+                        overdueShipping: 0,
+                        overdueDelivery: 0,
+                    },
+                };
+                this.createNotificationError({
+                    title: 'Statistiken konnten nicht geladen werden',
+                    message: error?.message || 'Bitte prüfen Sie die Verbindung zu den externen APIs.',
+                });
+            }
         },
         onPageChange(payload) {
             if (typeof payload === 'number') {
@@ -633,6 +688,35 @@ Component.register('lieferzeiten-external-orders', {
         closeDetail() {
             this.showDetailModal = false;
             this.selectedOrder = null;
+        },
+        normalizeOrderRow(order) {
+            const normalizedOrder = order ?? {};
+            const customerName = [normalizedOrder.customerFirstName, normalizedOrder.customerLastName]
+                .map((part) => String(part ?? '').trim())
+                .filter(Boolean)
+                .join(' ')
+                || normalizedOrder.customerName
+                || normalizedOrder.customer
+                || '—';
+
+            const statusLabel = normalizedOrder.statusLabel
+                || normalizedOrder.businessStatusLabel
+                || normalizedOrder.status
+                || '—';
+
+            return {
+                ...normalizedOrder,
+                id: normalizedOrder.id ?? normalizedOrder.orderNumber,
+                orderNumber: normalizedOrder.orderNumber ?? normalizedOrder.bestellnummer ?? '—',
+                customerName,
+                orderReference: normalizedOrder.san6OrderNumber ?? normalizedOrder.san6 ?? normalizedOrder.orderReference ?? '—',
+                email: normalizedOrder.customerEmail ?? normalizedOrder.email ?? '—',
+                date: normalizedOrder.orderDate ?? normalizedOrder.date ?? normalizedOrder.createdAt ?? '',
+                statusLabel,
+                channel: String(normalizedOrder.sourceSystem ?? normalizedOrder.domain ?? normalizedOrder.channel ?? '').toLowerCase(),
+                totalItems: Number(normalizedOrder.orderedQuantityTotal ?? normalizedOrder.totalItems ?? normalizedOrder.quantity ?? 0),
+                totalPrice: Number(normalizedOrder.totalPrice ?? normalizedOrder.totalRevenue ?? normalizedOrder.amountTotal ?? 0),
+            };
         },
         normalizeOrderDetail(order) {
             const base = order ?? {};
