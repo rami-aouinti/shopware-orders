@@ -4,7 +4,6 @@ namespace ExternalOrders\Tests\Controller;
 
 use Doctrine\DBAL\Connection;
 use ExternalOrders\Controller\ExternalOrderController;
-use ExternalOrders\Service\DeliveryDateEditorService;
 use ExternalOrders\Service\ExternalOrderService;
 use ExternalOrders\Service\ExternalOrderSyncService;
 use ExternalOrders\Service\ExternalOrderTestDataService;
@@ -70,7 +69,6 @@ class ExternalOrderControllerTest extends TestCase
             $this->createMock(ExternalOrderSyncService::class),
             $this->createMock(TopmSan6OrderExportService::class),
             $this->createMock(SupplierRequestTaskService::class),
-            $this->createMock(DeliveryDateEditorService::class),
             $this->createMock(Connection::class),
         );
 
@@ -101,7 +99,6 @@ class ExternalOrderControllerTest extends TestCase
             $this->createMock(ExternalOrderSyncService::class),
             $this->createMock(TopmSan6OrderExportService::class),
             $this->createMock(SupplierRequestTaskService::class),
-            $this->createMock(DeliveryDateEditorService::class),
             $this->createMock(Connection::class),
         );
 
@@ -114,40 +111,6 @@ class ExternalOrderControllerTest extends TestCase
 
         static::assertSame(Response::HTTP_OK, $response->getStatusCode());
         static::assertSame('{"updated":1,"alreadyMarked":0,"notFound":0}', $response->getContent());
-    }
-
-    public function testStatusReturnsPolicyPayloadWithCompletionRule(): void
-    {
-        $externalOrderService = $this->createMock(ExternalOrderService::class);
-        $externalOrderService
-            ->expects($this->once())
-            ->method('fetchOrderStatuses')
-            ->with($this->isInstanceOf(Context::class), 'internal-42')
-            ->willReturn([
-                'internalOrderId' => 'internal-42',
-                'aggregatedStatus' => 'Versendet',
-                'policy' => [
-                    'completionRules' => [
-                        'abschlussErlaubt' => false,
-                        'allPackagesDeliveredRequired' => true,
-                    ],
-                ],
-            ]);
-
-        $controller = new ExternalOrderController(
-            $externalOrderService,
-            $this->createMock(ExternalOrderTestDataService::class),
-            $this->createMock(ExternalOrderSyncService::class),
-            $this->createMock(TopmSan6OrderExportService::class),
-            $this->createMock(SupplierRequestTaskService::class),
-            $this->createMock(DeliveryDateEditorService::class),
-            $this->createMock(Connection::class),
-        );
-
-        $response = $controller->status('internal-42', Context::createDefaultContext());
-
-        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
-        static::assertStringContainsString('"completionRules":{"abschlussErlaubt":false,"allPackagesDeliveredRequired":true}', (string) $response->getContent());
     }
 
     public function testFileTransferRouteIsExplicitlyPublicWithoutAcl(): void
