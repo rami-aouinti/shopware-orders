@@ -8,18 +8,20 @@ class ExternalOrderService extends ApiService {
 
     static DEMO_DATA_TIMEOUT_MS = 120000;
 
-    async list({ channel = null, search = null } = {}) {
-        const params = {};
-        if (channel) {
-            params.channel = channel;
-        }
-        if (search) {
-            params.search = search;
-        }
+    async list(params = {}) {
+        const normalizedParams = Object.entries(params).reduce((accumulator, [key, value]) => {
+            if (value === null || value === undefined || value === '') {
+                return accumulator;
+            }
+
+            accumulator[key] = value;
+
+            return accumulator;
+        }, {});
 
         const response = await this.httpClient.get(`_action/${this.getApiBasePath()}/list`, {
             headers: this.getBasicHeaders(),
-            params,
+            params: normalizedParams,
         });
 
         const data = ApiService.handleResponse(response) ?? response?.data;
