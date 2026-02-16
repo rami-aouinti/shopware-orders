@@ -38,7 +38,9 @@ readonly class ExternalOrderService
         int $limit = 50,
         ?string $sort = null,
         ?string $order = null,
-        array $filters = []
+        array $filters = [],
+        ?string $selectedArea = null,
+        ?string $selectedMainView = null
     ): array {
         $page = max(1, $page);
         $limit = $limit > 0 ? $limit : 50;
@@ -1062,6 +1064,168 @@ readonly class ExternalOrderService
         } catch (\Exception) {
             return null;
         }
+    }
+
+
+    /**
+     * @param array<int, array<string, mixed>> $orders
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function filterOrdersByArea(array $orders, ?string $selectedArea): array
+    {
+        if ($selectedArea === null || $selectedArea === '') {
+            return $orders;
+        }
+
+        $areaToChannels = [
+            'first-medical-ecommerce' => ['b2b'],
+            'medical-solutions' => ['ebay_de', 'kaufland', 'ebay_at', 'zonami', 'peg', 'bezb'],
+        ];
+
+        $allowedChannels = $areaToChannels[$selectedArea] ?? null;
+        if ($allowedChannels === null) {
+            return $orders;
+        }
+
+        return array_values(array_filter(
+            $orders,
+            static fn (array $orderItem): bool => in_array((string) ($orderItem['channel'] ?? ''), $allowedChannels, true)
+        ));
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $orders
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function filterOrdersByMainView(array $orders, ?string $selectedMainView): array
+    {
+        if ($selectedMainView !== 'openOrders') {
+            return $orders;
+        }
+
+        return array_values(array_filter(
+            $orders,
+            fn (array $orderItem): bool => $this->isOpenOrder($orderItem)
+        ));
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $orders
+     *
+     * @return array<string, int|float>
+     */
+    private function buildSummary(array $orders): array
+    {
+        $totalRevenue = 0.0;
+        $totalItems = 0;
+        $openOrdersTotal = 0;
+        $overdueShippingTotal = 0;
+        $overdueDeliveriesCompletedTotal = 0;
+
+        foreach ($orders as $orderItem) {
+            $totalRevenue += (float) ($orderItem['totalRevenue'] ?? 0.0);
+            $totalItems += (int) ($orderItem['totalItems'] ?? 0);
+            $openOrdersTotal += $this->isOpenOrder($orderItem) ? 1 : 0;
+            $overdueShippingTotal += $this->isOverdueShipping($orderItem) ? 1 : 0;
+            $overdueDeliveriesCompletedTotal += $this->isOverdueCompletedDelivery($orderItem) ? 1 : 0;
+        }
+
+        return [
+            'orderCount' => count($orders),
+            'totalOrders' => count($orders),
+            'totalRevenue' => $totalRevenue,
+            'totalItems' => $totalItems,
+            'totalQuantity' => $totalItems,
+            'openOrdersTotal' => $openOrdersTotal,
+            'overdueShippingTotal' => $overdueShippingTotal,
+            'overdueDeliveriesCompletedTotal' => $overdueDeliveriesCompletedTotal,
+        ];
+    }
+
+    private function isOpenOrder(array $orderItem): bool
+    {
+        $statusCandidates = [
+            $orderItem['status'] ?? null,
+            $orderItem['statusLabel'] ?? null,
+            $orderItem['ordersStatusName'] ?? null,
+        ];
+
+        foreach ($statusCandidates as $status) {
+            $normalized = strtolower(str_replace([' ', '-'], '_', trim((string) ($status ?? ''))));
+            if (in_array($normalized, ['open', 'offen', 'processing', 'in_progress', 'pending', 'paid', 'versandbereit', 'bezahlt'], true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isOverdueShipping(array $orderItem): bool
+    {
+        if ($this->extractBooleanMetric($orderItem, ['isOverdueShipping', 'overdueShipping', 'shippingOverdue'])) {
+            return true;
+        }
+
+        $latestShippingDate = $this->normalizeDateValue($orderItem['latestShippingDate'] ?? null);
+        if ($latestShippingDate === null) {
+            return false;
+        }
+
+        return $latestShippingDate < (new \DateTimeImmutable('today'))->format('Y-m-d')
+            && !$this->statusMatches($orderItem, 'shipped')
+            && !$this->statusMatches($orderItem, 'completed');
+    }
+
+    private function isOverdueCompletedDelivery(array $orderItem): bool
+    {
+        if ($this->extractBooleanMetric($orderItem, ['isOverdueCompletedDelivery', 'overdueCompletedDelivery', 'overdueDeliveryCompleted'])) {
+            return true;
+        }
+
+        if (!$this->statusMatches($orderItem, 'completed')) {
+            return false;
+        }
+
+        $deliveryDate = $this->normalizeDateValue($orderItem['deliveryDate'] ?? null);
+        if ($deliveryDate === null) {
+            return false;
+        }
+
+        return $deliveryDate < (new \DateTimeImmutable('today'))->format('Y-m-d');
+    }
+
+    /**
+     * @param array<string, mixed> $orderItem
+     * @param array<int, string> $candidates
+     */
+    private function extractBooleanMetric(array $orderItem, array $candidates): bool
+    {
+        foreach ($candidates as $key) {
+            $value = $orderItem[$key] ?? null;
+
+            if (is_bool($value)) {
+                return $value;
+            }
+
+            if (is_numeric($value)) {
+                return (float) $value > 0;
+            }
+
+            if (is_string($value)) {
+                $normalized = strtolower(trim($value));
+                if (in_array($normalized, ['1', 'true', 'yes', 'ja'], true)) {
+                    return true;
+                }
+
+                if (in_array($normalized, ['0', 'false', 'no', 'nein'], true)) {
+                    return false;
+                }
+            }
+        }
+
+        return false;
     }
 
     private function sortOrders(array $orders, string $sortField, string $sortDirection): array
