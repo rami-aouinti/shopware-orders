@@ -228,6 +228,40 @@
         gap: 8px;
     }
 
+    &__session-gate {
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px;
+    }
+
+    &__session-card {
+        width: min(680px, 100%);
+        background: #ffffff;
+        border: 1px solid #d7dde5;
+        border-radius: 12px;
+        padding: 28px;
+        text-align: center;
+
+        h3 {
+            margin: 0 0 8px;
+        }
+
+        p {
+            margin: 0;
+            color: #52667a;
+        }
+    }
+
+    &__session-options {
+        margin-top: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+    }
+
     &__download-icon {
         margin-right: 6px;
     }
@@ -247,6 +281,19 @@
         border-bottom: 0;
     }
 
+
+    &__main-view-selector {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 360px;
+    }
+
+    &__main-view-label {
+        font-size: 12px;
+        color: #52667a;
+        font-weight: 600;
+    }
     &__filters {
         display: flex;
         flex-wrap: nowrap;

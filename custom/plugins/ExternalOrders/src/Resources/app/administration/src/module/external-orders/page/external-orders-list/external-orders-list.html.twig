@@ -5,16 +5,16 @@
             <div class="external-orders__summary external-orders__summary--header">
                 <div class="external-orders__summary-metrics">
                     <div class="external-orders__summary-item">
-                        <span class="external-orders__summary-label">Bestellungen</span>
-                        <span class="external-orders__summary-value">{{ summary.orderCount }}</span>
+                        <span class="external-orders__summary-label">aktuell offene Bestellungen Gesamt</span>
+                        <span class="external-orders__summary-value">{{ summary.openOrdersTotal }}</span>
                     </div>
                     <div class="external-orders__summary-item">
-                        <span class="external-orders__summary-label">Gesamtumsatz</span>
-                        <span class="external-orders__summary-value">{{ formatCurrency(summary.totalRevenue) }}</span>
+                        <span class="external-orders__summary-label">aktuell überfälliger Versand</span>
+                        <span class="external-orders__summary-value">{{ summary.overdueShippingTotal }}</span>
                     </div>
                     <div class="external-orders__summary-item">
-                        <span class="external-orders__summary-label">Stück</span>
-                        <span class="external-orders__summary-value">{{ summary.totalItems }}</span>
+                        <span class="external-orders__summary-label">aktuell überfällige Lieferungen (Status abgeschlossen)</span>
+                        <span class="external-orders__summary-value">{{ summary.overdueDeliveriesCompletedTotal }}</span>
                     </div>
                 </div>
                 <div class="external-orders__summary-actions">
@@ -39,7 +39,25 @@
         </div>
     </header>
 
-    <main id="main" class="sw-page__main-content" tabindex="-1">
+    <div v-if="!selectedArea" class="external-orders__session-gate" role="dialog" aria-modal="true">
+        <div class="external-orders__session-card">
+            <h3>Bereich auswählen</h3>
+            <p>Bitte wählen Sie zuerst den gewünschten Bereich aus.</p>
+            <div class="external-orders__session-options">
+                <button
+                    v-for="area in areaOptions"
+                    :key="area.value"
+                    class="external-orders__button external-orders__button--primary"
+                    type="button"
+                    @click="selectArea(area.value)"
+                >
+                    {{ area.label }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <main v-if="selectedArea" id="main" class="sw-page__main-content" tabindex="-1">
         <div class="external-orders__page">
             <sw-card class="external-orders__channels" style="max-width: none; width: 100%;">
                 <div class="external-orders__channel-tabs">
@@ -58,6 +76,17 @@
                     </button>
                 </div>
                 <div class="external-orders__filters-bar">
+                    <div class="external-orders__main-view-selector">
+                        <label class="external-orders__main-view-label" for="external-orders-main-view">Hauptansicht</label>
+                        <sw-single-select
+                            id="external-orders-main-view"
+                            v-model:value="selectedMainView"
+                            :options="mainViewOptions"
+                            value-property="value"
+                            label-property="label"
+                            size="small"
+                        />
+                    </div>
                     <div class="external-orders__filters">
                         <button
                                 class="external-orders__button external-orders__button--primary"
