@@ -32,6 +32,16 @@
         padding: 0;
         margin-right: 8px;
         cursor: pointer;
+
+        &.is-active {
+            font-weight: 600;
+        }
+    }
+
+    &__tracking-current {
+        color: #52667a;
+        margin-left: 4px;
+        font-size: 12px;
     }
 
     &__tracking-overlay {

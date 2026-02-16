@@ -856,12 +856,13 @@ readonly class LieferzeitenOrderOverviewService
                 LOWER(HEX(sh.position_id)) AS positionId,
                 sh.sendenummer AS number,
                 sh.carrier AS carrier,
+                sh.is_active AS isActive,
                 sh.last_changed_by AS lastChangedBy,
                 sh.last_changed_at AS lastChangedAt,
                 sh.created_at AS createdAt
              FROM `lieferzeiten_sendenummer_history` sh
              WHERE LOWER(HEX(sh.position_id)) IN (:positionIds)
-             ORDER BY sh.created_at DESC',
+             ORDER BY sh.is_active DESC, sh.created_at DESC',
             ['positionIds' => $positionIds],
             ['positionIds' => ArrayParameterType::STRING],
         );

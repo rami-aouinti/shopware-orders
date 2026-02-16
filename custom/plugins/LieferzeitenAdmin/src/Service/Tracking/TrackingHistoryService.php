@@ -62,11 +62,18 @@ readonly class TrackingHistoryService
                 continue;
             }
 
+            $rawStatus = (string) ($event['status'] ?? $event['trackingStatus'] ?? $event['state'] ?? 'unknown');
+            $rawLabel = (string) ($event['label'] ?? $event['description'] ?? $event['message'] ?? '');
+            $rawTimestamp = (string) ($event['timestamp'] ?? $event['eventTime'] ?? $event['date'] ?? '');
+            $rawLocation = (string) ($event['location'] ?? $event['city'] ?? $event['hub'] ?? '');
+
             $normalized[] = [
-                'status' => $this->normalizeStatus((string) ($event['status'] ?? 'unknown')),
-                'label' => (string) ($event['label'] ?? ''),
-                'timestamp' => (string) ($event['timestamp'] ?? ''),
-                'location' => (string) ($event['location'] ?? ''),
+                'status' => $this->normalizeStatus($rawStatus),
+                'label' => $rawLabel,
+                'timestamp' => $rawTimestamp,
+                'location' => $rawLocation,
+                'rawStatus' => $rawStatus,
+                'source' => (string) ($event['source'] ?? 'carrier'),
             ];
         }
 

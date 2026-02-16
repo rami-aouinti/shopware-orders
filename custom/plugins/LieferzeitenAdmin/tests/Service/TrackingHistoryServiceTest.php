@@ -28,6 +28,34 @@ class TrackingHistoryServiceTest extends TestCase
         static::assertSame('in_transit', $response['events'][1]['status']);
     }
 
+
+    public function testFetchHistoryNormalizesSan6StyleEventFieldsToConsistentFormat(): void
+    {
+        $client = $this->createMock(TrackingClientInterface::class);
+        $client->method('supportsCarrier')->willReturn(true);
+        $client->method('fetchHistory')->willReturn([
+            [
+                'trackingStatus' => 'unterwegs',
+                'description' => 'Paket im Transit',
+                'eventTime' => '2026-02-05T09:00:00+00:00',
+                'city' => 'Köln',
+                'source' => 'san6',
+            ],
+        ]);
+
+        $service = new TrackingHistoryService([$client]);
+
+        $response = $service->fetchHistory('dhl', 'TRACK-1');
+
+        static::assertTrue($response['ok']);
+        static::assertSame('in_transit', $response['events'][0]['status']);
+        static::assertSame('Paket im Transit', $response['events'][0]['label']);
+        static::assertSame('2026-02-05T09:00:00+00:00', $response['events'][0]['timestamp']);
+        static::assertSame('Köln', $response['events'][0]['location']);
+        static::assertSame('unterwegs', $response['events'][0]['rawStatus']);
+        static::assertSame('san6', $response['events'][0]['source']);
+    }
+
     public function testFetchHistoryReturnsProviderErrorPayload(): void
     {
         $client = $this->createMock(TrackingClientInterface::class);

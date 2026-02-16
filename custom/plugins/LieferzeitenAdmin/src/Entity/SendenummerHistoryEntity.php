@@ -15,6 +15,8 @@ class SendenummerHistoryEntity extends Entity
 
     protected ?string $carrier = null;
 
+    protected ?bool $isActive = null;
+
     protected ?string $lastChangedBy = null;
 
     protected ?\DateTimeInterface $lastChangedAt = null;
@@ -49,6 +51,16 @@ class SendenummerHistoryEntity extends Entity
     public function setCarrier(?string $carrier): void
     {
         $this->carrier = $carrier;
+    }
+
+    public function isActive(): ?bool
+    {
+        return $this->isActive;
+    }
+
+    public function setIsActive(?bool $isActive): void
+    {
+        $this->isActive = $isActive;
     }
 
     public function getLastChangedBy(): ?string
