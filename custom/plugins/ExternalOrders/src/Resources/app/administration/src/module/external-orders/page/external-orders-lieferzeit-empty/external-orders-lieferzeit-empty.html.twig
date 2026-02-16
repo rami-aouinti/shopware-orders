@@ -51,25 +51,24 @@
             <div class="external-orders-lieferzeit-empty__filters-row external-orders-lieferzeit-empty__filters-row--primary">
                 <sw-text-field v-model:value="filters.bestellnummer" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Bestellnummer" />
                 <sw-text-field v-model:value="filters.san6" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="SAN6-Auftragsnummer" />
-                <sw-text-field v-model:value="filters.user" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Kunde" />
-                <sw-text-field v-model:value="filters.domain" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Vertriebskanal" />
+                <sw-text-field v-model:value="filters.user" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Änderung durch User" />
                 <sw-text-field v-model:value="filters.sendenummer" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Sendungsnummer" />
-                <sw-text-field v-model:value="filters.status" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Bestellstatus" />
+                <sw-text-field v-model:value="filters.status" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Status" />
             </div>
 
             <div class="external-orders-lieferzeit-empty__filters-row external-orders-lieferzeit-empty__filters-row--secondary">
-                <sw-datepicker v-model:value="filters.shippingDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Spätester Versand von" />
-                <sw-datepicker v-model:value="filters.shippingDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Spätester Versand bis" />
-                <sw-datepicker v-model:value="filters.businessDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Lieferstart (Business) von" />
-                <sw-datepicker v-model:value="filters.businessDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Lieferstart (Business) bis" />
-                <sw-datepicker v-model:value="filters.businessDateEndFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Lieferende (Business) von" />
-                <sw-datepicker v-model:value="filters.businessDateEndTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Lieferende (Business) bis" />
+                <sw-datepicker v-model:value="filters.latestShippingDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Spätester Versandzeitpunkt von" />
+                <sw-datepicker v-model:value="filters.latestShippingDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Spätester Versandzeitpunkt bis" />
+                <sw-datepicker v-model:value="filters.shippingDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Versand-Datum von" />
+                <sw-datepicker v-model:value="filters.shippingDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Versand-Datum bis" />
+                <sw-datepicker v-model:value="filters.latestDeliveryDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Spätester Lieferzeitpunkt von" />
+                <sw-datepicker v-model:value="filters.latestDeliveryDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Spätester Lieferzeitpunkt bis" />
+                <sw-datepicker v-model:value="filters.deliveryDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefer-Datum von" />
+                <sw-datepicker v-model:value="filters.deliveryDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefer-Datum bis" />
                 <sw-datepicker v-model:value="filters.lieferterminLieferantFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Lieferant von" />
                 <sw-datepicker v-model:value="filters.lieferterminLieferantTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Lieferant bis" />
-                <sw-datepicker v-model:value="filters.neuerLieferterminFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Neuer Liefertermin von" />
-                <sw-datepicker v-model:value="filters.neuerLieferterminTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Neuer Liefertermin bis" />
-                <sw-datepicker v-model:value="filters.deliveryDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Späteste Lieferung von" />
-                <sw-datepicker v-model:value="filters.deliveryDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Späteste Lieferung bis" />
+                <sw-datepicker v-model:value="filters.neuerLieferterminFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Auftragsbearbeitung von" />
+                <sw-datepicker v-model:value="filters.neuerLieferterminTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Auftragsbearbeitung bis" />
                 <sw-text-field
                     v-model:value="tableSearchTerm"
                     class="external-orders-lieferzeit-empty__search external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--search"
