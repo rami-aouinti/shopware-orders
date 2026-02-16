@@ -28,6 +28,9 @@
             <argument key="$connection" type="service" id="Doctrine\DBAL\Connection" />
             <argument key="$systemConfigService" type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
         </service>
+        <service id="ExternalOrders\Service\DeliveryDateEditorService">
+            <argument key="$connection" type="service" id="Doctrine\DBAL\Connection" />
+        </service>
         <service id="ExternalOrders\Service\TopmSan6OrderMapper" />
         <service id="ExternalOrders\Service\TopmSan6Client" />
         <service id="ExternalOrders\Service\ExternalToOrderMapper" />

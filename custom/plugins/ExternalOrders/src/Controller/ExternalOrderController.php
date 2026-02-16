@@ -3,6 +3,8 @@
 namespace ExternalOrders\Controller;
 
 use ExternalOrders\Service\ExternalOrderService;
+use ExternalOrders\Dto\DeliveryDateEditorSaveRequestDto;
+use ExternalOrders\Service\DeliveryDateEditorService;
 use ExternalOrders\Service\ExternalOrderSyncService;
 use ExternalOrders\Service\ExternalOrderTestDataService;
 use ExternalOrders\Service\SupplierRequestTaskService;
@@ -28,6 +30,7 @@ class ExternalOrderController extends AbstractController
         private readonly ExternalOrderSyncService $syncService,
         private readonly TopmSan6OrderExportService $orderExportService,
         private readonly SupplierRequestTaskService $supplierRequestTaskService,
+        private readonly DeliveryDateEditorService $deliveryDateEditorService,
         private readonly Connection $connection,
     ) {
     }
@@ -272,6 +275,46 @@ class ExternalOrderController extends AbstractController
         return new JsonResponse([
             'tasks' => $tasks,
         ]);
+    }
+
+
+    #[Route(
+        path: '/api/_action/external-orders/delivery-date-editor/{orderId}/{positionId}',
+        name: 'api.admin.external-orders.delivery-date-editor.get',
+        defaults: ['_acl' => ['admin']],
+        methods: [Request::METHOD_GET]
+    )]
+    public function getDeliveryDateEditorState(string $orderId, string $positionId): Response
+    {
+        if (!Uuid::isValid($orderId) || trim($positionId) === '') {
+            return new JsonResponse(['message' => 'orderId oder positionId ist ungültig.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        return new JsonResponse($this->deliveryDateEditorService->getEditorState($orderId, $positionId));
+    }
+
+    #[Route(
+        path: '/api/_action/external-orders/delivery-date-editor/save',
+        name: 'api.admin.external-orders.delivery-date-editor.save',
+        defaults: ['_acl' => ['admin']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function saveDeliveryDateEditorState(Request $request): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        if (!is_array($payload)) {
+            return new JsonResponse(['message' => 'Ungültiger Payload.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $dto = DeliveryDateEditorSaveRequestDto::fromArray($payload);
+        $result = $this->deliveryDateEditorService->saveEditorState($dto);
+
+        if (($result['saved'] ?? false) === false) {
+            return new JsonResponse($result, Response::HTTP_BAD_REQUEST);
+        }
+
+        return new JsonResponse($result);
     }
 
     #[Route(

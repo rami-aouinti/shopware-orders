@@ -119,6 +119,25 @@ class ExternalOrderService extends ApiService {
     }
 
 
+
+    async getDeliveryDateEditorState(orderId, positionId) {
+        const response = await this.httpClient.get(`_action/${this.getApiBasePath()}/delivery-date-editor/${orderId}/${positionId}`, {
+            headers: this.getBasicHeaders(),
+        });
+
+        const data = ApiService.handleResponse(response) ?? response?.data;
+        return data?.data ?? data;
+    }
+
+    async saveDeliveryDateEditorState(payload) {
+        const response = await this.httpClient.post(`_action/${this.getApiBasePath()}/delivery-date-editor/save`, payload, {
+            headers: this.getBasicHeaders(),
+        });
+
+        const data = ApiService.handleResponse(response) ?? response?.data;
+        return data?.data ?? data;
+    }
+
     async getCompletedSupplierRequestTasks(params = {}) {
         const response = await this.httpClient.get(`_action/${this.getApiBasePath()}/completed-supplier-request-tasks`, {
             headers: this.getBasicHeaders(),
