@@ -46,12 +46,7 @@ const createDefaultColumnFilters = () => COLUMN_KEYS.reduce((filters, key) => {
 Shopware.Component.register('external-orders-lieferzeit-empty', {
     template,
 
-    inject: {
-        lieferzeitenOrdersService: {
-            from: 'lieferzeitenOrdersService',
-            default: null,
-        },
-    },
+    inject: ['externalOrderService'],
 
     data() {
         return {
@@ -234,6 +229,11 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 return result;
             }
 
+            const orders = result?.orders;
+            if (Array.isArray(orders)) {
+                return orders;
+            }
+
             const rows = result?.data;
             if (Array.isArray(rows)) {
                 return rows;
@@ -242,16 +242,34 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             return [];
         },
 
+        normalizeOrder(order) {
+            const trackingNumbers = Array.isArray(order?.trackingNumbers)
+                ? order.trackingNumbers.filter((trackingNumber) => String(trackingNumber || '').trim() !== '')
+                : [];
+
+            return {
+                ...order,
+                bestellnummer: order?.bestellnummer ?? order?.orderNumber ?? order?.orderId ?? '',
+                san6: order?.san6 ?? order?.san6OrderNumber ?? order?.orderReference ?? order?.auftragNumber ?? '',
+                status: order?.status ?? order?.statusLabel ?? order?.ordersStatusName ?? '',
+                user: order?.user ?? order?.customerName ?? order?.customersName ?? '',
+                sendenummer: order?.sendenummer ?? order?.trackingNumber ?? trackingNumbers.join(', '),
+                domain: order?.domain ?? order?.sourceSystem ?? order?.channel ?? '',
+                latestShippingDate: order?.latestShippingDate ?? order?.shippingDate ?? order?.shippingDateLatest ?? '',
+                latestDeliveryDate: order?.latestDeliveryDate ?? order?.deliveryDate ?? order?.lieferterminLieferant ?? '',
+            };
+        },
+
         async fetchOrdersFallback(params) {
             const initContainer = Shopware.Application.getContainer('init');
             const httpClient = initContainer?.httpClient;
             const loginService = Shopware.Service('loginService');
 
             if (!httpClient || !loginService) {
-                throw new Error('Lieferzeiten service is unavailable.');
+                throw new Error('External orders service is unavailable.');
             }
 
-            const response = await httpClient.get('_action/lieferzeiten/orders', {
+            const response = await httpClient.get('_action/external-orders/list', {
                 params,
                 headers: {
                     Authorization: `Bearer ${loginService.getToken()}`,
@@ -269,11 +287,11 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
             try {
                 const params = this.buildFilterParams();
-                const result = this.lieferzeitenOrdersService
-                    ? await this.lieferzeitenOrdersService.getOrders(params)
+                const result = this.externalOrderService
+                    ? await this.externalOrderService.list(params)
                     : await this.fetchOrdersFallback(params);
 
-                this.orders = this.extractOrders(result);
+                this.orders = this.extractOrders(result).map((order) => this.normalizeOrder(order));
                 this.page = 1;
             } catch (error) {
                 this.orders = [];
