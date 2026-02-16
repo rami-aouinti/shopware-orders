@@ -363,8 +363,8 @@ readonly class ExternalOrderService
         $customerName = $customerName !== '' ? $customerName : 'N/A';
 
         $email = $payload['customersEmailAddress'] ?? $payload['email'] ?? ($customer['email'] ?? 'N/A');
-        $orderNumber = $payload['orderNumber'] ?? ($detail['orderNumber'] ?? $order->getOrderNumber() ?? $externalId);
-        $orderReference = $payload['auftragNumber'] ?? $payload['orderReference'] ?? $orderNumber;
+        $orderNumber = trim((string) ($payload['orderNumber'] ?? ($detail['orderNumber'] ?? $order->getOrderNumber() ?? $externalId)));
+        $orderReference = trim((string) ($payload['auftragNumber'] ?? $payload['orderReference'] ?? $orderNumber));
         $channel = $payload['channel'] ?? 'unknown';
 
         $statusLabel = $payload['ordersStatusName'] ?? $payload['statusLabel'] ?? ($additional['status'] ?? 'Processing');
