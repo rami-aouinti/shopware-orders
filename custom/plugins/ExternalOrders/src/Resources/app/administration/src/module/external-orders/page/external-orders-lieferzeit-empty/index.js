@@ -30,16 +30,24 @@ const CHANNEL_LABELS = Object.freeze({
     san6: 'SAN6',
 });
 
-const COLUMN_KEYS = [
-    'bestellnummer',
-    'san6',
-    'status',
-    'user',
-    'sendenummer',
-    'domain',
-    'latestShippingDate',
-    'latestDeliveryDate',
-];
+const COLUMN_DEFINITIONS = Object.freeze([
+    { key: 'bestellnummer', label: 'Bestellnummer', group: 'Bestellung' },
+    { key: 'san6', label: 'SAN6-Auftragsnummer', group: 'Bestellung' },
+    { key: 'user', label: 'Änderung durch User', group: 'Bestellung' },
+    { key: 'sendenummer', label: 'Sendungsnummer', group: 'Lieferung' },
+    { key: 'shippingDate', label: 'Versand-Datum', group: 'Lieferung', type: 'date' },
+    { key: 'deliveryDate', label: 'Liefer-Datum', group: 'Lieferung', type: 'date' },
+    { key: 'lieferterminLieferant', label: 'Liefertermin Lieferant', group: 'Lieferung', type: 'date' },
+    { key: 'neuerLiefertermin', label: 'Liefertermin Auftragsbearbeitung', group: 'Lieferung', type: 'date' },
+    { key: 'latestShippingDate', label: 'Spätester Versandzeitpunkt', group: 'Status', type: 'date' },
+    { key: 'latestDeliveryDate', label: 'Spätester Lieferzeitpunkt', group: 'Status', type: 'date' },
+    { key: 'status', label: 'Status', group: 'Status' },
+]);
+
+const COLUMN_KEYS = COLUMN_DEFINITIONS.map((column) => column.key);
+const DATE_COLUMN_KEYS = COLUMN_DEFINITIONS
+    .filter((column) => column.type === 'date')
+    .map((column) => column.key);
 
 const createDefaultFilters = () => ({
     bestellnummer: '',
@@ -47,14 +55,14 @@ const createDefaultFilters = () => ({
     user: '',
     sendenummer: '',
     status: '',
+    latestShippingDateFrom: null,
+    latestShippingDateTo: null,
     shippingDateFrom: null,
     shippingDateTo: null,
-    businessDateFrom: null,
-    businessDateTo: null,
+    latestDeliveryDateFrom: null,
+    latestDeliveryDateTo: null,
     deliveryDateFrom: null,
     deliveryDateTo: null,
-    businessDateEndFrom: null,
-    businessDateEndTo: null,
     lieferterminLieferantFrom: null,
     lieferterminLieferantTo: null,
     neuerLieferterminFrom: null,
@@ -102,16 +110,10 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
     computed: {
         tableColumns() {
-            return [
-                { key: 'bestellnummer', label: 'Bestellnummer' },
-                { key: 'san6', label: 'SAN6' },
-                { key: 'status', label: 'Status' },
-                { key: 'user', label: 'User' },
-                { key: 'sendenummer', label: 'Sendenummer' },
-                { key: 'domain', label: 'Domain' },
-                { key: 'latestShippingDate', label: 'Spätester Versand' },
-                { key: 'latestDeliveryDate', label: 'Späteste Lieferung' },
-            ];
+            return COLUMN_DEFINITIONS.map((column) => ({
+                ...column,
+                label: `${column.group} · ${column.label}`,
+            }));
         },
 
         channels() {
@@ -310,8 +312,12 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 user: order?.user ?? order?.customerName ?? order?.customersName ?? '',
                 sendenummer: order?.sendenummer ?? order?.trackingNumber ?? trackingNumbers.join(', '),
                 domain: order?.domain ?? order?.sourceSystem ?? order?.channel ?? '',
-                latestShippingDate: order?.latestShippingDate ?? order?.shippingDate ?? order?.shippingDateLatest ?? '',
-                latestDeliveryDate: order?.latestDeliveryDate ?? order?.deliveryDate ?? order?.lieferterminLieferant ?? '',
+                shippingDate: order?.shippingDate ?? order?.versandDatum ?? order?.shippingAt ?? '',
+                deliveryDate: order?.deliveryDate ?? order?.lieferDatum ?? order?.deliveredAt ?? '',
+                lieferterminLieferant: order?.lieferterminLieferant ?? order?.supplierDeliveryDate ?? '',
+                neuerLiefertermin: order?.neuerLiefertermin ?? order?.newDeliveryDate ?? order?.lieferterminAuftragsbearbeitung ?? '',
+                latestShippingDate: order?.latestShippingDate ?? order?.shippingDateLatest ?? '',
+                latestDeliveryDate: order?.latestDeliveryDate ?? order?.lieferzeitpunktLatest ?? order?.lieferterminLieferant ?? '',
             };
         },
 
@@ -453,15 +459,22 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             const mapping = {
                 bestellnummer: order?.bestellnummer ?? order?.orderNumber,
                 san6: order?.san6 ?? order?.san6OrderNumber,
-                status: order?.status,
                 user: order?.user,
                 sendenummer: order?.sendenummer,
-                domain: order?.domain ?? order?.sourceSystem,
-                latestShippingDate: order?.latestShippingDate ?? order?.shippingDate,
-                latestDeliveryDate: order?.latestDeliveryDate ?? order?.deliveryDate,
+                shippingDate: order?.shippingDate,
+                deliveryDate: order?.deliveryDate,
+                lieferterminLieferant: order?.lieferterminLieferant ?? order?.supplierDeliveryDate,
+                neuerLiefertermin: order?.neuerLiefertermin ?? order?.newDeliveryDate,
+                latestShippingDate: order?.latestShippingDate,
+                latestDeliveryDate: order?.latestDeliveryDate,
+                status: order?.status,
             };
 
             return mapping[column] ?? '';
+        },
+
+        isDateColumn(columnKey) {
+            return DATE_COLUMN_KEYS.includes(columnKey);
         },
 
         getComparableSortValue(value) {

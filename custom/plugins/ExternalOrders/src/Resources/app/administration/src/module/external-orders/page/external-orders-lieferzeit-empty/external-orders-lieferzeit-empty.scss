@@ -148,11 +148,16 @@
         width: 100%;
 
         &--primary {
-            flex-wrap: nowrap;
+            display: grid;
+            grid-template-columns: repeat(5, minmax(180px, 1fr));
+            gap: 8px;
         }
 
         &--secondary {
-            flex-wrap: nowrap;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(180px, 1fr));
+            gap: 8px;
+            align-items: start;
         }
     }
 
@@ -160,15 +165,16 @@
         min-width: 0;
 
         &--third {
-            flex: 1 1 0;
+            min-width: 0;
         }
 
         &--date {
-            flex: 0 1 220px;
+            min-width: 180px;
         }
 
         &--search {
-            flex: 1 1 260px;
+            min-width: 260px;
+            grid-column: span 2;
         }
     }
 
@@ -177,8 +183,16 @@
     }
 
     &__filters-actions {
-        margin-left: auto;
-        flex: 0 0 auto;
+        margin-left: 0;
+        justify-content: flex-end;
+        width: 100%;
+        grid-column: 1 / -1;
+    }
+
+    .sw-datepicker,
+    .sw-field,
+    .sw-field--text {
+        width: 100%;
     }
 
     &__button {
@@ -499,6 +513,16 @@
         &__active-channel {
             align-items: flex-start;
         }
+
+        &__filters-row {
+            &--primary {
+                grid-template-columns: repeat(3, minmax(180px, 1fr));
+            }
+
+            &--secondary {
+                grid-template-columns: repeat(2, minmax(180px, 1fr));
+            }
+        }
     }
 
     @media (max-width: 768px) {
@@ -513,6 +537,7 @@
 
         &__filters-row {
             width: 100%;
+            display: flex;
             flex-wrap: wrap;
         }
 
@@ -525,6 +550,7 @@
             &--date,
             &--search {
                 flex: 1 1 100%;
+                grid-column: auto;
             }
         }
 
