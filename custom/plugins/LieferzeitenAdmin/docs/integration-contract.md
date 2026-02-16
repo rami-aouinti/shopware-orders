@@ -1,7 +1,7 @@
 # Integrationsvertrag — LieferzeitenAdmin
 
-Version: `1.3.0`  
-Letzte Aktualisierung: `2026-02-14`
+Version: `1.4.0`  
+Letzte Aktualisierung: `2026-02-16`
 
 ## 1) Ein-/Ausgabe-Verträge der APIs
 
@@ -219,3 +219,53 @@ Die Statistik-Antwort enthält ein stabiles Fensterobjekt:
   }
 }
 ```
+
+
+## 8) Statusmodell (Quelle je Status)
+
+| Business-Status | Bedeutung | Primäre Lesequellen | Aktiv zurückschreiben |
+|---|---|---|---|
+| `1` | New | Shopware/Gambio | nein |
+| `2` | In clarification | Shopware/Gambio | nein |
+| `3` | Awaiting supplier | Shopware/Gambio, San6 | nein |
+| `4` | Partially available | Shopware/Gambio, San6 | nein |
+| `5` | Ready for shipping | Shopware/Gambio, San6 | nein |
+| `6` | Partially shipped | Shopware/Gambio, San6, Trackingdienst | nein |
+| `7` | Shipped | Shopware/Gambio, San6, Trackingdienst | ja (Shopware/Gambio) |
+| `8` | Closed | Shopware/Gambio, San6, Trackingdienst | ja (Shopware/Gambio) |
+
+## 9) Aggregationsregel „Order Completed"
+
+`Order Completed` (`status=8`) wird nur gesetzt, wenn **alle** Pakete einen finalen Zustellzustand haben.
+
+Finale Zustellzustände (Beispiele):
+- `delivered`, `zugestellt`, `ablageort`
+- `paketshop_retire`, `paketshop_collected`
+- `completed`, `8`
+
+Blockierende Sonderfälle (führen zu **nicht completed**):
+- Paketshop nicht abgeholt: `paketshop_non_retire`, `paketshop_not_collected`
+- Retouren: `retoure`
+- Verweigerung: `refus`, `verweigert`
+- Zollablehnung: `douane`, `zoll_abgelehnt`
+- Sonstige unzustellbar: `nicht_zustellbar`
+
+Ausnahme: SAN6-intern zugestellte Aufträge ohne Tracking dürfen weiterhin über die vorhandenen SAN6-Flags als completed interpretiert werden.
+
+## 10) Explizite Sync-Strategie
+
+### 10.1 Nur lesen (kein Push zurück)
+- Status `1` bis `6`
+- Trackingereignisse (DHL/GLS) inkl. Sonderfälle
+- SAN6-Kontextdaten für Matching und Datumsauflösung
+
+### 10.2 Aktiv zurückschreiben
+- Nur Status `7` und `8`
+- Zielsysteme: Shopware/Gambio (kanalabhängiger Push-Endpunkt)
+- Trigger: nur LMS-initiierte manuelle Statusänderungen (`user_lms`/`lms_user`)
+
+### 10.3 Fehler- und Retry-Verhalten beim API-Sync
+- Exponentieller Backoff pro Queue-Item (`2^attempts * 60s`, max. 24h)
+- Nach `6` Fehlversuchen wird ein Queue-Item auf `failed` gesetzt (`failedReason = max_attempts_exceeded`)
+- Bei fehlender Push-Konfiguration wird der Push protokolliert und beim nächsten Versuch erneut verarbeitet
+- Import-Sync bleibt robust: fehlerhafte Teilquellen (z. B. Tracking temporär nicht verfügbar) blockieren den Gesamtzyklus nicht

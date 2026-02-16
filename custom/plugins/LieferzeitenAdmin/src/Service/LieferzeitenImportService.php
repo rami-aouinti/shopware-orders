@@ -25,6 +25,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 class LieferzeitenImportService
 {
     private const INTERNAL_SHIPPING_LABEL = 'Versand durch First Medical';
+    private const MAX_STATUS_PUSH_ATTEMPTS = 6;
 
     /**
      * SAN6 payload contract for internal deliveries without tracking.
@@ -936,25 +937,25 @@ class LieferzeitenImportService
             return true;
         }
 
-        $specialCase = (string) ($order['specialCompletionCase'] ?? $san6Payload['specialCompletionCase'] ?? '');
-        if ($specialCase !== '' && in_array(strtolower($specialCase), ['manual_complete', 'digital_only', 'pickup_done', 'special_case'], true)) {
-            return true;
-        }
-
         $parcels = $order['parcels'] ?? $san6Payload['parcels'] ?? [];
         if (is_array($parcels) && $parcels !== []) {
-            $closedParcels = 0;
+            $finalDeliveredParcels = 0;
             foreach ($parcels as $parcel) {
                 if (!is_array($parcel)) {
                     continue;
                 }
 
-                if ($this->isClosedParcelStatusForStatus8($parcel, $order)) {
-                    ++$closedParcels;
+                $parcelState = $this->normalizeParcelState($parcel);
+                if (OrderStatusModel::isBlockingParcelState($parcelState)) {
+                    return false;
+                }
+
+                if ($this->isFinalDeliveredParcelStatusForStatus8($parcel, $order)) {
+                    ++$finalDeliveredParcels;
                 }
             }
 
-            return $closedParcels > 0 && $closedParcels === count($parcels);
+            return $finalDeliveredParcels > 0 && $finalDeliveredParcels === count($parcels);
         }
 
         return $this->isSan6InternalDeliveryCompleted($order, $san6Payload);
@@ -1003,7 +1004,7 @@ class LieferzeitenImportService
      * @param array<string,mixed> $parcel
      * @param array<string,mixed> $order
      */
-    private function isClosedParcelStatusForStatus8(array $parcel, array $order = []): bool
+    private function isFinalDeliveredParcelStatusForStatus8(array $parcel, array $order = []): bool
     {
         $mapped = $this->status8TrackingMappingProvider->isClosed($parcel, $order);
         if ($mapped !== null) {
@@ -1017,7 +1018,7 @@ class LieferzeitenImportService
             return (bool) $closed;
         }
 
-        return in_array($state, ['delivered', 'completed', '8'], true);
+        return OrderStatusModel::isFinalDeliveredParcelState($state);
     }
 
     /** @param array<string,mixed> $parcel */
@@ -1055,7 +1056,7 @@ class LieferzeitenImportService
                     continue;
                 }
 
-                if (($item['triggerSource'] ?? null) !== 'user_lms') {
+                if (!in_array((string) ($item['triggerSource'] ?? ''), ['user_lms', 'lms_user', ''], true)) {
                     continue;
                 }
 
@@ -1064,7 +1065,7 @@ class LieferzeitenImportService
                     continue;
                 }
 
-                if ((string) ($item['triggerSource'] ?? '') !== 'lms_user') {
+                if (!in_array((string) ($item['triggerSource'] ?? ''), ['user_lms', 'lms_user'], true)) {
                     $queue[$index]['state'] = 'ignored';
                     $queue[$index]['ignoredAt'] = date(DATE_ATOM);
                     $queue[$index]['ignoredReason'] = 'trigger_not_lms_user';
@@ -1085,6 +1086,14 @@ class LieferzeitenImportService
                 $attempts = (int) ($queue[$index]['attempts'] ?? 0) + 1;
                 $queue[$index]['attempts'] = $attempts;
                 $queue[$index]['lastErrorAt'] = date(DATE_ATOM);
+
+                if ($attempts >= self::MAX_STATUS_PUSH_ATTEMPTS) {
+                    $queue[$index]['state'] = 'failed';
+                    $queue[$index]['failedAt'] = date(DATE_ATOM);
+                    $queue[$index]['failedReason'] = 'max_attempts_exceeded';
+                    continue;
+                }
+
                 $queue[$index]['nextAttemptAt'] = date(DATE_ATOM, $now + min(86400, (2 ** $attempts) * 60));
             }
 
@@ -1103,7 +1112,7 @@ class LieferzeitenImportService
 
     private function pushStatusToChannel(PaketEntity $paket, int $status): bool
     {
-        if ($status < 7 || $status > 8) {
+        if (!OrderStatusModel::canWriteBack($status)) {
             return true;
         }
 
