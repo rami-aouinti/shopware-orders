@@ -118,6 +118,17 @@ class ExternalOrderService extends ApiService {
         return data?.data ?? data;
     }
 
+
+    async getCompletedSupplierRequestTasks(params = {}) {
+        const response = await this.httpClient.get(`_action/${this.getApiBasePath()}/completed-supplier-request-tasks`, {
+            headers: this.getBasicHeaders(),
+            params,
+        });
+
+        const data = ApiService.handleResponse(response) ?? response?.data;
+        return data?.data ?? data;
+    }
+
     async createSupplierRequestTask(payload) {
         const response = await this.httpClient.post(`_action/${this.getApiBasePath()}/create-supplier-request-task`, payload, {
             headers: this.getBasicHeaders(),

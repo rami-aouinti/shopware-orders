@@ -27,6 +27,8 @@ class SupplierRequestTaskSubscriber implements EventSubscriberInterface
             $event->getOrderId(),
             $event->getPositionId(),
             $event->getInitiatorUserId(),
+            $event->getRecipientUserId(),
+            $event->getCorrelationId(),
         ));
     }
 }

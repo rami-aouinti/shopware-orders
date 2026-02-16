@@ -13,6 +13,7 @@ class SupplierRequestTaskCompletedEvent extends Event
         private readonly string $positionId,
         private readonly ?string $initiatorUserId,
         private readonly ?string $recipientUserId,
+        private readonly ?string $correlationId,
         private readonly Context $context,
     ) {
     }
@@ -22,5 +23,6 @@ class SupplierRequestTaskCompletedEvent extends Event
     public function getPositionId(): string { return $this->positionId; }
     public function getInitiatorUserId(): ?string { return $this->initiatorUserId; }
     public function getRecipientUserId(): ?string { return $this->recipientUserId; }
+    public function getCorrelationId(): ?string { return $this->correlationId; }
     public function getContext(): Context { return $this->context; }
 }

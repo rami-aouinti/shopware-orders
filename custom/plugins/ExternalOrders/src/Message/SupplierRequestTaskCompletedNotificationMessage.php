@@ -9,6 +9,8 @@ class SupplierRequestTaskCompletedNotificationMessage
         private readonly string $orderId,
         private readonly string $positionId,
         private readonly ?string $initiatorUserId,
+        private readonly ?string $assigneeUserId,
+        private readonly ?string $correlationId,
     ) {
     }
 
@@ -16,4 +18,6 @@ class SupplierRequestTaskCompletedNotificationMessage
     public function getOrderId(): string { return $this->orderId; }
     public function getPositionId(): string { return $this->positionId; }
     public function getInitiatorUserId(): ?string { return $this->initiatorUserId; }
+    public function getAssigneeUserId(): ?string { return $this->assigneeUserId; }
+    public function getCorrelationId(): ?string { return $this->correlationId; }
 }

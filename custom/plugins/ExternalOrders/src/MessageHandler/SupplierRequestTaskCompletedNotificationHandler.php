@@ -18,6 +18,8 @@ class SupplierRequestTaskCompletedNotificationHandler
             'orderId' => $message->getOrderId(),
             'positionId' => $message->getPositionId(),
             'initiatorUserId' => $message->getInitiatorUserId(),
+            'assigneeUserId' => $message->getAssigneeUserId(),
+            'correlationId' => $message->getCorrelationId(),
             'notificationChannel' => 'administration-queue',
         ]);
     }

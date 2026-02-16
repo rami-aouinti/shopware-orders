@@ -21,11 +21,12 @@ class SupplierRequestTaskService
     ) {
     }
 
-    public function createTask(string $orderId, string $positionId, ?string $initiatorUserId): array
+    public function createTask(string $orderId, string $positionId, ?string $initiatorUserId, ?string $assigneeUserId = null, ?string $correlationId = null): array
     {
         $taskId = Uuid::randomHex();
-        $recipientUserId = $this->resolveRecipientUserId($initiatorUserId);
+        $recipientUserId = $this->resolveRecipientUserId($initiatorUserId, $assigneeUserId);
         $dueDate = $this->calculateNextBusinessDay();
+        $correlationId = $this->resolveCorrelationId($correlationId);
 
         $this->connection->insert('external_supplier_request_task', [
             'id' => Uuid::fromHexToBytes($taskId),
@@ -33,6 +34,7 @@ class SupplierRequestTaskService
             'position_id' => $positionId,
             'initiator_user_id' => $initiatorUserId,
             'recipient_user_id' => $recipientUserId,
+            'correlation_id' => $correlationId,
             'status' => self::STATUS_OPEN,
             'due_date' => $dueDate->format('Y-m-d H:i:s.v'),
             'created_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s.v'),
@@ -40,21 +42,22 @@ class SupplierRequestTaskService
             'completed_at' => null,
         ]);
 
-        return [
+        return $this->buildTaskPayload([
             'taskId' => $taskId,
             'orderId' => $orderId,
             'positionId' => $positionId,
             'initiatorUserId' => $initiatorUserId,
-            'recipientUserId' => $recipientUserId,
+            'assigneeUserId' => $recipientUserId,
+            'correlationId' => $correlationId,
             'status' => self::STATUS_OPEN,
             'dueDate' => $dueDate->format(DATE_ATOM),
-        ];
+        ]);
     }
 
     public function completeTask(string $taskId, Context $context): void
     {
         $task = $this->connection->fetchAssociative(
-            'SELECT LOWER(HEX(id)) id, LOWER(HEX(order_id)) orderId, position_id positionId, initiator_user_id initiatorUserId, recipient_user_id recipientUserId, status FROM external_supplier_request_task WHERE id = :id',
+            'SELECT LOWER(HEX(id)) id, LOWER(HEX(order_id)) orderId, position_id positionId, initiator_user_id initiatorUserId, recipient_user_id recipientUserId, correlation_id correlationId, status FROM external_supplier_request_task WHERE id = :id',
             ['id' => Uuid::fromHexToBytes($taskId)]
         );
 
@@ -75,12 +78,56 @@ class SupplierRequestTaskService
             (string) $task['positionId'],
             isset($task['initiatorUserId']) ? (string) $task['initiatorUserId'] : null,
             isset($task['recipientUserId']) ? (string) $task['recipientUserId'] : null,
+            isset($task['correlationId']) ? (string) $task['correlationId'] : null,
             $context,
         ));
     }
 
-    private function resolveRecipientUserId(?string $initiatorUserId): ?string
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function findCompletedTasksByInitiator(string $initiatorUserId, ?\DateTimeImmutable $completedSince = null, int $limit = 25): array
     {
+        $query = 'SELECT LOWER(HEX(id)) taskId, LOWER(HEX(order_id)) orderId, position_id positionId, initiator_user_id initiatorUserId, recipient_user_id recipientUserId, correlation_id correlationId, status, due_date dueDate, completed_at completedAt
+            FROM external_supplier_request_task
+            WHERE initiator_user_id = :initiatorUserId AND status = :status AND completed_at IS NOT NULL';
+
+        $params = [
+            'initiatorUserId' => $initiatorUserId,
+            'status' => self::STATUS_DONE,
+            'limit' => max(1, $limit),
+        ];
+
+        if ($completedSince !== null) {
+            $query .= ' AND completed_at > :completedSince';
+            $params['completedSince'] = $completedSince->format('Y-m-d H:i:s.v');
+        }
+
+        $query .= ' ORDER BY completed_at ASC LIMIT :limit';
+
+        $rows = $this->connection->fetchAllAssociative($query, $params, ['limit' => \PDO::PARAM_INT]);
+
+        return array_map(function (array $row): array {
+            return $this->buildTaskPayload([
+                'taskId' => (string) ($row['taskId'] ?? ''),
+                'orderId' => (string) ($row['orderId'] ?? ''),
+                'positionId' => (string) ($row['positionId'] ?? ''),
+                'initiatorUserId' => isset($row['initiatorUserId']) ? (string) $row['initiatorUserId'] : null,
+                'assigneeUserId' => isset($row['recipientUserId']) ? (string) $row['recipientUserId'] : null,
+                'correlationId' => isset($row['correlationId']) ? (string) $row['correlationId'] : null,
+                'status' => (string) ($row['status'] ?? self::STATUS_DONE),
+                'dueDate' => $this->formatDateAsAtom($row['dueDate'] ?? null),
+                'completedAt' => $this->formatDateAsAtom($row['completedAt'] ?? null),
+            ]);
+        }, $rows);
+    }
+
+    private function resolveRecipientUserId(?string $initiatorUserId, ?string $assigneeUserId): ?string
+    {
+        if ($assigneeUserId !== null && trim($assigneeUserId) !== '') {
+            return trim($assigneeUserId);
+        }
+
         $configuredRecipient = trim((string) $this->systemConfigService->get('ExternalOrders.config.supplierRequestRecipientUserId'));
 
         if ($configuredRecipient !== '') {
@@ -88,6 +135,17 @@ class SupplierRequestTaskService
         }
 
         return $initiatorUserId;
+    }
+
+    private function resolveCorrelationId(?string $correlationId): string
+    {
+        $trimmed = trim((string) $correlationId);
+
+        if ($trimmed !== '') {
+            return $trimmed;
+        }
+
+        return Uuid::randomHex();
     }
 
     private function calculateNextBusinessDay(): \DateTimeImmutable
@@ -99,5 +157,33 @@ class SupplierRequestTaskService
         }
 
         return $currentDay;
+    }
+
+    /**
+     * @param array<string, mixed> $task
+     *
+     * @return array<string, mixed>
+     */
+    private function buildTaskPayload(array $task): array
+    {
+        return [
+            ...$task,
+            'references' => [
+                'orderId' => $task['orderId'] ?? null,
+                'positionId' => $task['positionId'] ?? null,
+                'initiatorUserId' => $task['initiatorUserId'] ?? null,
+                'assigneeUserId' => $task['assigneeUserId'] ?? null,
+                'correlationId' => $task['correlationId'] ?? null,
+            ],
+        ];
+    }
+
+    private function formatDateAsAtom(mixed $value): ?string
+    {
+        if (!is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        return (new \DateTimeImmutable($value))->format(DATE_ATOM);
     }
 }

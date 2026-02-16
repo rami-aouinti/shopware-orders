@@ -227,6 +227,7 @@ const DATE_COLUMN_KEYS = tableColumnsMeta
     .map((column) => column.key);
 
 const FILTERABLE_COLUMNS = tableColumnsMeta.filter((column) => column.filterable);
+const SUPPLIER_TASK_POLL_INTERVAL_MS = 15000;
 
 const BUSINESS_STATUS_LABELS = Object.freeze({
     processing: 'Bezahlt / in Bearbeitung',
@@ -337,6 +338,9 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             selectedOrder: null,
             showDetailModal: false,
             pendingSupplierRequestKeys: {},
+            supplierTaskPollingTimer: null,
+            supplierTaskLastCompletedAt: null,
+            notifiedSupplierTaskIds: {},
         };
     },
 
@@ -458,6 +462,11 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
     created() {
         this.loadOrders();
         this.loadStatistics();
+        this.startSupplierTaskCompletionPolling();
+    },
+
+    beforeDestroy() {
+        this.stopSupplierTaskCompletionPolling();
     },
 
     methods: {
@@ -980,6 +989,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                     orderId: order.id,
                     positionId: order.positionId,
                     initiatorUserId: this.resolveInitiatorUserId(),
+                    correlationId: this.createSupplierTaskCorrelationId(order),
                 });
 
                 this.createNotificationSuccess({
@@ -996,6 +1006,98 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 delete pendingSupplierRequestKeys[key];
                 this.pendingSupplierRequestKeys = pendingSupplierRequestKeys;
             }
+        },
+
+
+
+        createSupplierTaskCorrelationId(order) {
+            const orderId = String(order?.id ?? order?.orderId ?? 'unknown-order');
+            const positionId = String(order?.positionId ?? 'unknown-position');
+
+            return `${orderId}:${positionId}:${Date.now()}`;
+        },
+
+        startSupplierTaskCompletionPolling() {
+            if (this.supplierTaskPollingTimer) {
+                return;
+            }
+
+            this.pollSupplierTaskCompletions();
+            this.supplierTaskPollingTimer = window.setInterval(() => {
+                this.pollSupplierTaskCompletions();
+            }, SUPPLIER_TASK_POLL_INTERVAL_MS);
+        },
+
+        stopSupplierTaskCompletionPolling() {
+            if (!this.supplierTaskPollingTimer) {
+                return;
+            }
+
+            window.clearInterval(this.supplierTaskPollingTimer);
+            this.supplierTaskPollingTimer = null;
+        },
+
+        async pollSupplierTaskCompletions() {
+            const initiatorUserId = this.resolveInitiatorUserId();
+
+            if (!initiatorUserId || !this.externalOrderService) {
+                return;
+            }
+
+            try {
+                const response = await this.externalOrderService.getCompletedSupplierRequestTasks({
+                    initiatorUserId,
+                    completedSince: this.supplierTaskLastCompletedAt,
+                    limit: 20,
+                });
+
+                const tasks = Array.isArray(response?.tasks) ? response.tasks : [];
+
+                tasks.forEach((task) => {
+                    const taskId = String(task?.taskId || '');
+
+                    if (!taskId || this.notifiedSupplierTaskIds[taskId]) {
+                        return;
+                    }
+
+                    this.notifySupplierTaskCompletion(task);
+                    this.notifiedSupplierTaskIds = {
+                        ...this.notifiedSupplierTaskIds,
+                        [taskId]: true,
+                    };
+                });
+
+                const lastTask = tasks[tasks.length - 1] ?? null;
+                const lastCompletedAt = String(lastTask?.completedAt || '');
+
+                if (lastCompletedAt) {
+                    this.supplierTaskLastCompletedAt = lastCompletedAt;
+                }
+            } catch (error) {
+                // polling intentionally tolerant to temporary failures
+            }
+        },
+
+        buildSupplierPositionLink(task) {
+            const orderId = String(task?.orderId || '');
+            const positionId = String(task?.positionId || '');
+
+            if (!orderId || !positionId) {
+                return '/admin#/external/orders/lieferzeit';
+            }
+
+            return `/admin#/external/orders/lieferzeit?orderId=${encodeURIComponent(orderId)}&positionId=${encodeURIComponent(positionId)}`;
+        },
+
+        notifySupplierTaskCompletion(task) {
+            const orderId = String(task?.orderId || '-');
+            const positionId = String(task?.positionId || '-');
+            const directLink = this.buildSupplierPositionLink(task);
+
+            this.createNotificationSuccess({
+                title: 'Zusätzliche Liefertermin-Anfrage abgeschlossen',
+                message: `Auftrag ${orderId}, Position ${positionId} wurde abgeschlossen. Öffnen: ${directLink}`,
+            });
         },
 
         closeDetail() {
