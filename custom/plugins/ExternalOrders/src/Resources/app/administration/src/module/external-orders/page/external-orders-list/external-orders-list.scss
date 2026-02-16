@@ -921,3 +921,44 @@
     }
 
 }
+
+.external-orders {
+    &__delivery-editor-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 12px;
+    }
+
+    &__delivery-editor-field h5 {
+        margin: 0 0 8px;
+    }
+
+    &__delivery-editor-range {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+
+    &__delivery-editor-errors {
+        margin: 12px 0;
+        padding-left: 18px;
+        color: #d22;
+    }
+
+    &__delivery-editor-actions {
+        margin-bottom: 14px;
+    }
+
+    &__delivery-editor-history-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    &__delivery-editor-history-grid ul {
+        margin: 8px 0 0;
+        padding-left: 16px;
+    }
+}

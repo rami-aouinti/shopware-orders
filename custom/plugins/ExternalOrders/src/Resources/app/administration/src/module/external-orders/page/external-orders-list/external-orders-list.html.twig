@@ -799,6 +799,97 @@
                                 </div>
                             </section>
 
+                            <section v-if="deliveryDateEditor" class="external-orders__detail-card">
+                                <div class="external-orders__detail-card-header">
+                                    <h4>Liefertermin-Editor</h4>
+                                </div>
+                                <div class="external-orders__detail-card-body">
+                                    <div class="external-orders__delivery-editor-grid">
+                                        <div class="external-orders__delivery-editor-field">
+                                            <h5>Liefertermin Lieferant</h5>
+                                            <div class="external-orders__delivery-editor-range">
+                                                <sw-datepicker
+                                                    v-model:value="deliveryDateEditor.supplierDeliveryDateRange.from"
+                                                    date-type="date"
+                                                    size="small"
+                                                    placeholder="Von"
+                                                />
+                                                <sw-datepicker
+                                                    v-model:value="deliveryDateEditor.supplierDeliveryDateRange.to"
+                                                    date-type="date"
+                                                    size="small"
+                                                    placeholder="Bis"
+                                                />
+                                            </div>
+                                            <small>Kalenderwoche: {{ deliveryDateEditor.supplierDeliveryDateRange.calendarWeek || '—' }}</small>
+                                        </div>
+
+                                        <div class="external-orders__delivery-editor-field">
+                                            <h5>Neuer Liefertermin</h5>
+                                            <div class="external-orders__delivery-editor-range">
+                                                <sw-datepicker
+                                                    v-model:value="deliveryDateEditor.newDeliveryDateRange.from"
+                                                    date-type="date"
+                                                    size="small"
+                                                    placeholder="Von"
+                                                />
+                                                <sw-datepicker
+                                                    v-model:value="deliveryDateEditor.newDeliveryDateRange.to"
+                                                    date-type="date"
+                                                    size="small"
+                                                    placeholder="Bis"
+                                                />
+                                            </div>
+                                            <small>Kalenderwoche: {{ deliveryDateEditor.newDeliveryDateRange.calendarWeek || '—' }}</small>
+                                        </div>
+                                    </div>
+
+                                    <ul v-if="deliveryDateValidationErrors.length" class="external-orders__delivery-editor-errors">
+                                        <li v-for="(error, index) in deliveryDateValidationErrors" :key="`delivery-date-error-${index}`">
+                                            {{ error.message }}
+                                        </li>
+                                    </ul>
+
+                                    <div class="external-orders__delivery-editor-actions">
+                                        <sw-button
+                                            variant="primary"
+                                            size="small"
+                                            :disabled="!deliveryDateCanSave || isSavingDeliveryDates"
+                                            @click="saveDeliveryDateEditor"
+                                        >
+                                            {{ $tc('global.default.save') }}
+                                        </sw-button>
+                                    </div>
+
+                                    <div class="external-orders__delivery-editor-history-grid">
+                                        <div>
+                                            <h5>Historie Liefertermin Lieferant</h5>
+                                            <ul>
+                                                <li
+                                                    v-for="(entry, index) in deliveryDateEditor.history.supplierDeliveryDateRange"
+                                                    :key="`supplier-history-${index}`"
+                                                >
+                                                    {{ formatDateRangeLabel(entry.from) }} → {{ formatDateRangeLabel(entry.to) }}
+                                                    ({{ entry.changedAt }}{{ entry.changedByUser ? ' · ' + entry.changedByUser : '' }})
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h5>Historie Neuer Liefertermin</h5>
+                                            <ul>
+                                                <li
+                                                    v-for="(entry, index) in deliveryDateEditor.history.newDeliveryDateRange"
+                                                    :key="`new-history-${index}`"
+                                                >
+                                                    {{ formatDateRangeLabel(entry.from) }} → {{ formatDateRangeLabel(entry.to) }}
+                                                    ({{ entry.changedAt }}{{ entry.changedByUser ? ' · ' + entry.changedByUser : '' }})
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
                             <section class="external-orders__detail-card">
                                 <div class="external-orders__detail-card-header">
                                     <h4>Statusverlauf</h4>
