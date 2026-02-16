@@ -1,4 +1,5 @@
 import './page/external-orders-list';
+import './page/external-orders-lieferzeit-empty';
 
 const { Module } = Shopware;
 
@@ -18,6 +19,13 @@ Module.register('external-orders', {
                 privilege: 'admin',
             },
         },
+        lieferzeit: {
+            component: 'external-orders-lieferzeit-empty',
+            path: 'lieferzeit',
+            meta: {
+                privilege: 'admin',
+            },
+        },
     },
 
     navigation: [
@@ -29,6 +37,15 @@ Module.register('external-orders', {
             icon: 'regular-shopping-cart',
             parent: 'sw-order',
             position: 45,
+        },
+        {
+            id: 'external-orders-lieferzeit',
+            label: 'Lieferzeit',
+            color: '#009ee3',
+            path: 'external.orders.lieferzeit',
+            icon: 'regular-clock',
+            parent: 'sw-order',
+            position: 46,
         },
     ],
 });
