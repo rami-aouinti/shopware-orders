@@ -19,7 +19,7 @@ Shopware.Component.register('lieferzeiten-order-table', {
 
     mixins: ['notification'],
 
-    inject: ['lieferzeitenTrackingService', 'lieferzeitenOrdersService'],
+    inject: ['lieferzeitenOrdersService'],
 
     props: {
         orders: {
@@ -49,9 +49,6 @@ Shopware.Component.register('lieferzeiten-order-table', {
             expandedOrderIds: [],
             editableOrders: {},
             showTrackingModal: false,
-            isTrackingLoading: false,
-            trackingError: '',
-            trackingEvents: [],
             activeTracking: null,
             statusUpdateLoadingByOrder: {},
             detailsLoadingByOrder: {},
@@ -705,9 +702,13 @@ Shopware.Component.register('lieferzeiten-order-table', {
             const fallbackCarrier = String(position.trackingCarrier || order.trackingCarrier || '').toLowerCase();
 
             if (Array.isArray(position?.trackingEntries) && position.trackingEntries.length > 0) {
-                return position.trackingEntries.map((entry) => ({
+                return position.trackingEntries.map((entry, index) => ({
                     number: String(entry?.number || '').trim(),
                     carrier: String(entry?.carrier || fallbackCarrier).trim().toLowerCase(),
+                    lastChangedBy: entry?.lastChangedBy || null,
+                    lastChangedAt: entry?.lastChangedAt || null,
+                    createdAt: entry?.createdAt || null,
+                    isCurrent: index === 0,
                 })).filter((entry) => entry.number !== '');
             }
 
@@ -814,51 +815,19 @@ Shopware.Component.register('lieferzeiten-order-table', {
             });
         },
 
-        async openTrackingHistory(entry) {
-            if (entry?.isInternal) {
-                this.activeTracking = entry;
-                this.trackingError = this.$t('lieferzeiten.tracking.internalShipmentInfo');
-                this.trackingEvents = [];
-                this.isTrackingLoading = false;
-                this.showTrackingModal = true;
-
-                return;
-            }
-
-            if (!entry?.number || !entry?.carrier) {
-                this.trackingError = this.$t('lieferzeiten.tracking.missingCarrier');
-                this.showTrackingModal = true;
+        openTrackingHistory(entry) {
+            if (!entry?.number) {
                 return;
             }
 
             this.activeTracking = entry;
             this.showTrackingModal = true;
-            this.isTrackingLoading = true;
-            this.trackingError = '';
-            this.trackingEvents = [];
-
-            try {
-                const response = await this.lieferzeitenTrackingService.history(entry.carrier, entry.number);
-                if (response?.ok === false) {
-                    this.trackingError = response?.message || this.$t('lieferzeiten.tracking.loadError');
-                    return;
-                }
-                this.trackingEvents = Array.isArray(response?.events) ? response.events : [];
-            } catch (error) {
-                this.trackingError = error?.response?.data?.message || error?.message || this.$t('lieferzeiten.tracking.loadError');
-            } finally {
-                this.isTrackingLoading = false;
-            }
         },
 
         closeTrackingModal() {
             this.showTrackingModal = false;
-            this.isTrackingLoading = false;
-            this.trackingError = '';
-            this.trackingEvents = [];
             this.activeTracking = null;
         },
-
 
         resolveLastChangedBy(order) {
             const changedBy = this.pickFirstDefined(order, ['lastChangedBy', 'user']);
@@ -1214,7 +1183,16 @@ Shopware.Component.register('lieferzeiten-order-table', {
         },
 
         async saveNeuerLiefertermin(order, parcel) {
-            if (!this.hasEditAccess() || !this.canSaveNeuerLiefertermin(parcel)) {
+            if (!this.hasEditAccess()) {
+                return;
+            }
+
+            if (!this.canSaveNeuerLiefertermin(parcel)) {
+                this.createNotificationWarning({
+                    title: this.$t('global.default.warning'),
+                    message: this.$t('lieferzeiten.validation.newDeliveryRangeInvalid'),
+                });
+
                 return;
             }
 

@@ -78,6 +78,24 @@ describe('lieferzeiten/component/lieferzeiten-order-table', () => {
     });
 
 
+
+    it('marks latest tracking number as current and keeps old numbers for re-shipment history', () => {
+        const context = {};
+        const order = { trackingCarrier: 'dhl' };
+        const position = {
+            trackingEntries: [
+                { number: 'NEW-001', carrier: 'dhl', createdAt: '2026-01-10 10:00:00' },
+                { number: 'OLD-001', carrier: 'dhl', createdAt: '2026-01-09 10:00:00' },
+            ],
+        };
+
+        const entries = methods.resolveTrackingEntries.call(context, order, position);
+
+        expect(entries).toHaveLength(2);
+        expect(entries[0]).toEqual(expect.objectContaining({ number: 'NEW-001', isCurrent: true }));
+        expect(entries[1]).toEqual(expect.objectContaining({ number: 'OLD-001', isCurrent: false }));
+    });
+
     it('disables comment save when order has no positions', () => {
         const context = {
             hasEditAccess: () => true,

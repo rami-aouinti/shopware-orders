@@ -1,5 +1,6 @@
 import './component/lieferzeiten-domain-selection';
 import './component/lieferzeiten-order-table';
+import './component/lieferzeiten-tracking-modal';
 
 import './page/lieferzeiten-index';
 import './page/lieferzeiten-all';
