@@ -50,13 +50,26 @@
         <div class="external-orders-lieferzeit-empty__filters-bar">
             <div class="external-orders-lieferzeit-empty__filters-row external-orders-lieferzeit-empty__filters-row--primary">
                 <sw-text-field v-model:value="filters.bestellnummer" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Bestellnummer" />
-                <sw-text-field v-model:value="filters.san6" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="SAN6" />
-                <sw-text-field v-model:value="filters.user" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="User" />
+                <sw-text-field v-model:value="filters.san6" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="SAN6-Auftragsnummer" />
+                <sw-text-field v-model:value="filters.user" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Kunde" />
+                <sw-text-field v-model:value="filters.domain" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Vertriebskanal" />
+                <sw-text-field v-model:value="filters.sendenummer" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Sendungsnummer" />
+                <sw-text-field v-model:value="filters.status" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Bestellstatus" />
             </div>
 
             <div class="external-orders-lieferzeit-empty__filters-row external-orders-lieferzeit-empty__filters-row--secondary">
-                <sw-datepicker v-model:value="filters.shippingDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Versand von" />
-                <sw-datepicker v-model:value="filters.shippingDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Versand bis" />
+                <sw-datepicker v-model:value="filters.shippingDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Spätester Versand von" />
+                <sw-datepicker v-model:value="filters.shippingDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Spätester Versand bis" />
+                <sw-datepicker v-model:value="filters.businessDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Lieferstart (Business) von" />
+                <sw-datepicker v-model:value="filters.businessDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Lieferstart (Business) bis" />
+                <sw-datepicker v-model:value="filters.businessDateEndFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Lieferende (Business) von" />
+                <sw-datepicker v-model:value="filters.businessDateEndTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Lieferende (Business) bis" />
+                <sw-datepicker v-model:value="filters.lieferterminLieferantFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Lieferant von" />
+                <sw-datepicker v-model:value="filters.lieferterminLieferantTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Lieferant bis" />
+                <sw-datepicker v-model:value="filters.neuerLieferterminFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Neuer Liefertermin von" />
+                <sw-datepicker v-model:value="filters.neuerLieferterminTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Neuer Liefertermin bis" />
+                <sw-datepicker v-model:value="filters.deliveryDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Späteste Lieferung von" />
+                <sw-datepicker v-model:value="filters.deliveryDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Späteste Lieferung bis" />
                 <sw-text-field
                     v-model:value="tableSearchTerm"
                     class="external-orders-lieferzeit-empty__search external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--search"
@@ -142,14 +155,9 @@
                     </thead>
                     <tbody>
                         <tr v-for="order in paginatedOrders" :key="order.id || order.orderNumber">
-                            <td>{{ displayOrDash(order.bestellnummer || order.orderNumber) }}</td>
-                            <td>{{ displayOrDash(order.san6 || order.san6OrderNumber) }}</td>
-                            <td>{{ displayOrDash(order.status) }}</td>
-                            <td>{{ displayOrDash(order.user) }}</td>
-                            <td>{{ displayOrDash(order.sendenummer) }}</td>
-                            <td>{{ displayOrDash(order.domain || order.sourceSystem) }}</td>
-                            <td>{{ formatDate(order.latestShippingDate || order.shippingDate) }}</td>
-                            <td>{{ formatDate(order.latestDeliveryDate || order.deliveryDate) }}</td>
+                            <td v-for="column in tableColumns" :key="`${order.id || order.orderNumber}-${column.key}`">
+                                {{ isDateColumn(column.key) ? formatDate(getColumnValue(order, column.key)) : displayOrDash(getColumnValue(order, column.key)) }}
+                            </td>
                             <td>
                                 <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small" type="button" @click="openDetail(order)">
                                     Details
