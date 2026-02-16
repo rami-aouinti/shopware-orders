@@ -480,6 +480,14 @@ class FakeExternalOrderProvider
                 $orderId = 1008000 + ($index * 10) + $this->randomInt($id, 1, 9, 6);
                 $auftragNumber = 446000 + $index;
                 $isTestOrder = $this->randomInt($id, 0, 19, 7) === 0;
+                $latestShippingDate = $this->randomOrderDateYmd($id, 8);
+                $shippingDate = $this->randomOrderDateYmd($id, 9);
+                $latestDeliveryDate = $this->randomOrderDateYmd($id, 10);
+                $deliveryDate = $this->randomOrderDateYmd($id, 11);
+                $lieferterminLieferant = $this->randomOrderDateYmd($id, 12);
+                $lieferterminAuftragsbearbeitung = $this->randomOrderDateYmd($id, 13);
+                $changedByUser = sprintf('%s %s', $this->pickValue(self::FIRST_NAMES, $id, 14), $this->pickValue(self::LAST_NAMES, $id, 15));
+                $trackingNumber = sprintf('DHL-%s-%05d', strtoupper($channel), $index);
 
                 $orders[] = [
                     'id' => $id,
@@ -500,6 +508,17 @@ class FakeExternalOrderProvider
                     'ordersStatusName' => $statusLabel,
                     'orderStatusColor' => $statusDefinition['color'],
                     'isTestOrder' => $isTestOrder,
+                    'latestShippingDate' => $latestShippingDate,
+                    'shippingDate' => $shippingDate,
+                    'latestDeliveryDate' => $latestDeliveryDate,
+                    'deliveryDate' => $deliveryDate,
+                    'lieferterminLieferant' => $lieferterminLieferant,
+                    'lieferterminAuftragsbearbeitung' => $lieferterminAuftragsbearbeitung,
+                    'neuerLiefertermin' => $lieferterminAuftragsbearbeitung,
+                    'changedByUser' => $changedByUser,
+                    'sendenummer' => $trackingNumber,
+                    'trackingNumber' => $trackingNumber,
+                    'trackingNumbers' => [$trackingNumber],
                     'totalItems' => $totalItems,
                     'totalRevenue' => $totalRevenue,
                 ];
@@ -531,6 +550,25 @@ class FakeExternalOrderProvider
             (string) ($order['channel'] ?? 'ebay'),
             (string) ($order['auftragNumber'] ?? 'N/A')
         );
+        $latestShippingDate = (string) ($order['latestShippingDate'] ?? $this->randomOrderDateYmd($id, 8));
+        $shippingDate = (string) ($order['shippingDate'] ?? $this->randomOrderDateYmd($id, 9));
+        $latestDeliveryDate = (string) ($order['latestDeliveryDate'] ?? $this->randomOrderDateYmd($id, 10));
+        $deliveryDate = (string) ($order['deliveryDate'] ?? $this->randomOrderDateYmd($id, 11));
+        $lieferterminLieferant = (string) ($order['lieferterminLieferant'] ?? $this->randomOrderDateYmd($id, 12));
+        $lieferterminAuftragsbearbeitung = (string) ($order['lieferterminAuftragsbearbeitung'] ?? $this->randomOrderDateYmd($id, 13));
+
+        $items = [];
+        foreach (($detailTemplate['items'] ?? []) as $itemIndex => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $itemDelivery = $this->randomOrderDateYmd($id, 20 + $itemIndex);
+            $items[] = array_merge($item, [
+                'lieferterminLieferant' => $itemDelivery,
+                'lieferzeitpunktLatest' => $itemDelivery,
+            ]);
+        }
 
         return [
             'orderId' => (int) ($order['orderId'] ?? 0),
@@ -540,9 +578,20 @@ class FakeExternalOrderProvider
             'orderStatusColor' => $statusColor,
             'shippingMethod' => (string) $detailTemplate['shippingMethod'],
             'auftragNumber' => (int) ($order['auftragNumber'] ?? 0),
-            'items' => $detailTemplate['items'],
+            'items' => $items,
             'totals' => $detailTemplate['totals'],
             'statusHistory' => $statusHistory,
+            'additional' => [
+                'latestShippingDate' => $latestShippingDate,
+                'shippingDate' => $shippingDate,
+                'latestDeliveryDate' => $latestDeliveryDate,
+                'deliveryDate' => $deliveryDate,
+                'lieferterminLieferant' => $lieferterminLieferant,
+                'lieferterminAuftragsbearbeitung' => $lieferterminAuftragsbearbeitung,
+                'newDeliveryDate' => $lieferterminAuftragsbearbeitung,
+                'neuerLiefertermin' => $lieferterminAuftragsbearbeitung,
+                'status' => $statusLabel,
+            ],
             'customer' => array_merge($customer, ['emailAddress' => $email]),
             'billing' => $detailTemplate['billing'],
             'delivery' => $detailTemplate['delivery'],
@@ -682,6 +731,14 @@ class FakeExternalOrderProvider
         $timestamp = time() - ($daysAgo * 86400) - $secondsOffset;
 
         return gmdate('Y-m-d\\TH:i:s.000+00:00', $timestamp);
+    }
+
+    private function randomOrderDateYmd(string $seed, int $offset = 0): string
+    {
+        $daysAgo = $this->randomInt($seed, 1, 90, 70 + $offset);
+        $timestamp = time() - ($daysAgo * 86400);
+
+        return date('Y-m-d', $timestamp);
     }
 
     /**

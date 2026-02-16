@@ -250,6 +250,41 @@ class ExternalOrderServiceTest extends TestCase
         static::assertSame(1, $filtered['total']);
     }
 
+
+    public function testFetchOrdersHandlesNumericOrderReferenceWithoutTypeError(): void
+    {
+        $context = Context::createDefaultContext();
+        $order = $this->createOrderEntity('acacacacacacacacacacacacacacacac', 'SW-70001', 45.0, []);
+
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->once())->method('search')->willReturn(
+            new EntitySearchResult(OrderDefinition::ENTITY_NAME, 1, new OrderCollection([$order]), null, new Criteria(), $context)
+        );
+
+        $payload = [
+            'orderNumber' => 'SW-70001',
+            'auftragNumber' => 70001,
+        ];
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('fetchAllAssociative')
+            ->willReturn([[
+                'id' => 'dededededededededededededededede',
+                'order_id' => 'acacacacacacacacacacacacacacacac',
+                'external_id' => 'EXT-70001',
+                'channel' => 'san6',
+                'raw_payload' => json_encode($payload, JSON_THROW_ON_ERROR),
+            ]]);
+
+        $service = new ExternalOrderService($repository, $connection);
+
+        $result = $service->fetchOrders($context);
+
+        static::assertSame('70001', $result['orders'][0]['auftragNumber']);
+        static::assertSame('70001', $result['orders'][0]['san6OrderNumber']);
+    }
+
     /**
      * @param array<string, mixed>|null $customFields
      */
