@@ -51,6 +51,12 @@ readonly class ExternalOrderService
         'bestellung_abgeschlossen' => 'Bestellung abgeschlossen',
     ];
 
+    private const STATUS_SOURCE_READ_KEYS = [
+        'shopware' => ['shopwareStatus', 'shopware_status', 'shopware'],
+        'gambio' => ['gambioStatus', 'gambio_status', 'gambio', 'gambioOrderStatus'],
+        'san6' => ['san6Status', 'san6_status', 'ordersStatusName', 'statusLabel'],
+    ];
+
     public function fetchOrders(
         Context $context,
         ?string $channel = null,
@@ -183,10 +189,17 @@ readonly class ExternalOrderService
         $trackingEvents = $this->extractTrackingEvents($payload);
         $trackingAggregation = $this->aggregateTrackingEvents($trackingEvents);
 
-        $shopwareStatus = $this->extractStatusFromSource($payload, ['shopwareStatus', 'shopware_status', 'shopware']);
-        $san6Status = $this->extractStatusFromSource($payload, ['san6Status', 'san6_status', 'ordersStatusName', 'statusLabel']);
+        $shopwareStatus = $this->extractStatusFromSource($payload, self::STATUS_SOURCE_READ_KEYS['shopware']);
+        $gambioStatus = $this->extractStatusFromSource($payload, self::STATUS_SOURCE_READ_KEYS['gambio']);
+        $san6Status = $this->extractStatusFromSource($payload, self::STATUS_SOURCE_READ_KEYS['san6']);
         $trackingStatus = $trackingAggregation['trackingStatus'];
-        $aggregatedStatus = $this->resolveAggregatedBusinessStatus($shopwareStatus, $san6Status, $trackingStatus, $trackingAggregation['allPackagesDelivered']);
+        $aggregatedStatus = $this->resolveAggregatedBusinessStatus(
+            $shopwareStatus,
+            $gambioStatus,
+            $san6Status,
+            $trackingStatus,
+            $trackingAggregation['allPackagesDelivered']
+        );
 
         return [
             'internalOrderId' => $orderId,
@@ -194,6 +207,7 @@ readonly class ExternalOrderService
             'channel' => $metadata['channel'],
             'sources' => [
                 'shopware' => $shopwareStatus,
+                'gambio' => $gambioStatus,
                 'san6' => $san6Status,
                 'tracking' => $trackingStatus,
             ],
@@ -204,6 +218,7 @@ readonly class ExternalOrderService
                 'totalPackages' => $trackingAggregation['totalPackages'],
             ],
             'aggregatedStatus' => $aggregatedStatus,
+            'policy' => $this->buildStatusPolicy($trackingAggregation['allPackagesDelivered']),
         ];
     }
 
@@ -786,7 +801,7 @@ readonly class ExternalOrderService
         return null;
     }
 
-    private function resolveAggregatedBusinessStatus(?string $shopwareStatus, ?string $san6Status, ?string $trackingStatus, bool $allPackagesDelivered): string
+    private function resolveAggregatedBusinessStatus(?string $shopwareStatus, ?string $gambioStatus, ?string $san6Status, ?string $trackingStatus, bool $allPackagesDelivered): string
     {
         if ($allPackagesDelivered) {
             return 'Bestellung abgeschlossen';
@@ -794,14 +809,41 @@ readonly class ExternalOrderService
 
         $normalizedCandidates = array_map(
             static fn (?string $status): string => strtolower(str_replace([' ', '-'], '_', (string) $status)),
-            [$trackingStatus, $shopwareStatus, $san6Status]
+            [$trackingStatus, $shopwareStatus, $gambioStatus, $san6Status]
         );
+
+        if (in_array('completed', $normalizedCandidates, true)
+            || in_array('bestellung_abgeschlossen', $normalizedCandidates, true)
+            || in_array('delivered', $normalizedCandidates, true)) {
+            return 'Versendet';
+        }
 
         if (in_array('shipped', $normalizedCandidates, true) || in_array('versendet', $normalizedCandidates, true) || in_array('in_transit', $normalizedCandidates, true)) {
             return 'Versendet';
         }
 
         return 'Bezahlt / in Bearbeitung';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildStatusPolicy(bool $allPackagesDelivered): array
+    {
+        return [
+            'sourceByStatus' => [
+                'Bezahlt / in Bearbeitung' => ['shopware', 'gambio', 'san6'],
+                'Versendet' => ['tracking', 'shopware', 'gambio', 'san6'],
+                'Bestellung abgeschlossen' => ['tracking'],
+            ],
+            'readOnlySources' => ['san6', 'tracking'],
+            'writeBackTargets' => ['shopware', 'gambio'],
+            'completionRules' => [
+                'abschlussErlaubt' => $allPackagesDelivered,
+                'allPackagesDeliveredRequired' => true,
+                'nonCompletionGuard' => 'Bestellung abgeschlossen nur, wenn alle Pakete fachlich zugestellt sind.',
+            ],
+        ];
     }
 
     private function normalizeStatusCode(string $statusLabel): string
