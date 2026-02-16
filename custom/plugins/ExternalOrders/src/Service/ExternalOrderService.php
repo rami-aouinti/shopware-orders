@@ -363,8 +363,8 @@ readonly class ExternalOrderService
         $customerName = $customerName !== '' ? $customerName : 'N/A';
 
         $email = $payload['customersEmailAddress'] ?? $payload['email'] ?? ($customer['email'] ?? 'N/A');
-        $orderNumber = trim((string) ($payload['orderNumber'] ?? ($detail['orderNumber'] ?? $order->getOrderNumber() ?? $externalId)));
-        $orderReference = trim((string) ($payload['auftragNumber'] ?? $payload['orderReference'] ?? $orderNumber));
+        $orderNumber = (string) ($payload['orderNumber'] ?? ($detail['orderNumber'] ?? $order->getOrderNumber() ?? $externalId));
+        $orderReference = (string) ($payload['auftragNumber'] ?? $payload['orderReference'] ?? $orderNumber);
         $channel = $payload['channel'] ?? 'unknown';
 
         $statusLabel = $payload['ordersStatusName'] ?? $payload['statusLabel'] ?? ($additional['status'] ?? 'Processing');
@@ -1039,7 +1039,7 @@ readonly class ExternalOrderService
         return false;
     }
 
-    private function resolveSan6OrderNumber(array $payload, string $orderReference): string
+    private function resolveSan6OrderNumber(array $payload, mixed $orderReference): string
     {
         $san6OrderNumber = $payload['san6OrderNumber'] ?? $payload['san6'] ?? $payload['orderReference'] ?? $payload['auftragNumber'] ?? $orderReference;
 
