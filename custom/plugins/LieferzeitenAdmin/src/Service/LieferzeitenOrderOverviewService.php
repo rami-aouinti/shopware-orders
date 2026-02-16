@@ -2,6 +2,7 @@
 
 namespace LieferzeitenAdmin\Service;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 
