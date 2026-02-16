@@ -84,41 +84,6 @@ class ExternalOrderController extends AbstractController
             $filters[$key] = $value;
         }
 
-        $allowedFilters = [
-            'bestellnummer',
-            'san6OrderNumber',
-            'latestShippingDateFrom',
-            'latestShippingDateTo',
-            'shippingDateFrom',
-            'shippingDateTo',
-            'latestDeliveryDateFrom',
-            'latestDeliveryDateTo',
-            'deliveryDateFrom',
-            'deliveryDateTo',
-            'lieferterminLieferantFrom',
-            'lieferterminLieferantTo',
-            'lieferterminAuftragsbearbeitungFrom',
-            'lieferterminAuftragsbearbeitungTo',
-            'changedByUser',
-            'sendenummer',
-            'status',
-        ];
-
-        $filters = [];
-        foreach ($allowedFilters as $key) {
-            $value = $request->query->get($key);
-            if (!is_string($value)) {
-                continue;
-            }
-
-            $value = trim($value);
-            if ($value === '') {
-                continue;
-            }
-
-            $filters[$key] = $value;
-        }
-
         return new JsonResponse(
             $this->externalOrderService->fetchOrders(
                 $context,
@@ -128,7 +93,9 @@ class ExternalOrderController extends AbstractController
                 $limit,
                 $sort ? (string) $sort : null,
                 $order ? (string) $order : null,
-                $filters
+                $filters,
+                $selectedArea ? (string) $selectedArea : null,
+                $selectedMainView ? (string) $selectedMainView : null
             )
         );
     }
