@@ -38,6 +38,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(metaByKey.paymentMethod).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
         expect(metaByKey.paymentReceivedDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
         expect(metaByKey.packageStatus).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
+        expect(metaByKey.shippedQuantity).toEqual(expect.objectContaining({ label: 'Versandmenge je Paket (versendet/bestellt)' }));
 
         expect(metaByKey.san6Auftragsposition).toEqual(expect.objectContaining({ filterable: false, filterType: 'none' }));
         expect(metaByKey.kommentar).toEqual(expect.objectContaining({ filterable: false, filterType: 'none' }));
@@ -91,62 +92,75 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(state.filters).not.toHaveProperty('kommentar');
     });
 
+    it('derives package status from quantities, package assignment and split logic', () => {
+        const derive = componentConfig.methods.normalizePackageStatus;
 
+        expect(derive('', 1, 10, 10, 10, true)).toBe('Gesamt-Versand');
+        expect(derive('', 2, 5, 10, 10, true)).toBe('Teillieferung');
+        expect(derive('', 2, 3, 10, 7, true)).toBe('Trennung Auftragsposition');
+        expect(derive('', 1, 0, 10, 0, true)).toBe('Unklar');
+        expect(derive('', 1, 5, 10, 5, false)).toBe('Unklar');
+    });
 
-    it('expands package rows and applies field priority for position/package/order scopes', () => {
+    it('builds table rows on position+package granularity and keeps per-package date values', () => {
         const state = componentConfig.data();
         const context = {
             ...state,
             normalizePackageStatus: componentConfig.methods.normalizePackageStatus,
         };
 
-        const [expanded] = componentConfig.methods.expandOrdersByPosition.call(context, [{
-            id: 'order-1',
-            bestellnummer: '10001',
-            latestShippingDate: '2026-02-20',
-            positions: [{
-                positionId: '10',
-                positionNumber: '1',
-                label: 'Artikel A',
-                shippingDate: '2026-02-11',
-                deliveryDate: '2026-02-14',
-                orderedQuantity: 5,
-                packages: [{
-                    packageId: 'PKG-1',
-                    shippedQuantity: 2,
-                    trackingNumber: 'TRK-1',
-                    shippingDate: '2026-02-12',
-                    deliveryDate: '2026-02-15',
-                }],
-            }],
-        }]);
-
-        expect(expanded.rowType).toBe('position');
-
         const rows = componentConfig.methods.expandOrdersByPosition.call(context, [{
             id: 'order-1',
+            shippingDate: '2026-02-01',
+            deliveryDate: '2026-02-03',
             positions: [{
                 positionId: '10',
-                orderedQuantity: 5,
-                packages: [{ packageId: 'PKG-1', shippedQuantity: 2, trackingNumber: 'TRK-1' }],
+                orderedQuantity: 10,
+                packages: [
+                    {
+                        packageId: 'PKG-1',
+                        shippedQuantity: 7,
+                        trackingNumber: 'TRK-1',
+                        shippingDate: '2026-02-05',
+                        deliveryDate: '2026-02-07',
+                    },
+                    {
+                        packageId: 'PKG-2',
+                        shippedQuantity: 3,
+                        trackingNumber: 'TRK-2',
+                        shippingDate: '2026-02-06',
+                        deliveryDate: '2026-02-08',
+                    },
+                ],
             }],
         }]);
 
         expect(rows).toHaveLength(2);
         expect(rows[0]).toEqual(expect.objectContaining({
-            rowType: 'position',
-            positionId: '10',
-            packageId: '',
-            trackingNumberPerPackage: '',
-        }));
-        expect(rows[1]).toEqual(expect.objectContaining({
             rowType: 'package',
             positionId: '10',
             packageId: 'PKG-1',
             trackingNumberPerPackage: 'TRK-1',
-            shippedQuantity: 2,
+            shippedQuantity: 7,
+            shippedOrderedRatio: '7/10',
+            shippingDate: '2026-02-05',
+            deliveryDate: '2026-02-07',
             packageStatus: 'Teillieferung',
         }));
+        expect(rows[1]).toEqual(expect.objectContaining({
+            rowType: 'package',
+            positionId: '10',
+            packageId: 'PKG-2',
+            trackingNumberPerPackage: 'TRK-2',
+            shippedQuantity: 3,
+            shippedOrderedRatio: '3/10',
+            shippingDate: '2026-02-06',
+            deliveryDate: '2026-02-08',
+            packageStatus: 'Teillieferung',
+        }));
+
+        const shippedQuantityValue = componentConfig.methods.getColumnValue(rows[0], 'shippedQuantity');
+        expect(shippedQuantityValue).toBe('7/10');
     });
 
     it('maps normalized filter params to externalOrderService.list', async () => {
