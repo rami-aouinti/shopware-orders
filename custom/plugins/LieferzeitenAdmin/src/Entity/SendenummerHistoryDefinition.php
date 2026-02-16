@@ -6,6 +6,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
@@ -40,6 +41,7 @@ class SendenummerHistoryDefinition extends EntityDefinition
             (new FkField('position_id', 'positionId', PositionDefinition::class))->addFlags(new Required()),
             new StringField('sendenummer', 'sendenummer'),
             new StringField('carrier', 'carrier'),
+            new BoolField('is_active', 'isActive'),
             new StringField('last_changed_by', 'lastChangedBy'),
             new DateTimeField('last_changed_at', 'lastChangedAt'),
             new ManyToOneAssociationField('position', 'position_id', PositionDefinition::class, 'id', false),

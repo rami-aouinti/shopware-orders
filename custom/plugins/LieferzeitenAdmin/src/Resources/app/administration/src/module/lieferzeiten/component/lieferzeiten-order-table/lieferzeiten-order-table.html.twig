@@ -62,9 +62,11 @@
                                     :key="`${row.key}-${entry.carrier}-${entry.number}`"
                                     type="button"
                                     class="lieferzeiten-order-table__tracking-link"
+                                    :class="{ 'is-active': entry.isCurrent }"
                                     @click="openTrackingHistory(entry, row.trackingEntries)"
                                 >
                                     {{ $t('lieferzeiten.tracking.openNumber', { number: entry.number }) }}
+                                    <span v-if="entry.isCurrent" class="lieferzeiten-order-table__tracking-current">({{ $t('lieferzeiten.tracking.current') }})</span>
                                 </button>
                             </template>
                             <template v-else>
@@ -164,9 +166,11 @@
                                                     :key="`${position.id}-${entry.number}`"
                                                     type="button"
                                                     class="lieferzeiten-order-table__tracking-link"
+                                                    :class="{ 'is-active': entry.isCurrent }"
                                                     @click="openTrackingHistory(entry, resolveTrackingEntries(row.order, position))"
                                                 >
                                                     {{ $t('lieferzeiten.tracking.openNumber', { number: entry.number }) }}
+                                                    <span v-if="entry.isCurrent" class="lieferzeiten-order-table__tracking-current">({{ $t('lieferzeiten.tracking.current') }})</span>
                                                 </button>
                                             </template>
                                         </td>
