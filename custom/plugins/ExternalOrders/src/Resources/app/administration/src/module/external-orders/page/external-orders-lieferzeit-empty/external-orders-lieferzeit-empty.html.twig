@@ -1,87 +1,144 @@
 <div class="external-orders-lieferzeit-empty">
     <header class="external-orders-lieferzeit-empty__header">
-        <div>
+        <div class="external-orders-lieferzeit-empty__header-main">
             <p class="external-orders-lieferzeit-empty__eyebrow">Logistikmonitor</p>
-            <h2>Lieferzeit</h2>
+            <h2>{{ pageTitle }}</h2>
             <p class="external-orders-lieferzeit-empty__subtitle">
-                Überwachen Sie Versand- und Lieferfristen und filtern Sie offene Aufträge gezielt.
+                Überwachen Sie Versand- und Lieferfristen, filtern Sie Aufträge kanalbezogen und prüfen Sie Details direkt in der Tabelle.
             </p>
         </div>
-
-        <div class="external-orders-lieferzeit-empty__kpi" v-if="!isLoading && !loadError">
-            <span class="external-orders-lieferzeit-empty__kpi-label">Treffer</span>
-            <span class="external-orders-lieferzeit-empty__kpi-value">{{ orders.length }}</span>
+        <div class="external-orders-lieferzeit-empty__active-channel">
+            <span>Aktiver Kanal</span>
+            <strong>{{ activeChannelLabel }}</strong>
         </div>
     </header>
 
-    <sw-card-view>
-        <sw-card class="external-orders-lieferzeit-empty__filters" title="Filter">
-            <sw-container columns="repeat(auto-fit, minmax(220px, 1fr))" gap="16px">
-                <sw-text-field v-model:value="filters.bestellnummer" label="Bestellnummer"></sw-text-field>
-                <sw-text-field v-model:value="filters.san6" label="San6 Auftragsnummer"></sw-text-field>
-                <sw-text-field v-model:value="filters.user" label="Username"></sw-text-field>
-                <sw-text-field v-model:value="filters.sendenummer" label="Sendenummer"></sw-text-field>
-                <sw-text-field v-model:value="filters.status" label="Status"></sw-text-field>
-
-                <sw-datepicker v-model:value="filters.shippingDateFrom" label="spätester Versandzeitpunkt (von)"></sw-datepicker>
-                <sw-datepicker v-model:value="filters.shippingDateTo" label="spätester Versandzeitpunkt (bis)"></sw-datepicker>
-
-                <sw-datepicker v-model:value="filters.businessDateFrom" label="Versand-Datum (von)"></sw-datepicker>
-                <sw-datepicker v-model:value="filters.businessDateTo" label="Versand-Datum (bis)"></sw-datepicker>
-
-                <sw-datepicker v-model:value="filters.deliveryDateFrom" label="spätester Lieferzeitpunkt (von)"></sw-datepicker>
-                <sw-datepicker v-model:value="filters.deliveryDateTo" label="spätester Lieferzeitpunkt (bis)"></sw-datepicker>
-
-                <sw-datepicker v-model:value="filters.businessDateEndFrom" label="Liefer-Datum (von)"></sw-datepicker>
-                <sw-datepicker v-model:value="filters.businessDateEndTo" label="Liefer-Datum (bis)"></sw-datepicker>
-
-                <sw-datepicker v-model:value="filters.lieferterminLieferantFrom" label="Liefertermin Lieferant (von)"></sw-datepicker>
-                <sw-datepicker v-model:value="filters.lieferterminLieferantTo" label="Liefertermin Lieferant (bis)"></sw-datepicker>
-
-                <sw-datepicker v-model:value="filters.neuerLieferterminFrom" label="Liefertermin Auftragsbearbeitung (von)"></sw-datepicker>
-                <sw-datepicker v-model:value="filters.neuerLieferterminTo" label="Liefertermin Auftragsbearbeitung (bis)"></sw-datepicker>
-            </sw-container>
-
-            <div class="external-orders-lieferzeit-empty__filter-actions">
-                <sw-button variant="primary" @click="applyFilters">
-                    <sw-icon name="regular-search" size="16" small></sw-icon>
-                    Filtern
-                </sw-button>
-                <sw-button variant="ghost" @click="resetFilters">Zurücksetzen</sw-button>
+    <main id="main" class="sw-page__main-content external-orders-lieferzeit-empty__main" tabindex="-1">
+        <div class="external-orders-lieferzeit-empty__summary">
+            <div class="external-orders-lieferzeit-empty__summary-item">
+                <span class="external-orders-lieferzeit-empty__summary-label">Treffer</span>
+                <span class="external-orders-lieferzeit-empty__summary-value">{{ paginationTotal }}</span>
             </div>
-        </sw-card>
+            <div class="external-orders-lieferzeit-empty__summary-item">
+                <span class="external-orders-lieferzeit-empty__summary-label">Offene Aufträge</span>
+                <span class="external-orders-lieferzeit-empty__summary-value">{{ statisticsMetrics.openOrders }}</span>
+            </div>
+            <div class="external-orders-lieferzeit-empty__summary-item">
+                <span class="external-orders-lieferzeit-empty__summary-label">Versand überfällig</span>
+                <span class="external-orders-lieferzeit-empty__summary-value">{{ statisticsMetrics.overdueShipping }}</span>
+            </div>
+            <div class="external-orders-lieferzeit-empty__summary-item">
+                <span class="external-orders-lieferzeit-empty__summary-label">Lieferung überfällig</span>
+                <span class="external-orders-lieferzeit-empty__summary-value">{{ statisticsMetrics.overdueDelivery }}</span>
+            </div>
+        </div>
 
-        <sw-card class="external-orders-lieferzeit-empty__results" title="Ergebnisse">
-            <sw-loader v-if="isLoading"></sw-loader>
-
-            <sw-empty-state
-                v-if="loadError"
-                title="Fehler beim Laden"
-                subline="Die Lieferzeiten konnten nicht geladen werden."
+        <sw-card class="external-orders-lieferzeit-empty__channels">
+        <div class="external-orders-lieferzeit-empty__channel-tabs">
+            <button
+                v-for="channel in channels"
+                :key="channel.id"
+                class="external-orders-lieferzeit-empty__channel-tab"
+                :class="{ 'is--active': activeChannel === channel.id }"
+                type="button"
+                @click="onChannelChange(channel.id)"
             >
-                <template slot="actions">
-                    <sw-button variant="primary" @click="loadOrders">
-                        Erneut versuchen
-                    </sw-button>
-                </template>
-            </sw-empty-state>
+                {{ channel.label }}
+            </button>
+        </div>
 
-            <div v-if="!isLoading && !loadError && orders.length" class="external-orders-lieferzeit-empty__table-wrapper">
-                <table class="sw-data-grid__table external-orders-lieferzeit-empty__table">
+        <div class="external-orders-lieferzeit-empty__filters-bar">
+            <div class="external-orders-lieferzeit-empty__filters">
+                <sw-text-field v-model:value="filters.bestellnummer" size="small" placeholder="Bestellnummer" />
+                <sw-text-field v-model:value="filters.san6" size="small" placeholder="SAN6" />
+                <sw-text-field v-model:value="filters.user" size="small" placeholder="User" />
+                <sw-datepicker v-model:value="filters.shippingDateFrom" size="small" date-type="date" placeholder="Versand von" />
+                <sw-datepicker v-model:value="filters.shippingDateTo" size="small" date-type="date" placeholder="Versand bis" />
+            </div>
+            <div class="external-orders-lieferzeit-empty__filters-actions">
+                <sw-text-field
+                    v-model:value="tableSearchTerm"
+                    class="external-orders-lieferzeit-empty__search"
+                    size="small"
+                    placeholder="Suche in Tabelle"
+                    @change="onSearch"
+                />
+                <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary" type="button" @click="resetFilters">
+                    Filter löschen
+                </button>
+                <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--primary" type="button" @click="applyFilters">
+                    Anwenden
+                </button>
+            </div>
+        </div>
+
+        <sw-loader v-if="isLoading"></sw-loader>
+
+        <sw-empty-state
+            v-else-if="loadError"
+            title="Fehler beim Laden"
+            subline="Die Lieferzeiten konnten nicht geladen werden."
+        >
+            <template slot="actions">
+                <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--primary" type="button" @click="loadOrders">
+                    Erneut versuchen
+                </button>
+            </template>
+        </sw-empty-state>
+
+        <template v-else-if="paginatedOrders.length">
+            <div class="external-orders-lieferzeit-empty__table-wrapper">
+                <table class="external-orders-lieferzeit-empty__table">
                     <thead>
                         <tr>
-                            <th>Bestellnummer</th>
-                            <th>SAN6</th>
-                            <th>Status</th>
-                            <th>User</th>
-                            <th>Sendenummer</th>
-                            <th>Domain</th>
-                            <th>Spätester Versand</th>
-                            <th>Späteste Lieferung</th>
+                            <th v-for="column in tableColumns" :key="column.key" class="external-orders-lieferzeit-empty__cell">
+                                <div class="external-orders-lieferzeit-empty__column-header">
+                                    <button class="external-orders-lieferzeit-empty__column-sort" type="button" @click="onSortColumn(column.key)">
+                                        {{ column.label }}
+                                        <span class="external-orders-lieferzeit-empty__sort-indicator">{{ getSortIndicator(column.key) }}</span>
+                                    </button>
+                                    <button
+                                        class="external-orders-lieferzeit-empty__column-filter-button"
+                                        :class="{ 'is--active': isColumnFilterActive(column.key) }"
+                                        type="button"
+                                        @click.stop="toggleColumnFilter(column.key)"
+                                    >
+                                        <sw-icon name="regular-filter" size="14"></sw-icon>
+                                    </button>
+                                    <div
+                                        v-if="activeColumnFilter === column.key"
+                                        class="external-orders-lieferzeit-empty__column-filter-panel"
+                                        @click.stop
+                                    >
+                                        <sw-single-select
+                                            v-model:value="columnFilters[column.key].operator"
+                                            :options="columnFilterOperatorOptions"
+                                            value-property="value"
+                                            label-property="label"
+                                            size="small"
+                                            class="external-orders-lieferzeit-empty__column-filter-field"
+                                        />
+                                        <sw-text-field
+                                            v-model:value="columnFilters[column.key].value"
+                                            size="small"
+                                            class="external-orders-lieferzeit-empty__column-filter-field"
+                                        />
+                                        <div class="external-orders-lieferzeit-empty__column-filter-actions">
+                                            <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small" type="button" @click="clearColumnFilter(column.key)">
+                                                Clear
+                                            </button>
+                                            <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--primary external-orders-lieferzeit-empty__button--small" type="button" @click="applyColumnFilter">
+                                                Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="external-orders-lieferzeit-empty__cell external-orders-lieferzeit-empty__cell--actions">Aktion</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="order in orders" :key="order.id">
+                        <tr v-for="order in paginatedOrders" :key="order.id || order.orderNumber">
                             <td>{{ displayOrDash(order.bestellnummer || order.orderNumber) }}</td>
                             <td>{{ displayOrDash(order.san6 || order.san6OrderNumber) }}</td>
                             <td>{{ displayOrDash(order.status) }}</td>
@@ -90,16 +147,68 @@
                             <td>{{ displayOrDash(order.domain || order.sourceSystem) }}</td>
                             <td>{{ formatDate(order.latestShippingDate || order.shippingDate) }}</td>
                             <td>{{ formatDate(order.latestDeliveryDate || order.deliveryDate) }}</td>
+                            <td>
+                                <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small" type="button" @click="openDetail(order)">
+                                    Details
+                                </button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <sw-empty-state
-                v-if="!isLoading && !loadError && orders.length === 0"
-                title="Keine Lieferzeiten gefunden"
-                subline="Für die aktuellen Filter gibt es keine Ergebnisse."
-            />
+            <div class="external-orders-lieferzeit-empty__pagination">
+                <button type="button" class="external-orders-lieferzeit-empty__pagination-nav" :disabled="page <= 1" @click="goToFirstPage">«</button>
+                <button type="button" class="external-orders-lieferzeit-empty__pagination-nav" :disabled="page <= 1" @click="goToPreviousPage">‹</button>
+                <div class="external-orders-lieferzeit-empty__pagination-pages">
+                    <button
+                        v-for="pageNumber in visiblePages"
+                        :key="pageNumber"
+                        type="button"
+                        class="external-orders-lieferzeit-empty__pagination-page"
+                        :class="{ 'is--active': pageNumber === page }"
+                        @click="goToPage(pageNumber)"
+                    >
+                        {{ pageNumber }}
+                    </button>
+                </div>
+                <button type="button" class="external-orders-lieferzeit-empty__pagination-nav" :disabled="page >= totalPages" @click="goToNextPage">›</button>
+                <button type="button" class="external-orders-lieferzeit-empty__pagination-nav" :disabled="page >= totalPages" @click="goToLastPage">»</button>
+                <label class="external-orders-lieferzeit-empty__pagination-limit">
+                    <span>Pro Seite</span>
+                    <select :value="String(limit)" @change="onLimitChange($event.target.value)">
+                        <option v-for="option in limitOptions" :key="option" :value="String(option)">{{ option }}</option>
+                    </select>
+                </label>
+            </div>
+        </template>
+
+        <sw-empty-state
+            v-else
+            class="external-orders-lieferzeit-empty__empty-state"
+            title="Keine Lieferzeiten gefunden"
+            subline="Für die aktuellen Filter gibt es keine Ergebnisse."
+        />
         </sw-card>
-    </sw-card-view>
+    </main>
+
+    <div v-if="showDetailModal && selectedOrder" class="external-orders-lieferzeit-empty__detail-overlay" @click.self="closeDetail">
+        <div class="external-orders-lieferzeit-empty__detail-dialog" role="dialog" aria-modal="true">
+            <header class="external-orders-lieferzeit-empty__detail-header">
+                <h3>Bestellung {{ displayOrDash(selectedOrder.bestellnummer || selectedOrder.orderNumber) }}</h3>
+                <button class="external-orders-lieferzeit-empty__detail-close" type="button" @click="closeDetail">×</button>
+            </header>
+            <div class="external-orders-lieferzeit-empty__detail-body">
+                <dl class="external-orders-lieferzeit-empty__detail-grid">
+                    <dt>Status</dt><dd>{{ displayOrDash(selectedOrder.status) }}</dd>
+                    <dt>User</dt><dd>{{ displayOrDash(selectedOrder.user) }}</dd>
+                    <dt>SAN6</dt><dd>{{ displayOrDash(selectedOrder.san6 || selectedOrder.san6OrderNumber) }}</dd>
+                    <dt>Sendenummer</dt><dd>{{ displayOrDash(selectedOrder.sendenummer) }}</dd>
+                    <dt>Domain</dt><dd>{{ displayOrDash(selectedOrder.domain || selectedOrder.sourceSystem) }}</dd>
+                    <dt>Versanddatum</dt><dd>{{ formatDate(selectedOrder.latestShippingDate || selectedOrder.shippingDate) }}</dd>
+                    <dt>Lieferdatum</dt><dd>{{ formatDate(selectedOrder.latestDeliveryDate || selectedOrder.deliveryDate) }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
 </div>
