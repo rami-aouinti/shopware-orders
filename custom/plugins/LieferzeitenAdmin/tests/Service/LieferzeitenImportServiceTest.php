@@ -9,7 +9,6 @@ use LieferzeitenAdmin\Service\Integration\IntegrationContractValidator;
 use LieferzeitenAdmin\Service\Status8TrackingMappingProvider;
 use LieferzeitenAdmin\Service\ChannelDateSettingsProvider;
 use LieferzeitenAdmin\Service\LieferzeitenImportService;
-use LieferzeitenAdmin\Service\LatestDeadlineCalculator;
 use LieferzeitenAdmin\Service\Notification\NotificationEventService;
 use LieferzeitenAdmin\Service\Notification\SalesChannelResolver;
 use LieferzeitenAdmin\Service\Notification\NotificationTriggerCatalog;
@@ -543,13 +542,15 @@ class LieferzeitenImportServiceTest extends TestCase
     {
         $settingsProvider = $this->createMock(ChannelDateSettingsProvider::class);
         $settingsProvider->method('getForChannel')->with('shopware')->willReturn([
-            'shipping' => ['workingDays' => 1, 'cutoff' => '12:00'],
-            'delivery' => ['workingDays' => 3, 'cutoff' => '12:00'],
+            'shipping' => 1,
+            'delivery' => 3,
         ]);
 
         $calculator = new BusinessDayDeliveryDateCalculator();
         $service = $this->createService(
-            latestDeadlineCalculator: new LatestDeadlineCalculator(new BaseDateResolver(), $settingsProvider, $calculator),
+            baseDateResolver: new BaseDateResolver(),
+            settingsProvider: $settingsProvider,
+            deliveryDateCalculator: $calculator,
         );
 
         $method = new \ReflectionMethod($service, 'resolveAndApplyBusinessDates');
@@ -559,8 +560,7 @@ class LieferzeitenImportServiceTest extends TestCase
             'paymentMethod' => 'Vorkasse',
             'orderDate' => '2026-02-02 09:00:00',
             'paymentDate' => '2026-02-05 10:00:00',
-            'salesChannelId' => 'shopware',
-        ]);
+        ], 'shopware');
 
         static::assertSame('payment_date', $resolution['baseDateType']);
         static::assertSame('2026-02-06T10:00:00+00:00', $result['shippingDate']);
@@ -572,13 +572,15 @@ class LieferzeitenImportServiceTest extends TestCase
     {
         $settingsProvider = $this->createMock(ChannelDateSettingsProvider::class);
         $settingsProvider->method('getForChannel')->with('shopware')->willReturn([
-            'shipping' => ['workingDays' => 1, 'cutoff' => '12:00'],
-            'delivery' => ['workingDays' => 2, 'cutoff' => '12:00'],
+            'shipping' => 1,
+            'delivery' => 2,
         ]);
 
         $calculator = new BusinessDayDeliveryDateCalculator();
         $service = $this->createService(
-            latestDeadlineCalculator: new LatestDeadlineCalculator(new BaseDateResolver(), $settingsProvider, $calculator),
+            baseDateResolver: new BaseDateResolver(),
+            settingsProvider: $settingsProvider,
+            deliveryDateCalculator: $calculator,
         );
 
         $method = new \ReflectionMethod($service, 'resolveAndApplyBusinessDates');
@@ -588,8 +590,7 @@ class LieferzeitenImportServiceTest extends TestCase
             'paymentMethod' => 'prepayment',
             'orderDate' => '2026-02-02 09:00:00',
             'paymentDate' => null,
-            'salesChannelId' => 'shopware',
-        ]);
+        ], 'shopware');
 
         static::assertSame('payment_date_missing', $resolution['baseDateType']);
         static::assertTrue($resolution['missingPaymentDate']);
@@ -1076,7 +1077,9 @@ class LieferzeitenImportServiceTest extends TestCase
         ?SystemConfigService $config = null,
         ?Status8TrackingMappingProvider $status8TrackingMappingProvider = null,
         ?NotificationEventService $notificationEventService = null,
-        ?LatestDeadlineCalculator $latestDeadlineCalculator = null,
+        ?BaseDateResolver $baseDateResolver = null,
+        ?ChannelDateSettingsProvider $settingsProvider = null,
+        ?BusinessDayDeliveryDateCalculator $deliveryDateCalculator = null,
         ?EntityRepository $positionRepository = null,
         ?EntityRepository $sendenummerHistoryRepository = null,
     ): LieferzeitenImportService {
@@ -1091,7 +1094,9 @@ class LieferzeitenImportServiceTest extends TestCase
             $this->createMock(ChannelOrderAdapterRegistry::class),
             $this->createMock(San6Client::class),
             $this->createMock(San6MatchingService::class),
-            $latestDeadlineCalculator ?? $this->createMock(LatestDeadlineCalculator::class),
+            $baseDateResolver ?? $this->createMock(BaseDateResolver::class),
+            $settingsProvider ?? $this->createMock(ChannelDateSettingsProvider::class),
+            $deliveryDateCalculator ?? $this->createMock(BusinessDayDeliveryDateCalculator::class),
             $status8TrackingMappingProvider ?? new Status8TrackingMappingProvider($config),
             new ParcelStatusAggregationPolicy(),
             $this->createMock(LockFactory::class),

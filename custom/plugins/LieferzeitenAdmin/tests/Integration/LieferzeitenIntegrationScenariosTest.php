@@ -3,13 +3,8 @@
 namespace LieferzeitenAdmin\Tests\Integration;
 
 use Doctrine\DBAL\Connection;
-use LieferzeitenAdmin\Service\BaseDateResolver;
-use LieferzeitenAdmin\Service\BusinessDayDeliveryDateCalculator;
-use LieferzeitenAdmin\Service\ChannelDateSettingsProvider;
 use LieferzeitenAdmin\Service\LieferzeitenOrderOverviewService;
-use LieferzeitenAdmin\Service\LatestDeadlineCalculator;
 use PHPUnit\Framework\TestCase;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class LieferzeitenIntegrationScenariosTest extends TestCase
 {
@@ -31,11 +26,7 @@ class LieferzeitenIntegrationScenariosTest extends TestCase
             )
             ->willReturn([]);
 
-        $settingsProvider = new ChannelDateSettingsProvider($this->createMock(SystemConfigService::class), $connection);
-        $service = new LieferzeitenOrderOverviewService(
-            $connection,
-            new LatestDeadlineCalculator(new BaseDateResolver(), $settingsProvider, new BusinessDayDeliveryDateCalculator()),
-        );
+        $service = new LieferzeitenOrderOverviewService($connection);
         $service->listOrders(1, 25, 'status', 'ASC', [
             'businessDateFrom' => '2026-01-01',
             'businessDateEndTo' => '2026-01-31',

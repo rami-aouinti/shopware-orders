@@ -11,7 +11,9 @@ class PaketDeliveryDateRecalculationService
 {
     public function __construct(
         private readonly EntityRepository $paketRepository,
-        private readonly LatestDeadlineCalculator $latestDeadlineCalculator,
+        private readonly BaseDateResolver $baseDateResolver,
+        private readonly ChannelDateSettingsProvider $settingsProvider,
+        private readonly BusinessDayDeliveryDateCalculator $calculator,
     ) {
     }
 
@@ -33,22 +35,22 @@ class PaketDeliveryDateRecalculationService
                 'paymentMethod' => $paket->get('paymentMethod'),
             ];
 
-            $calculation = $this->latestDeadlineCalculator->calculate(
-                $payload,
-                is_string($paket->get('salesChannelId')) ? (string) $paket->get('salesChannelId') : null,
-                (string) ($paket->get('sourceSystem') ?? 'shopware'),
-            );
-
-            $calculatedShippingDate = $calculation['latestShipping'];
-            $calculatedDeliveryDate = $calculation['latestDelivery'];
-
+            $resolution = $this->baseDateResolver->resolve($payload);
             $update = [
                 'id' => $paket->getId(),
-                'baseDateType' => $calculation['baseDateType'],
-                'calculatedDeliveryDate' => $calculatedDeliveryDate?->format('Y-m-d H:i:s'),
-                'shippingDate' => $calculatedShippingDate?->format('Y-m-d H:i:s'),
-                'deliveryDate' => $calculatedDeliveryDate?->format('Y-m-d H:i:s'),
+                'baseDateType' => $resolution['baseDateType'],
+                'calculatedDeliveryDate' => null,
             ];
+
+            if ($resolution['baseDate'] !== null) {
+                $settings = $this->settingsProvider->getForChannel((string) ($paket->get('sourceSystem') ?? 'shopware'));
+                $calculatedShippingDate = $this->calculator->calculate($resolution['baseDate'], $settings['shipping']);
+                $calculatedDeliveryDate = $this->calculator->calculate($resolution['baseDate'], $settings['delivery']);
+
+                $update['shippingDate'] = $calculatedShippingDate?->format('Y-m-d H:i:s');
+                $update['deliveryDate'] = $calculatedDeliveryDate?->format('Y-m-d H:i:s');
+                $update['calculatedDeliveryDate'] = $calculatedDeliveryDate?->format('Y-m-d H:i:s');
+            }
 
             $updates[] = $update;
         }
