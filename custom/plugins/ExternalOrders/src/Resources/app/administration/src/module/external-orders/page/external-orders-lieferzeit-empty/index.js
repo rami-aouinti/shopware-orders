@@ -1,5 +1,11 @@
 import template from './external-orders-lieferzeit-empty.html.twig';
 
+const DEFAULT_STATISTICS_METRICS = Object.freeze({
+    openOrders: 0,
+    overdueShipping: 0,
+    overdueDelivery: 0,
+});
+
 const createDefaultFilters = () => ({
     bestellnummer: '',
     san6: '',
