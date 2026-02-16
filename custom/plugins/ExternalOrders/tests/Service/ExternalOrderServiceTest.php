@@ -181,6 +181,75 @@ class ExternalOrderServiceTest extends TestCase
         $service->updateModifiableStatus($context, $order->getId(), 'Bestellung abgeschlossen');
     }
 
+
+    public function testFetchOrdersProvidesCanonicalAliasesAndSupportsAllListFilters(): void
+    {
+        $context = Context::createDefaultContext();
+        $order = $this->createOrderEntity('abababababababababababababababab', 'SW-60001', 12.0, []);
+
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->once())->method('search')->willReturn(
+            new EntitySearchResult(OrderDefinition::ENTITY_NAME, 1, new OrderCollection([$order]), null, new Criteria(), $context)
+        );
+
+        $payload = [
+            'orderNumber' => 'SW-60001',
+            'auftragNumber' => 'SAN6-60001',
+            'san6' => 'SAN6-60001',
+            'status' => 'versendet',
+            'latestShippingDate' => '2026-04-11',
+            'shippingDate' => '2026-04-10',
+            'latestDeliveryDate' => '2026-04-12',
+            'deliveryDate' => '2026-04-11',
+            'lieferterminLieferant' => '2026-04-09',
+            'lieferterminAuftragsbearbeitung' => '2026-04-08',
+            'changedByUser' => 'Max Mustermann',
+            'sendenummer' => 'DHL-60001',
+        ];
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->exactly(2))
+            ->method('fetchAllAssociative')
+            ->willReturn([[ 
+                'id' => 'cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd',
+                'order_id' => 'abababababababababababababababab',
+                'external_id' => 'EXT-60001',
+                'channel' => 'san6',
+                'raw_payload' => json_encode($payload, JSON_THROW_ON_ERROR),
+            ]]);
+
+        $service = new ExternalOrderService($repository, $connection);
+
+        $unfiltered = $service->fetchOrders($context);
+        static::assertSame('SAN6-60001', $unfiltered['orders'][0]['san6']);
+        static::assertSame('SAN6-60001', $unfiltered['orders'][0]['san6OrderNumber']);
+        static::assertSame('shipped', $unfiltered['orders'][0]['statusCode']);
+
+        $filtered = $service->fetchOrders($context, filters: [
+            'bestellnummer' => 'SW-60001',
+            'san6OrderNumber' => 'SAN6-60001',
+            'latestShippingDateFrom' => '2026-04-11',
+            'latestShippingDateTo' => '2026-04-11',
+            'shippingDateFrom' => '2026-04-10',
+            'shippingDateTo' => '2026-04-10',
+            'latestDeliveryDateFrom' => '2026-04-12',
+            'latestDeliveryDateTo' => '2026-04-12',
+            'deliveryDateFrom' => '2026-04-11',
+            'deliveryDateTo' => '2026-04-11',
+            'lieferterminLieferantFrom' => '2026-04-09',
+            'lieferterminLieferantTo' => '2026-04-09',
+            'lieferterminAuftragsbearbeitungFrom' => '2026-04-08',
+            'lieferterminAuftragsbearbeitungTo' => '2026-04-08',
+            'changedByUser' => 'Max',
+            'sendenummer' => 'DHL-60001',
+            'status' => 'shipped',
+            'san6' => 'SAN6-60001',
+            'statusCode' => 'shipped',
+        ]);
+
+        static::assertSame(1, $filtered['total']);
+    }
+
     /**
      * @param array<string, mixed>|null $customFields
      */

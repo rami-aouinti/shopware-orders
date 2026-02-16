@@ -71,6 +71,22 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(state.filters).not.toHaveProperty('kommentar');
     });
 
+
+    it('normalizes canonical response aliases for san6 and statusCode', () => {
+        const state = componentConfig.data();
+        const normalized = componentConfig.methods.normalizeOrder.call({ ...state }, {
+            orderNumber: '10001',
+            san6: 'SAN6-10001',
+            statusCode: 'shipped',
+            statusLabel: 'Versendet',
+        });
+
+        expect(normalized.san6).toBe('SAN6-10001');
+        expect(normalized.san6OrderNumber).toBe('SAN6-10001');
+        expect(normalized.statusCode).toBe('shipped');
+        expect(normalized.status).toBe('Versendet');
+    });
+
     it('maps normalized filter params to externalOrderService.list', async () => {
         const state = componentConfig.data();
         const list = jest.fn().mockResolvedValue({ orders: [] });

@@ -51,6 +51,7 @@ class ExternalOrderController extends AbstractController
 
         $allowedFilters = [
             'bestellnummer',
+            'san6',
             'san6OrderNumber',
             'latestShippingDateFrom',
             'latestShippingDateTo',
@@ -67,6 +68,7 @@ class ExternalOrderController extends AbstractController
             'changedByUser',
             'sendenummer',
             'status',
+            'statusCode',
         ];
 
         $filters = [];

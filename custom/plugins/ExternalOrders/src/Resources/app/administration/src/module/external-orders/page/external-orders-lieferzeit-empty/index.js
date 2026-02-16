@@ -520,8 +520,18 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             const trackingNumbers = Array.isArray(order?.trackingNumbers)
                 ? order.trackingNumbers.filter((trackingNumber) => String(trackingNumber || '').trim() !== '')
                 : [];
+
+            const canonicalSan6OrderNumber = String(
+                order?.san6OrderNumber
+                ?? order?.san6
+                ?? order?.orderReference
+                ?? order?.auftragNumber
+                ?? '',
+            ).trim();
+
             const normalizedBusinessStatus = normalizeBusinessStatus(
-                order?.status
+                order?.statusCode
+                ?? order?.status
                 ?? order?.statusLabel
                 ?? order?.ordersStatusName
                 ?? order?.aggregatedStatus
@@ -530,8 +540,8 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             return {
                 ...order,
                 bestellnummer: order?.bestellnummer ?? order?.orderNumber ?? order?.orderId ?? '',
-                san6OrderNumber: order?.san6OrderNumber ?? order?.san6 ?? order?.orderReference ?? order?.auftragNumber ?? '',
-                san6: order?.san6 ?? order?.san6OrderNumber ?? order?.orderReference ?? order?.auftragNumber ?? '',
+                san6: canonicalSan6OrderNumber,
+                san6OrderNumber: canonicalSan6OrderNumber,
                 status: normalizedBusinessStatus.label,
                 statusCode: normalizedBusinessStatus.code,
                 changedByUser: order?.changedByUser ?? order?.user ?? order?.customerName ?? order?.customersName ?? '',

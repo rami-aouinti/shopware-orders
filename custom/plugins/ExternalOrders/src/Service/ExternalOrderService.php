@@ -25,6 +25,27 @@ readonly class ExternalOrderService
     ) {
     }
 
+
+    private const BUSINESS_STATUS_CODE_MAP = [
+        'open' => 'processing',
+        'in_progress' => 'processing',
+        'paid' => 'processing',
+        'versandbereit' => 'processing',
+        'bezahlt' => 'processing',
+        'processing' => 'processing',
+        'partially_shipped' => 'shipped',
+        'shipped' => 'shipped',
+        'versendet' => 'shipped',
+        'in_transit' => 'shipped',
+        'out_for_delivery' => 'shipped',
+        'completed' => 'completed',
+        'done' => 'completed',
+        'delivered' => 'completed',
+        'bestellung_abgeschlossen' => 'completed',
+        'cancelled' => 'cancelled',
+        'test' => 'test',
+    ];
+
     private const MODIFIABLE_STATUS_TARGETS = [
         'versendet' => 'Versendet',
         'bestellung_abgeschlossen' => 'Bestellung abgeschlossen',
@@ -347,7 +368,12 @@ readonly class ExternalOrderService
         $channel = $payload['channel'] ?? 'unknown';
 
         $statusLabel = $payload['ordersStatusName'] ?? $payload['statusLabel'] ?? ($additional['status'] ?? 'Processing');
-        $status = $payload['status'] ?? strtolower((string) $statusLabel);
+        $statusCode = $this->normalizeBusinessStatusCode(
+            $payload['statusCode']
+            ?? $payload['status']
+            ?? ($metadata['source_status'] ?? null)
+            ?? $statusLabel
+        ) ?? 'processing';
 
         $date = $payload['datePurchased'] ?? $payload['date'] ?? ($additional['orderDate'] ?? ($order->getOrderDateTime()?->format(DATE_ATOM) ?? ''));
         $trackingNumbers = $payload['trackingNumbers'] ?? $payload['trackingNumber'] ?? [];
@@ -368,6 +394,7 @@ readonly class ExternalOrderService
         $lieferterminAuftragsbearbeitung = $payload['lieferterminAuftragsbearbeitung'] ?? $payload['neuerLiefertermin'] ?? $payload['newDeliveryDate'] ?? ($additional['lieferterminAuftragsbearbeitung'] ?? null);
         $changedByUser = $payload['changedByUser'] ?? $payload['user'] ?? $customerName;
         $positions = $this->extractPositions($detail);
+        $san6OrderNumber = $this->resolveSan6OrderNumber($payload, $orderReference);
 
         $totalItems = $payload['totalItems'] ?? $this->countDetailItems($detail);
         $totalRevenue = $payload['totalRevenue'] ?? ($totals['sum'] ?? $order->getAmountTotal() ?? 0.0);
@@ -390,12 +417,14 @@ readonly class ExternalOrderService
             'customersEmailAddress' => $email,
             'date' => $date,
             'datePurchased' => $date,
-            'status' => $status,
+            'status' => $statusCode,
+            'statusCode' => $statusCode,
             'statusLabel' => $statusLabel,
             'ordersStatusName' => $statusLabel,
             'orderStatusColor' => $statusColor,
             'isTestOrder' => $isTestOrder,
-            'san6OrderNumber' => $payload['san6OrderNumber'] ?? $orderReference,
+            'san6' => $san6OrderNumber,
+            'san6OrderNumber' => $san6OrderNumber,
             'changedByUser' => $changedByUser,
             'sendenummer' => $payload['sendenummer'] ?? implode(', ', $trackingNumbers),
             'trackingNumber' => $payload['trackingNumber'] ?? implode(', ', $trackingNumbers),
@@ -880,7 +909,8 @@ readonly class ExternalOrderService
                     }
                     break;
                 case 'san6OrderNumber':
-                    if (!$this->stringContains($orderItem['san6OrderNumber'] ?? ($orderItem['orderReference'] ?? null), $needle)) {
+                case 'san6':
+                    if (!$this->stringContains($orderItem['san6OrderNumber'] ?? ($orderItem['san6'] ?? ($orderItem['orderReference'] ?? null)), $needle)) {
                         return false;
                     }
                     break;
@@ -895,6 +925,7 @@ readonly class ExternalOrderService
                     }
                     break;
                 case 'status':
+                case 'statusCode':
                     if (!$this->statusMatches($orderItem, $needle)) {
                         return false;
                     }
@@ -983,34 +1014,15 @@ readonly class ExternalOrderService
     {
         $normalizedNeedle = mb_strtolower(trim($needle));
         $statusSources = [
+            $orderItem['statusCode'] ?? null,
             $orderItem['status'] ?? null,
             $orderItem['statusLabel'] ?? null,
             $orderItem['ordersStatusName'] ?? null,
         ];
 
         if (in_array($normalizedNeedle, ['processing', 'shipped', 'completed', 'cancelled', 'test'], true)) {
-            $normalizedMap = [
-                'open' => 'processing',
-                'in_progress' => 'processing',
-                'paid' => 'processing',
-                'versandbereit' => 'processing',
-                'bezahlt' => 'processing',
-                'partially_shipped' => 'shipped',
-                'shipped' => 'shipped',
-                'versendet' => 'shipped',
-                'in_transit' => 'shipped',
-                'out_for_delivery' => 'shipped',
-                'completed' => 'completed',
-                'done' => 'completed',
-                'delivered' => 'completed',
-                'bestellung_abgeschlossen' => 'completed',
-                'cancelled' => 'cancelled',
-                'test' => 'test',
-            ];
-
             foreach ($statusSources as $source) {
-                $normalized = str_replace([' ', '-'], '_', mb_strtolower(trim((string) ($source ?? ''))));
-                if (($normalizedMap[$normalized] ?? $normalized) === $normalizedNeedle) {
+                if ($this->normalizeBusinessStatusCode($source) === $normalizedNeedle) {
                     return true;
                 }
             }
@@ -1025,6 +1037,23 @@ readonly class ExternalOrderService
         }
 
         return false;
+    }
+
+    private function resolveSan6OrderNumber(array $payload, string $orderReference): string
+    {
+        $san6OrderNumber = $payload['san6OrderNumber'] ?? $payload['san6'] ?? $payload['orderReference'] ?? $payload['auftragNumber'] ?? $orderReference;
+
+        return trim((string) $san6OrderNumber);
+    }
+
+    private function normalizeBusinessStatusCode(mixed $status): ?string
+    {
+        $normalized = str_replace([' ', '-'], '_', mb_strtolower(trim((string) ($status ?? ''))));
+        if ($normalized === '') {
+            return null;
+        }
+
+        return self::BUSINESS_STATUS_CODE_MAP[$normalized] ?? null;
     }
 
     private function dateInRange(mixed $value, ?string $from, ?string $to): bool
