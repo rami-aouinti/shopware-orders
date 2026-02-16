@@ -1,93 +1,86 @@
-{% block external_orders_lieferzeit_empty %}
-    <sw-page class="external-orders-lieferzeit-empty">
-        <template slot="smart-bar-header">
-            <h2>Lieferzeit</h2>
-        </template>
+<div class="external-orders-lieferzeit-empty">
+    <h2>Lieferzeit</h2>
+    <sw-card-view>
+        <sw-card class="external-orders-lieferzeit-empty__filters" title="Filter">
+            <sw-container columns="repeat(auto-fit, minmax(220px, 1fr))" gap="16px">
+                <sw-text-field v-model:value="filters.bestellnummer" label="Bestellnummer"></sw-text-field>
+                <sw-text-field v-model:value="filters.san6" label="San6 Auftragsnummer"></sw-text-field>
+                <sw-text-field v-model:value="filters.user" label="Username"></sw-text-field>
+                <sw-text-field v-model:value="filters.sendenummer" label="Sendenummer"></sw-text-field>
+                <sw-text-field v-model:value="filters.status" label="Status"></sw-text-field>
 
-        <template slot="content">
-            <sw-card-view>
-                <sw-card class="external-orders-lieferzeit-empty__filters" title="Filter">
-                    <sw-container columns="repeat(auto-fit, minmax(220px, 1fr))" gap="16px">
-                        <sw-text-field v-model:value="filters.bestellnummer" label="Bestellnummer"></sw-text-field>
-                        <sw-text-field v-model:value="filters.san6" label="San6 Auftragsnummer"></sw-text-field>
-                        <sw-text-field v-model:value="filters.user" label="Username"></sw-text-field>
-                        <sw-text-field v-model:value="filters.sendenummer" label="Sendenummer"></sw-text-field>
-                        <sw-text-field v-model:value="filters.status" label="Status"></sw-text-field>
+                <sw-datepicker v-model:value="filters.shippingDateFrom" label="spätester Versandzeitpunkt (von)"></sw-datepicker>
+                <sw-datepicker v-model:value="filters.shippingDateTo" label="spätester Versandzeitpunkt (bis)"></sw-datepicker>
 
-                        <sw-datepicker v-model:value="filters.shippingDateFrom" label="spätester Versandzeitpunkt (von)"></sw-datepicker>
-                        <sw-datepicker v-model:value="filters.shippingDateTo" label="spätester Versandzeitpunkt (bis)"></sw-datepicker>
+                <sw-datepicker v-model:value="filters.businessDateFrom" label="Versand-Datum (von)"></sw-datepicker>
+                <sw-datepicker v-model:value="filters.businessDateTo" label="Versand-Datum (bis)"></sw-datepicker>
 
-                        <sw-datepicker v-model:value="filters.businessDateFrom" label="Versand-Datum (von)"></sw-datepicker>
-                        <sw-datepicker v-model:value="filters.businessDateTo" label="Versand-Datum (bis)"></sw-datepicker>
+                <sw-datepicker v-model:value="filters.deliveryDateFrom" label="spätester Lieferzeitpunkt (von)"></sw-datepicker>
+                <sw-datepicker v-model:value="filters.deliveryDateTo" label="spätester Lieferzeitpunkt (bis)"></sw-datepicker>
 
-                        <sw-datepicker v-model:value="filters.deliveryDateFrom" label="spätester Lieferzeitpunkt (von)"></sw-datepicker>
-                        <sw-datepicker v-model:value="filters.deliveryDateTo" label="spätester Lieferzeitpunkt (bis)"></sw-datepicker>
+                <sw-datepicker v-model:value="filters.businessDateEndFrom" label="Liefer-Datum (von)"></sw-datepicker>
+                <sw-datepicker v-model:value="filters.businessDateEndTo" label="Liefer-Datum (bis)"></sw-datepicker>
 
-                        <sw-datepicker v-model:value="filters.businessDateEndFrom" label="Liefer-Datum (von)"></sw-datepicker>
-                        <sw-datepicker v-model:value="filters.businessDateEndTo" label="Liefer-Datum (bis)"></sw-datepicker>
+                <sw-datepicker v-model:value="filters.lieferterminLieferantFrom" label="Liefertermin Lieferant (von)"></sw-datepicker>
+                <sw-datepicker v-model:value="filters.lieferterminLieferantTo" label="Liefertermin Lieferant (bis)"></sw-datepicker>
 
-                        <sw-datepicker v-model:value="filters.lieferterminLieferantFrom" label="Liefertermin Lieferant (von)"></sw-datepicker>
-                        <sw-datepicker v-model:value="filters.lieferterminLieferantTo" label="Liefertermin Lieferant (bis)"></sw-datepicker>
+                <sw-datepicker v-model:value="filters.neuerLieferterminFrom" label="Liefertermin Auftragsbearbeitung (von)"></sw-datepicker>
+                <sw-datepicker v-model:value="filters.neuerLieferterminTo" label="Liefertermin Auftragsbearbeitung (bis)"></sw-datepicker>
+            </sw-container>
 
-                        <sw-datepicker v-model:value="filters.neuerLieferterminFrom" label="Liefertermin Auftragsbearbeitung (von)"></sw-datepicker>
-                        <sw-datepicker v-model:value="filters.neuerLieferterminTo" label="Liefertermin Auftragsbearbeitung (bis)"></sw-datepicker>
-                    </sw-container>
+            <div class="external-orders-lieferzeit-empty__filter-actions">
+                <sw-button variant="primary" @click="applyFilters">Filtern</sw-button>
+                <sw-button variant="ghost" @click="resetFilters">Zurücksetzen</sw-button>
+            </div>
+        </sw-card>
 
-                    <div class="external-orders-lieferzeit-empty__filter-actions">
-                        <sw-button variant="primary" @click="applyFilters">Filtern</sw-button>
-                        <sw-button variant="ghost" @click="resetFilters">Zurücksetzen</sw-button>
-                    </div>
-                </sw-card>
+        <sw-card>
+            <sw-loader v-if="isLoading"></sw-loader>
 
-                <sw-card>
-                    <sw-loader v-if="isLoading"></sw-loader>
+            <sw-empty-state
+                    v-if="loadError"
+                    title="Fehler beim Laden"
+                    subline="Die Lieferzeiten konnten nicht geladen werden."
+            >
+                <template slot="actions">
+                    <sw-button variant="primary" @click="loadOrders">
+                        Erneut versuchen
+                    </sw-button>
+                </template>
+            </sw-empty-state>
 
-                    <sw-empty-state
-                        v-if="loadError"
-                        title="Fehler beim Laden"
-                        subline="Die Lieferzeiten konnten nicht geladen werden."
-                    >
-                        <template slot="actions">
-                            <sw-button variant="primary" @click="loadOrders">
-                                Erneut versuchen
-                            </sw-button>
-                        </template>
-                    </sw-empty-state>
+            <table v-if="!isLoading && !loadError && orders.length" class="sw-data-grid__table">
+                <thead>
+                <tr>
+                    <th>Bestellnummer</th>
+                    <th>SAN6</th>
+                    <th>Status</th>
+                    <th>User</th>
+                    <th>Sendenummer</th>
+                    <th>Domain</th>
+                    <th>Spätester Versand</th>
+                    <th>Späteste Lieferung</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="order in orders" :key="order.id">
+                    <td>{{ displayOrDash(order.bestellnummer || order.orderNumber) }}</td>
+                    <td>{{ displayOrDash(order.san6 || order.san6OrderNumber) }}</td>
+                    <td>{{ displayOrDash(order.status) }}</td>
+                    <td>{{ displayOrDash(order.user) }}</td>
+                    <td>{{ displayOrDash(order.sendenummer) }}</td>
+                    <td>{{ displayOrDash(order.domain || order.sourceSystem) }}</td>
+                    <td>{{ formatDate(order.latestShippingDate || order.shippingDate) }}</td>
+                    <td>{{ formatDate(order.latestDeliveryDate || order.deliveryDate) }}</td>
+                </tr>
+                </tbody>
+            </table>
 
-                    <table v-if="!isLoading && !loadError && orders.length" class="sw-data-grid__table">
-                        <thead>
-                            <tr>
-                                <th>Bestellnummer</th>
-                                <th>SAN6</th>
-                                <th>Status</th>
-                                <th>User</th>
-                                <th>Sendenummer</th>
-                                <th>Domain</th>
-                                <th>Spätester Versand</th>
-                                <th>Späteste Lieferung</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="order in orders" :key="order.id">
-                                <td>{{ displayOrDash(order.bestellnummer || order.orderNumber) }}</td>
-                                <td>{{ displayOrDash(order.san6 || order.san6OrderNumber) }}</td>
-                                <td>{{ displayOrDash(order.status) }}</td>
-                                <td>{{ displayOrDash(order.user) }}</td>
-                                <td>{{ displayOrDash(order.sendenummer) }}</td>
-                                <td>{{ displayOrDash(order.domain || order.sourceSystem) }}</td>
-                                <td>{{ formatDate(order.latestShippingDate || order.shippingDate) }}</td>
-                                <td>{{ formatDate(order.latestDeliveryDate || order.deliveryDate) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <sw-empty-state
-                        v-if="!isLoading && !loadError && orders.length === 0"
-                        title="Keine Lieferzeiten gefunden"
-                        subline="Für die aktuellen Filter gibt es keine Ergebnisse."
-                    />
-                </sw-card>
-            </sw-card-view>
-        </template>
-    </sw-page>
-{% endblock %}
+            <sw-empty-state
+                    v-if="!isLoading && !loadError && orders.length === 0"
+                    title="Keine Lieferzeiten gefunden"
+                    subline="Für die aktuellen Filter gibt es keine Ergebnisse."
+            />
+        </sw-card>
+    </sw-card-view>
+</div>
