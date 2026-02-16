@@ -375,7 +375,7 @@ readonly class ExternalOrderService
             ?? $statusLabel
         ) ?? 'processing';
 
-        $date = $payload['datePurchased'] ?? $payload['date'] ?? ($additional['orderDate'] ?? ($order->getOrderDateTime()?->format(DATE_ATOM) ?? ''));
+        $orderDate = $payload['orderDate'] ?? $payload['datePurchased'] ?? $payload['date'] ?? ($additional['orderDate'] ?? ($order->getOrderDateTime()?->format(DATE_ATOM) ?? ''));
         $trackingNumbers = $payload['trackingNumbers'] ?? $payload['trackingNumber'] ?? [];
         if (!is_array($trackingNumbers)) {
             $trackingNumbers = [$trackingNumbers];
@@ -415,8 +415,9 @@ readonly class ExternalOrderService
             'orderReference' => $orderReference,
             'email' => $email,
             'customersEmailAddress' => $email,
-            'date' => $date,
-            'datePurchased' => $date,
+            'date' => $orderDate,
+            'datePurchased' => $orderDate,
+            'orderDate' => $orderDate,
             'status' => $statusCode,
             'statusCode' => $statusCode,
             'statusLabel' => $statusLabel,
@@ -443,7 +444,7 @@ readonly class ExternalOrderService
     }
 
     /**
-     * @return array<int, array{positionId:string, positionNumber:string, productLabel:string, lieferterminLieferant:?string}>
+     * @return array<int, array{positionId:string, positionNumber:string, productLabel:string, orderedQuantity:int, lieferterminLieferant:?string}>
      */
     private function extractPositions(?array $detail): array
     {
@@ -468,10 +469,13 @@ readonly class ExternalOrderService
                 $positionNumber = (string) ($index + 1);
             }
 
+            $orderedQuantity = (int) ($item['orderedQuantity'] ?? $item['quantity'] ?? 0);
+
             $positions[] = [
                 'positionId' => $positionId,
                 'positionNumber' => $positionNumber,
                 'productLabel' => (string) ($item['name'] ?? $item['label'] ?? $item['title'] ?? ''),
+                'orderedQuantity' => $orderedQuantity,
                 'lieferterminLieferant' => isset($item['lieferterminLieferant']) ? (string) $item['lieferterminLieferant'] : null,
             ];
         }
@@ -592,7 +596,7 @@ readonly class ExternalOrderService
                 'trackingNumbers' => [],
             ],
             'additional' => [
-                'orderDate' => $payload['date'] ?? '',
+                'orderDate' => $payload['orderDate'] ?? $payload['datePurchased'] ?? $payload['date'] ?? '',
                 'status' => $payload['statusLabel'] ?? 'Processing',
                 'orderType' => 'N/A',
                 'notes' => 'N/A',
@@ -927,6 +931,30 @@ readonly class ExternalOrderService
                 case 'status':
                 case 'statusCode':
                     if (!$this->statusMatches($orderItem, $needle)) {
+                        return false;
+                    }
+                    break;
+                case 'orderDateFrom':
+                    if (!$this->dateInRange($orderItem['orderDate'] ?? ($orderItem['datePurchased'] ?? ($orderItem['date'] ?? null)), $needle, null)) {
+                        return false;
+                    }
+                    break;
+                case 'orderDateTo':
+                    if (!$this->dateInRange($orderItem['orderDate'] ?? ($orderItem['datePurchased'] ?? ($orderItem['date'] ?? null)), null, $needle)) {
+                        return false;
+                    }
+                    break;
+                case 'orderedQuantity':
+                    $orderedQuantities = [];
+                    foreach (($orderItem['positions'] ?? []) as $position) {
+                        if (!is_array($position)) {
+                            continue;
+                        }
+
+                        $orderedQuantities[] = (string) ((int) ($position['orderedQuantity'] ?? 0));
+                    }
+
+                    if ($orderedQuantities === [] || !array_filter($orderedQuantities, static fn (string $quantity): bool => mb_stripos($quantity, $needle) !== false)) {
                         return false;
                     }
                     break;
