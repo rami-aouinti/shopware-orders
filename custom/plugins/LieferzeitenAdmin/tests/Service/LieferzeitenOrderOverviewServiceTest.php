@@ -7,6 +7,7 @@ use LieferzeitenAdmin\Service\BaseDateResolver;
 use LieferzeitenAdmin\Service\BusinessDayDeliveryDateCalculator;
 use LieferzeitenAdmin\Service\ChannelDateSettingsProvider;
 use LieferzeitenAdmin\Service\LieferzeitenOrderOverviewService;
+use LieferzeitenAdmin\Service\LatestDeadlineCalculator;
 use PHPUnit\Framework\TestCase;
 
 class LieferzeitenOrderOverviewServiceTest extends TestCase
@@ -381,9 +382,7 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
 
         return new LieferzeitenOrderOverviewService(
             $connection,
-            new BaseDateResolver(),
-            $settingsProvider,
-            new BusinessDayDeliveryDateCalculator(),
+            new LatestDeadlineCalculator(new BaseDateResolver(), $settingsProvider, new BusinessDayDeliveryDateCalculator()),
         );
     }
 

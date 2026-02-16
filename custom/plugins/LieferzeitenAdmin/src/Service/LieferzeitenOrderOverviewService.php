@@ -112,9 +112,7 @@ class LieferzeitenOrderOverviewService
 
     public function __construct(
         private Connection $connection,
-        private BaseDateResolver $baseDateResolver,
-        private ChannelDateSettingsProvider $settingsProvider,
-        private BusinessDayDeliveryDateCalculator $dateCalculator,
+        private LatestDeadlineCalculator $latestDeadlineCalculator,
     ) {
     }
 
@@ -225,6 +223,7 @@ class LieferzeitenOrderOverviewService
                 p.shipping_assignment_type AS shippingAssignmentType,
                 p.source_system AS sourceSystem,
                 p.source_system AS domain,
+                p.sales_channel_id AS salesChannelId,
                 p.customer_email AS customerEmail,
                 p.customer_email AS customer_email,
                 p.customer_first_name AS customerFirstName,
@@ -239,7 +238,7 @@ class LieferzeitenOrderOverviewService
              FROM `lieferzeiten_paket` p
              %s
              %s
-             GROUP BY p.id, p.external_order_id, p.paket_number, p.partial_shipment_quantity, p.order_date, p.shipping_date, p.delivery_date, p.payment_method, p.payment_date, p.business_date_from, p.business_date_to, p.calculated_delivery_date, p.last_changed_by, p.last_changed_at, p.status, p.shipping_assignment_type, p.source_system, p.customer_first_name, p.customer_last_name, p.customer_additional_name
+             GROUP BY p.id, p.external_order_id, p.paket_number, p.partial_shipment_quantity, p.order_date, p.shipping_date, p.delivery_date, p.payment_method, p.payment_date, p.business_date_from, p.business_date_to, p.calculated_delivery_date, p.last_changed_by, p.last_changed_at, p.status, p.shipping_assignment_type, p.source_system, p.sales_channel_id, p.customer_first_name, p.customer_last_name, p.customer_additional_name
              ORDER BY %s
              LIMIT :limit OFFSET :offset',
             $joinSql,
@@ -291,6 +290,7 @@ class LieferzeitenOrderOverviewService
                 p.last_changed_at AS changedAt,
                 p.source_system AS sourceSystem,
                 p.source_system AS domain,
+                p.sales_channel_id AS salesChannelId,
                 p.customer_email AS customerEmail,
                 p.customer_email AS customer_email,
                 p.customer_first_name AS customerFirstName,
@@ -299,7 +299,7 @@ class LieferzeitenOrderOverviewService
              FROM `lieferzeiten_paket` p
              LEFT JOIN `lieferzeiten_position` pos ON pos.paket_id = p.id
              WHERE p.id = :paketId
-             GROUP BY p.id, p.external_order_id, p.paket_number, p.partial_shipment_quantity, p.status, p.last_changed_by, p.last_changed_at, p.source_system, p.customer_email, p.customer_first_name, p.customer_last_name, p.customer_additional_name
+             GROUP BY p.id, p.external_order_id, p.paket_number, p.partial_shipment_quantity, p.status, p.last_changed_by, p.last_changed_at, p.source_system, p.sales_channel_id, p.customer_email, p.customer_first_name, p.customer_last_name, p.customer_additional_name
              LIMIT 1',
             ['paketId' => hex2bin($paketId)],
         );
@@ -680,17 +680,14 @@ class LieferzeitenOrderOverviewService
             'paymentReceivedDate' => $this->formatDateString($row['paymentDate'] ?? null),
         ];
 
-        $resolution = $this->baseDateResolver->resolve($payload);
-        if ($resolution['baseDate'] === null) {
-            $row['latestShippingDate'] = null;
-            $row['latestDeliveryDate'] = null;
+        $calculation = $this->latestDeadlineCalculator->calculate(
+            $payload,
+            is_string($row['salesChannelId'] ?? null) ? (string) $row['salesChannelId'] : null,
+            (string) ($row['sourceSystem'] ?? 'shopware'),
+        );
 
-            return $row;
-        }
-
-        $settings = $this->settingsProvider->getForChannel((string) ($row['sourceSystem'] ?? 'shopware'));
-        $row['latestShippingDate'] = $this->dateCalculator->calculate($resolution['baseDate'], $settings['shipping'])?->format('Y-m-d H:i:s');
-        $row['latestDeliveryDate'] = $this->dateCalculator->calculate($resolution['baseDate'], $settings['delivery'])?->format('Y-m-d H:i:s');
+        $row['latestShippingDate'] = $calculation['latestShipping']?->format('Y-m-d H:i:s');
+        $row['latestDeliveryDate'] = $calculation['latestDelivery']?->format('Y-m-d H:i:s');
 
         return $row;
     }

@@ -5,9 +5,12 @@ namespace LieferzeitenAdmin\Tests\Integration;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Connection;
 use LieferzeitenAdmin\Service\DemoDataSeederService;
+use LieferzeitenAdmin\Service\BaseDateResolver;
+use LieferzeitenAdmin\Service\BusinessDayDeliveryDateCalculator;
 use LieferzeitenAdmin\Service\ChannelDateSettingsProvider;
 use LieferzeitenAdmin\Service\ChannelPdmsThresholdResolver;
 use LieferzeitenAdmin\Service\LieferzeitenOrderOverviewService;
+use LieferzeitenAdmin\Service\LatestDeadlineCalculator;
 use LieferzeitenAdmin\Service\LieferzeitenStatisticsService;
 use LieferzeitenAdmin\Service\LieferzeitenExternalOrderLinkService;
 use ExternalOrders\Service\ExternalOrderTestDataService;
@@ -179,7 +182,14 @@ class DemoDataSeederIntegrationTest extends TestCase
         $seeder = $this->createSeeder();
         $seeder->seed(Context::createDefaultContext(), false);
 
-        $orderOverviewService = new LieferzeitenOrderOverviewService($this->connection);
+        $orderOverviewService = new LieferzeitenOrderOverviewService(
+            $this->connection,
+            new LatestDeadlineCalculator(
+                new BaseDateResolver(),
+                new ChannelDateSettingsProvider($this->createMock(SystemConfigService::class), $this->connection),
+                new BusinessDayDeliveryDateCalculator(),
+            ),
+        );
         $orders = $orderOverviewService->listOrders(1, 100, null, null, []);
 
         static::assertSame(8, $orders['total'], 'Test order must be excluded from listing.');
