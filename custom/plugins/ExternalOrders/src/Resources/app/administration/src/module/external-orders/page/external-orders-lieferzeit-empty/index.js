@@ -1,11 +1,5 @@
 import template from './external-orders-lieferzeit-empty.html.twig';
 
-const DEFAULT_STATISTICS_METRICS = Object.freeze({
-    openOrders: 0,
-    overdueShipping: 0,
-    overdueDelivery: 0,
-});
-
 const createDefaultFilters = () => ({
     bestellnummer: '',
     san6: '',
@@ -68,6 +62,10 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
     },
 
     methods: {
+        async loadStatistics() {
+            return null;
+        },
+
         buildFilterParams() {
             return Object.entries(this.filters).reduce((params, [key, value]) => {
                 if (value === null || value === undefined) {
