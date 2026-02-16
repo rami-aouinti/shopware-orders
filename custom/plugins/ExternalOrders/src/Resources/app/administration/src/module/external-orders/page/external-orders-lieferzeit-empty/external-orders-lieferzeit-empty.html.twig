@@ -48,27 +48,30 @@
         </div>
 
         <div class="external-orders-lieferzeit-empty__filters-bar">
-            <div class="external-orders-lieferzeit-empty__filters">
-                <sw-text-field v-model:value="filters.bestellnummer" size="small" placeholder="Bestellnummer" />
-                <sw-text-field v-model:value="filters.san6" size="small" placeholder="SAN6" />
-                <sw-text-field v-model:value="filters.user" size="small" placeholder="User" />
-                <sw-datepicker v-model:value="filters.shippingDateFrom" size="small" date-type="date" placeholder="Versand von" />
-                <sw-datepicker v-model:value="filters.shippingDateTo" size="small" date-type="date" placeholder="Versand bis" />
+            <div class="external-orders-lieferzeit-empty__filters-row external-orders-lieferzeit-empty__filters-row--primary">
+                <sw-text-field v-model:value="filters.bestellnummer" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Bestellnummer" />
+                <sw-text-field v-model:value="filters.san6" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="SAN6" />
+                <sw-text-field v-model:value="filters.user" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="User" />
             </div>
-            <div class="external-orders-lieferzeit-empty__filters-actions">
+
+            <div class="external-orders-lieferzeit-empty__filters-row external-orders-lieferzeit-empty__filters-row--secondary">
+                <sw-datepicker v-model:value="filters.shippingDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Versand von" />
+                <sw-datepicker v-model:value="filters.shippingDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Versand bis" />
                 <sw-text-field
                     v-model:value="tableSearchTerm"
-                    class="external-orders-lieferzeit-empty__search"
+                    class="external-orders-lieferzeit-empty__search external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--search"
                     size="small"
                     placeholder="Suche in Tabelle"
                     @change="onSearch"
                 />
-                <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary" type="button" @click="resetFilters">
-                    Filter löschen
-                </button>
-                <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--primary" type="button" @click="applyFilters">
-                    Anwenden
-                </button>
+                <div class="external-orders-lieferzeit-empty__filters-actions">
+                    <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary" type="button" @click="resetFilters">
+                        Filter löschen
+                    </button>
+                    <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--primary" type="button" @click="applyFilters">
+                        Anwenden
+                    </button>
+                </div>
             </div>
         </div>
 
