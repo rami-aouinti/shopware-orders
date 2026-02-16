@@ -292,6 +292,12 @@ Component.register('external-orders-list', {
             const selectedKeys = new Set(this.selectedOrders.map((order) => this.getOrderKey(order)));
             return this.filteredOrders.filter((order) => this.isTestOrder(order) && !selectedKeys.has(this.getOrderKey(order)));
         },
+        deliveryRows() {
+            const order = this.selectedOrder ?? {};
+            const orderId = order?.id ?? order?.orderNumber ?? 'order';
+
+            return this.buildDeliveryRows(order?.items ?? [], orderId);
+        },
     },
 
     watch: {
@@ -739,10 +745,15 @@ Component.register('external-orders-list', {
                     const shippedQuantity = Number(item?.shippedQuantity ?? orderedQuantity);
 
                     return {
+                        id: item?.id ?? item?.positionId ?? item?.positionID ?? item?.lineItemId ?? '',
+                        positionId: item?.positionId ?? item?.positionID ?? item?.id ?? item?.lineItemId ?? '',
                         name: item?.name ?? item?.productName ?? '',
                         quantity: orderedQuantity,
                         orderedQuantity,
                         shippedQuantity,
+                        packageId: item?.packageId ?? item?.packageID ?? '',
+                        packageLabel: item?.packageLabel ?? item?.packageName ?? item?.parcelNumber ?? '',
+                        packages: this.normalizeItemPackages(item),
                         sku: item?.sku ?? item?.productNumber ?? '',
                         netPrice: Number(item?.netPrice ?? item?.productPrice ?? 0),
                         taxRate: Number(item?.taxRate ?? 19),
@@ -947,6 +958,121 @@ Component.register('external-orders-list', {
             const status = this.itemDisplayStatus(item);
 
             if (!['Teillieferung', 'Trennung Auftragsposition'].includes(status) || ordered <= 0) {
+                return '';
+            }
+
+            return `${shipped}/${ordered} Stück`;
+        },
+        normalizeItemPackages(item) {
+            const packageCandidates = item?.packages
+                ?? item?.packageItems
+                ?? item?.shipmentPackages
+                ?? item?.deliveries;
+
+            if (!Array.isArray(packageCandidates)) {
+                return [];
+            }
+
+            return packageCandidates.map((pkg, packageIndex) => ({
+                packageId: pkg?.packageId
+                    ?? pkg?.id
+                    ?? pkg?.packageNumber
+                    ?? pkg?.trackingNumber
+                    ?? `pkg-${packageIndex + 1}`,
+                packageLabel: pkg?.label
+                    ?? pkg?.packageLabel
+                    ?? pkg?.packageNumber
+                    ?? pkg?.trackingNumber
+                    ?? `Paket ${packageIndex + 1}`,
+                shippedQuantity: Number(pkg?.shippedQuantity ?? pkg?.quantity ?? 0),
+                orderedQuantity: Number(pkg?.orderedQuantity ?? item?.orderedQuantity ?? item?.quantity ?? 0),
+            }));
+        },
+        buildDeliveryRows(items, orderId) {
+            const splitRows = [];
+
+            items.forEach((item, itemIndex) => {
+                const positionId = this.resolvePositionId(item, itemIndex);
+                const packages = Array.isArray(item?.packages) ? item.packages : [];
+
+                if (packages.length === 0) {
+                    splitRows.push(this.createPositionDeliveryRow(item, orderId, positionId));
+                    return;
+                }
+
+                packages.forEach((pkg, packageIndex) => {
+                    splitRows.push(this.createPackageDeliveryRow(item, pkg, orderId, positionId, packageIndex));
+                });
+            });
+
+            return splitRows;
+        },
+        resolvePositionId(item, itemIndex) {
+            return String(
+                item?.positionId
+                ?? item?.id
+                ?? item?.lineItemId
+                ?? item?.sku
+                ?? `position-${itemIndex + 1}`,
+            );
+        },
+        createPositionDeliveryRow(item, orderId, positionId) {
+            const orderedQuantity = Number(item?.orderedQuantity ?? item?.quantity ?? 0);
+            const shippedQuantity = Number(item?.shippedQuantity ?? orderedQuantity);
+
+            return {
+                rowKey: `${orderId}-${positionId}-position`,
+                rowType: 'position',
+                positionId,
+                packageId: 'position',
+                packageLabel: '-',
+                name: item?.name ?? '',
+                sku: item?.sku ?? '',
+                rowQuantity: orderedQuantity,
+                orderedQuantity,
+                shippedQuantity,
+                netPrice: Number(item?.netPrice ?? 0),
+                taxRate: Number(item?.taxRate ?? 0),
+                grossPrice: Number(item?.grossPrice ?? 0),
+                totalPrice: Number(item?.totalPrice ?? 0),
+            };
+        },
+        createPackageDeliveryRow(item, pkg, orderId, positionId, packageIndex) {
+            const fallbackOrdered = Number(item?.orderedQuantity ?? item?.quantity ?? 0);
+            const shippedQuantity = Number(pkg?.shippedQuantity ?? pkg?.quantity ?? 0);
+            const orderedQuantity = Number(pkg?.orderedQuantity ?? fallbackOrdered);
+            const packageId = String(pkg?.packageId ?? pkg?.id ?? `package-${packageIndex + 1}`);
+            const packageLabel = pkg?.packageLabel ?? pkg?.label ?? packageId;
+
+            return {
+                rowKey: `${orderId}-${positionId}-${packageId}`,
+                rowType: 'package',
+                positionId,
+                packageId,
+                packageLabel,
+                name: item?.name ?? '',
+                sku: item?.sku ?? '',
+                rowQuantity: shippedQuantity,
+                orderedQuantity,
+                shippedQuantity,
+                netPrice: Number(item?.netPrice ?? 0),
+                taxRate: Number(item?.taxRate ?? 0),
+                grossPrice: Number(item?.grossPrice ?? 0),
+                totalPrice: Number(item?.totalPrice ?? 0),
+            };
+        },
+        deliveryRowStatus(row) {
+            if (row?.rowType === 'package') {
+                return 'Paketlieferung';
+            }
+
+            return this.itemDisplayStatus(row, this.selectedOrder?.items ?? []);
+        },
+        deliveryRowShipmentRatio(row) {
+            const ordered = Number(row?.orderedQuantity ?? 0);
+            const shipped = Number(row?.shippedQuantity ?? 0);
+
+            if (ordered <= 0) {
                 return '';
             }
 

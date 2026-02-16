@@ -53,6 +53,7 @@ const createDefaultFilters = () => ({
     bestellnummer: '',
     san6: '',
     user: '',
+    domain: '',
     sendenummer: '',
     status: '',
     latestShippingDateFrom: null,
