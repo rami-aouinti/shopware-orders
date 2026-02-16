@@ -222,6 +222,45 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
         $service->listOrders();
     }
 
+    public function testDomainFilterUsesResolvedLegacyHelperAndLowerSourceConditions(): void
+    {
+        $capturedSql = [];
+        $capturedParams = [];
+
+        $connection = $this->createMock(Connection::class);
+        $connection->method('fetchOne')
+            ->willReturnCallback(static function (string $sql, array $params) use (&$capturedSql, &$capturedParams): string {
+                $capturedSql[] = $sql;
+                $capturedParams[] = $params;
+
+                return '0';
+            });
+
+        $connection->method('fetchAllAssociative')
+            ->willReturnCallback(static function (string $sql, array $params) use (&$capturedSql, &$capturedParams): array {
+                $capturedSql[] = $sql;
+                $capturedParams[] = $params;
+
+                return [];
+            });
+
+        $service = new LieferzeitenOrderOverviewService($connection);
+        $service->listOrders(1, 25, null, null, ['domain' => 'Medical Solutions']);
+
+        static::assertCount(2, $capturedSql);
+        foreach ($capturedSql as $sql) {
+            static::assertStringContainsString('LOWER(COALESCE(p.source_system, "")) IN (:domainSource0, :domainSource1, :domainSource2)', $sql);
+        }
+
+        static::assertCount(2, $capturedParams);
+        foreach ($capturedParams as $params) {
+            static::assertSame('medical solutions', $params['domainSource0'] ?? null);
+            static::assertSame('medical-solutions', $params['domainSource1'] ?? null);
+            static::assertSame('medical_solutions', $params['domainSource2'] ?? null);
+            static::assertArrayNotHasKey('sourceSystems', $params);
+        }
+    }
+
     public function testSortWhitelistFallsBackToOrderDate(): void
     {
         $connection = $this->createMock(Connection::class);
