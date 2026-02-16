@@ -108,6 +108,79 @@ class ExternalOrderServiceTest extends TestCase
         static::assertSame(['updated' => 1, 'alreadyMarked' => 0, 'notFound' => 0], $result);
     }
 
+    public function testFetchOrderStatusesAggregatesTrackingSources(): void
+    {
+        $context = Context::createDefaultContext();
+        $order = $this->createOrderEntity('ffffffffffffffffffffffffffffffff', 'SW-40001', 15.0, []);
+
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->once())->method('search')->willReturn(
+            new EntitySearchResult(OrderDefinition::ENTITY_NAME, 1, new OrderCollection([$order]), null, new Criteria([$order->getId()]), $context)
+        );
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('fetchAllAssociative')
+            ->willReturn([[
+                'id' => '11111111111111111111111111111111',
+                'order_id' => 'ffffffffffffffffffffffffffffffff',
+                'external_id' => 'EXT-40001',
+                'channel' => 'san6',
+                'raw_payload' => json_encode([
+                    'shopwareStatus' => 'shipped',
+                    'ordersStatusName' => 'Versendet',
+                    'trackingEvents' => [
+                        ['trackingNumber' => 'DHL-1', 'status' => 'delivered'],
+                        ['trackingNumber' => 'DHL-2', 'status' => 'in_transit'],
+                    ],
+                ], JSON_THROW_ON_ERROR),
+            ]]);
+
+        $service = new ExternalOrderService($repository, $connection);
+
+        $result = $service->fetchOrderStatuses($context, $order->getId());
+
+        static::assertNotNull($result);
+        static::assertSame('shipped', $result['sources']['shopware']);
+        static::assertSame('Versendet', $result['sources']['san6']);
+        static::assertSame('in_transit', $result['sources']['tracking']);
+        static::assertFalse($result['tracking']['allPackagesDelivered']);
+        static::assertSame('Versendet', $result['aggregatedStatus']);
+    }
+
+    public function testUpdateModifiableStatusRejectsCompletedWhenPackagesNotDelivered(): void
+    {
+        $context = Context::createDefaultContext();
+        $order = $this->createOrderEntity('12121212121212121212121212121212', 'SW-50001', 15.0, []);
+
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->exactly(2))->method('search')->willReturn(
+            new EntitySearchResult(OrderDefinition::ENTITY_NAME, 1, new OrderCollection([$order]), null, new Criteria([$order->getId()]), $context)
+        );
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('fetchAllAssociative')
+            ->willReturn([[
+                'id' => '22222222222222222222222222222222',
+                'order_id' => '12121212121212121212121212121212',
+                'external_id' => 'EXT-50001',
+                'channel' => 'san6',
+                'raw_payload' => json_encode([
+                    'trackingEvents' => [
+                        ['trackingNumber' => 'DHL-1', 'status' => 'in_transit'],
+                    ],
+                ], JSON_THROW_ON_ERROR),
+            ]]);
+
+        $service = new ExternalOrderService($repository, $connection);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('only allowed when all packages are delivered');
+
+        $service->updateModifiableStatus($context, $order->getId(), 'Bestellung abgeschlossen');
+    }
+
     /**
      * @param array<string, mixed>|null $customFields
      */
