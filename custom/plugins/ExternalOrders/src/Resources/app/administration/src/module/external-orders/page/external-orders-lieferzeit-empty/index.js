@@ -7,6 +7,29 @@ const DEFAULT_STATISTICS_METRICS = Object.freeze({
     overdueDelivery: 0,
 });
 
+
+const DEMO_CHANNELS = Object.freeze([
+    'b2b',
+    'ebay_de',
+    'kaufland',
+    'ebay_at',
+    'zonami',
+    'peg',
+    'bezb',
+    'san6',
+]);
+
+const CHANNEL_LABELS = Object.freeze({
+    b2b: 'B2B',
+    ebay_de: 'eBay DE',
+    kaufland: 'Kaufland',
+    ebay_at: 'eBay AT',
+    zonami: 'Zonami',
+    peg: 'PEG',
+    bezb: 'BEZB',
+    san6: 'SAN6',
+});
+
 const COLUMN_KEYS = [
     'bestellnummer',
     'san6',
@@ -58,12 +81,6 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             statisticsMetrics: {
                 ...DEFAULT_STATISTICS_METRICS,
             },
-            channels: [
-                { id: 'all', label: 'Alle Kanäle' },
-                { id: 'shopware', label: 'Shopware' },
-                { id: 'amazon', label: 'Amazon' },
-                { id: 'ebay', label: 'eBay' },
-            ],
             activeChannel: 'all',
             tableSearchTerm: '',
             activeColumnFilter: null,
@@ -94,6 +111,22 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 { key: 'domain', label: 'Domain' },
                 { key: 'latestShippingDate', label: 'Spätester Versand' },
                 { key: 'latestDeliveryDate', label: 'Späteste Lieferung' },
+            ];
+        },
+
+        channels() {
+            const dynamicChannels = this.orders
+                .map((order) => this.getOrderDomain(order))
+                .filter((channelId) => channelId !== '');
+
+            const channelIds = [...new Set([...DEMO_CHANNELS, ...dynamicChannels])];
+
+            return [
+                { id: 'all', label: 'Alle Kanäle' },
+                ...channelIds.map((channelId) => ({
+                    id: channelId,
+                    label: this.getChannelLabel(channelId),
+                })),
             ];
         },
 
@@ -186,6 +219,28 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
     },
 
     methods: {
+        normalizeChannelId(value) {
+            return String(value || '').trim().toLowerCase();
+        },
+
+        getOrderDomain(order) {
+            return this.normalizeChannelId(order?.domain ?? order?.sourceSystem ?? order?.channel ?? '');
+        },
+
+        getChannelLabel(channelId) {
+            const normalizedChannelId = this.normalizeChannelId(channelId);
+
+            if (CHANNEL_LABELS[normalizedChannelId]) {
+                return CHANNEL_LABELS[normalizedChannelId];
+            }
+
+            return normalizedChannelId
+                .split('_')
+                .filter((segment) => segment !== '')
+                .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+                .join(' ');
+        },
+
         async loadStatistics() {
             return DEFAULT_STATISTICS_METRICS;
         },
@@ -292,6 +347,11 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                     : await this.fetchOrdersFallback(params);
 
                 this.orders = this.extractOrders(result).map((order) => this.normalizeOrder(order));
+
+                if (!this.channels.some((channel) => channel.id === this.activeChannel)) {
+                    this.activeChannel = 'all';
+                }
+
                 this.page = 1;
             } catch (error) {
                 this.orders = [];
@@ -321,7 +381,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         },
 
         onChannelChange(channelId) {
-            this.activeChannel = channelId;
+            this.activeChannel = this.normalizeChannelId(channelId) || 'all';
             this.page = 1;
         },
 
@@ -427,14 +487,8 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 return true;
             }
 
-            const channelValue = String(
-                order?.domain
-                ?? order?.sourceSystem
-                ?? order?.channel
-                ?? '',
-            ).toLowerCase();
-
-            return channelValue.includes(String(this.activeChannel).toLowerCase());
+            const channelValue = this.getOrderDomain(order);
+            return channelValue === this.normalizeChannelId(this.activeChannel);
         },
 
         openDetail(order) {
