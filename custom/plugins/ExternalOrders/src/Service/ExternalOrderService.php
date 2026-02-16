@@ -37,7 +37,8 @@ readonly class ExternalOrderService
         int $page = 1,
         int $limit = 50,
         ?string $sort = null,
-        ?string $order = null
+        ?string $order = null,
+        array $filters = []
     ): array {
         $page = max(1, $page);
         $limit = $limit > 0 ? $limit : 50;
@@ -92,6 +93,13 @@ readonly class ExternalOrderService
 
                     return false;
                 }
+            ));
+        }
+
+        if ($filters !== []) {
+            $orders = array_values(array_filter(
+                $orders,
+                fn (array $orderItem): bool => $this->matchesListFilters($orderItem, $filters)
             ));
         }
 
@@ -349,6 +357,23 @@ readonly class ExternalOrderService
         $status = $payload['status'] ?? strtolower((string) $statusLabel);
 
         $date = $payload['datePurchased'] ?? $payload['date'] ?? ($additional['orderDate'] ?? ($order->getOrderDateTime()?->format(DATE_ATOM) ?? ''));
+        $trackingNumbers = $payload['trackingNumbers'] ?? $payload['trackingNumber'] ?? [];
+        if (!is_array($trackingNumbers)) {
+            $trackingNumbers = [$trackingNumbers];
+        }
+
+        $trackingNumbers = array_values(array_filter(array_map(
+            static fn (mixed $value): string => trim((string) $value),
+            $trackingNumbers
+        ), static fn (string $value): bool => $value !== ''));
+
+        $latestShippingDate = $payload['latestShippingDate'] ?? $payload['shippingDateLatest'] ?? ($additional['latestShippingDate'] ?? null);
+        $shippingDate = $payload['shippingDate'] ?? $payload['versandDatum'] ?? ($additional['shippingDate'] ?? null);
+        $latestDeliveryDate = $payload['latestDeliveryDate'] ?? $payload['lieferzeitpunktLatest'] ?? ($additional['latestDeliveryDate'] ?? null);
+        $deliveryDate = $payload['deliveryDate'] ?? $payload['lieferDatum'] ?? ($additional['deliveryDate'] ?? null);
+        $lieferterminLieferant = $payload['lieferterminLieferant'] ?? $payload['supplierDeliveryDate'] ?? ($additional['lieferterminLieferant'] ?? null);
+        $lieferterminAuftragsbearbeitung = $payload['lieferterminAuftragsbearbeitung'] ?? $payload['neuerLiefertermin'] ?? $payload['newDeliveryDate'] ?? ($additional['lieferterminAuftragsbearbeitung'] ?? null);
+        $changedByUser = $payload['changedByUser'] ?? $payload['user'] ?? $customerName;
 
         $totalItems = $payload['totalItems'] ?? $this->countDetailItems($detail);
         $totalRevenue = $payload['totalRevenue'] ?? ($totals['sum'] ?? $order->getAmountTotal() ?? 0.0);
@@ -376,6 +401,18 @@ readonly class ExternalOrderService
             'ordersStatusName' => $statusLabel,
             'orderStatusColor' => $statusColor,
             'isTestOrder' => $isTestOrder,
+            'san6OrderNumber' => $payload['san6OrderNumber'] ?? $orderReference,
+            'changedByUser' => $changedByUser,
+            'sendenummer' => $payload['sendenummer'] ?? implode(', ', $trackingNumbers),
+            'trackingNumber' => $payload['trackingNumber'] ?? implode(', ', $trackingNumbers),
+            'trackingNumbers' => $trackingNumbers,
+            'latestShippingDate' => $latestShippingDate,
+            'shippingDate' => $shippingDate,
+            'latestDeliveryDate' => $latestDeliveryDate,
+            'deliveryDate' => $deliveryDate,
+            'lieferterminLieferant' => $lieferterminLieferant,
+            'lieferterminAuftragsbearbeitung' => $lieferterminAuftragsbearbeitung,
+            'neuerLiefertermin' => $lieferterminAuftragsbearbeitung,
             'totalItems' => (int) $totalItems,
             'totalRevenue' => (float) $totalRevenue,
         ];
@@ -795,6 +832,208 @@ readonly class ExternalOrderService
      *
      * @return array<int, array<string, mixed>>
      */
+
+    private function matchesListFilters(array $orderItem, array $filters): bool
+    {
+        foreach ($filters as $key => $value) {
+            $needle = trim((string) $value);
+            if ($needle === '') {
+                continue;
+            }
+
+            switch ($key) {
+                case 'bestellnummer':
+                    if (!$this->stringContains($orderItem['orderNumber'] ?? null, $needle)) {
+                        return false;
+                    }
+                    break;
+                case 'san6OrderNumber':
+                    if (!$this->stringContains($orderItem['san6OrderNumber'] ?? ($orderItem['orderReference'] ?? null), $needle)) {
+                        return false;
+                    }
+                    break;
+                case 'changedByUser':
+                    if (!$this->stringContains($orderItem['changedByUser'] ?? ($orderItem['customerName'] ?? null), $needle)) {
+                        return false;
+                    }
+                    break;
+                case 'sendenummer':
+                    if (!$this->stringContains($orderItem['sendenummer'] ?? ($orderItem['trackingNumber'] ?? null), $needle)) {
+                        return false;
+                    }
+                    break;
+                case 'status':
+                    if (!$this->statusMatches($orderItem, $needle)) {
+                        return false;
+                    }
+                    break;
+                case 'latestShippingDateFrom':
+                    if (!$this->dateInRange($orderItem['latestShippingDate'] ?? null, $needle, null)) {
+                        return false;
+                    }
+                    break;
+                case 'latestShippingDateTo':
+                    if (!$this->dateInRange($orderItem['latestShippingDate'] ?? null, null, $needle)) {
+                        return false;
+                    }
+                    break;
+                case 'shippingDateFrom':
+                    if (!$this->dateInRange($orderItem['shippingDate'] ?? null, $needle, null)) {
+                        return false;
+                    }
+                    break;
+                case 'shippingDateTo':
+                    if (!$this->dateInRange($orderItem['shippingDate'] ?? null, null, $needle)) {
+                        return false;
+                    }
+                    break;
+                case 'latestDeliveryDateFrom':
+                    if (!$this->dateInRange($orderItem['latestDeliveryDate'] ?? null, $needle, null)) {
+                        return false;
+                    }
+                    break;
+                case 'latestDeliveryDateTo':
+                    if (!$this->dateInRange($orderItem['latestDeliveryDate'] ?? null, null, $needle)) {
+                        return false;
+                    }
+                    break;
+                case 'deliveryDateFrom':
+                    if (!$this->dateInRange($orderItem['deliveryDate'] ?? null, $needle, null)) {
+                        return false;
+                    }
+                    break;
+                case 'deliveryDateTo':
+                    if (!$this->dateInRange($orderItem['deliveryDate'] ?? null, null, $needle)) {
+                        return false;
+                    }
+                    break;
+                case 'lieferterminLieferantFrom':
+                    if (!$this->dateInRange($orderItem['lieferterminLieferant'] ?? null, $needle, null)) {
+                        return false;
+                    }
+                    break;
+                case 'lieferterminLieferantTo':
+                    if (!$this->dateInRange($orderItem['lieferterminLieferant'] ?? null, null, $needle)) {
+                        return false;
+                    }
+                    break;
+                case 'lieferterminAuftragsbearbeitungFrom':
+                    if (!$this->dateInRange($orderItem['lieferterminAuftragsbearbeitung'] ?? null, $needle, null)) {
+                        return false;
+                    }
+                    break;
+                case 'lieferterminAuftragsbearbeitungTo':
+                    if (!$this->dateInRange($orderItem['lieferterminAuftragsbearbeitung'] ?? null, null, $needle)) {
+                        return false;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return true;
+    }
+
+    private function stringContains(mixed $value, string $needle): bool
+    {
+        $haystack = mb_strtolower(trim((string) ($value ?? '')));
+        $needle = mb_strtolower(trim($needle));
+
+        if ($needle === '') {
+            return true;
+        }
+
+        return $haystack !== '' && mb_stripos($haystack, $needle) !== false;
+    }
+
+    private function statusMatches(array $orderItem, string $needle): bool
+    {
+        $normalizedNeedle = mb_strtolower(trim($needle));
+        $statusSources = [
+            $orderItem['status'] ?? null,
+            $orderItem['statusLabel'] ?? null,
+            $orderItem['ordersStatusName'] ?? null,
+        ];
+
+        if (in_array($normalizedNeedle, ['processing', 'shipped', 'completed', 'cancelled', 'test'], true)) {
+            $normalizedMap = [
+                'open' => 'processing',
+                'in_progress' => 'processing',
+                'paid' => 'processing',
+                'versandbereit' => 'processing',
+                'bezahlt' => 'processing',
+                'partially_shipped' => 'shipped',
+                'shipped' => 'shipped',
+                'versendet' => 'shipped',
+                'in_transit' => 'shipped',
+                'out_for_delivery' => 'shipped',
+                'completed' => 'completed',
+                'done' => 'completed',
+                'delivered' => 'completed',
+                'bestellung_abgeschlossen' => 'completed',
+                'cancelled' => 'cancelled',
+                'test' => 'test',
+            ];
+
+            foreach ($statusSources as $source) {
+                $normalized = str_replace([' ', '-'], '_', mb_strtolower(trim((string) ($source ?? ''))));
+                if (($normalizedMap[$normalized] ?? $normalized) === $normalizedNeedle) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        foreach ($statusSources as $source) {
+            if ($this->stringContains($source, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function dateInRange(mixed $value, ?string $from, ?string $to): bool
+    {
+        $candidate = $this->normalizeDateValue($value);
+        if ($candidate === null) {
+            return false;
+        }
+
+        $fromDate = $from !== null ? $this->normalizeDateValue($from) : null;
+        $toDate = $to !== null ? $this->normalizeDateValue($to) : null;
+
+        if ($fromDate !== null && $candidate < $fromDate) {
+            return false;
+        }
+
+        if ($toDate !== null && $candidate > $toDate) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function normalizeDateValue(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return null;
+        }
+
+        try {
+            return (new \DateTimeImmutable($raw))->format('Y-m-d');
+        } catch (\Exception) {
+            return null;
+        }
+    }
+
     private function sortOrders(array $orders, string $sortField, string $sortDirection): array
     {
         usort($orders, static function (array $left, array $right) use ($sortField, $sortDirection): int {
