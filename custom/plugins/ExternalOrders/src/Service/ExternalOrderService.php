@@ -74,6 +74,9 @@ readonly class ExternalOrderService
             ));
         }
 
+        $orders = $this->filterOrdersByArea($orders, $selectedArea);
+        $orders = $this->filterOrdersByMainView($orders, $selectedMainView);
+
         if ($search) {
             $orders = array_values(array_filter(
                 $orders,
@@ -107,13 +110,7 @@ readonly class ExternalOrderService
         $total = count($orders);
         $orders = array_slice($orders, ($page - 1) * $limit, $limit);
 
-        $totalRevenue = 0.0;
-        $totalItems = 0;
-
-        foreach ($orders as $orderItem) {
-            $totalRevenue += (float) ($orderItem['totalRevenue'] ?? 0.0);
-            $totalItems += (int) ($orderItem['totalItems'] ?? 0);
-        }
+        $summary = $this->buildSummary($orders);
 
         return [
             'total' => $total,
@@ -121,13 +118,7 @@ readonly class ExternalOrderService
             'limit' => $limit,
             'totalPages' => (int) ceil($total / max(1, $limit)),
             'totalElements' => $total,
-            'summary' => [
-                'orderCount' => count($orders),
-                'totalOrders' => count($orders),
-                'totalRevenue' => $totalRevenue,
-                'totalItems' => $totalItems,
-                'totalQuantity' => $totalItems,
-            ],
+            'summary' => $summary,
             'orders' => $orders,
         ];
     }

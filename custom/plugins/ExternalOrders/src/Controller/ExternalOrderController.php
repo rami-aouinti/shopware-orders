@@ -43,6 +43,43 @@ class ExternalOrderController extends AbstractController
         $limit = (int) $request->query->get('limit', 50);
         $sort = $request->query->get('sort');
         $order = $request->query->get('order');
+        $selectedArea = $request->query->get('selectedArea');
+        $selectedMainView = $request->query->get('selectedMainView');
+
+        $allowedFilters = [
+            'bestellnummer',
+            'san6OrderNumber',
+            'latestShippingDateFrom',
+            'latestShippingDateTo',
+            'shippingDateFrom',
+            'shippingDateTo',
+            'latestDeliveryDateFrom',
+            'latestDeliveryDateTo',
+            'deliveryDateFrom',
+            'deliveryDateTo',
+            'lieferterminLieferantFrom',
+            'lieferterminLieferantTo',
+            'lieferterminAuftragsbearbeitungFrom',
+            'lieferterminAuftragsbearbeitungTo',
+            'changedByUser',
+            'sendenummer',
+            'status',
+        ];
+
+        $filters = [];
+        foreach ($allowedFilters as $key) {
+            $value = $request->query->get($key);
+            if (!is_string($value)) {
+                continue;
+            }
+
+            $value = trim($value);
+            if ($value === '') {
+                continue;
+            }
+
+            $filters[$key] = $value;
+        }
 
         $allowedFilters = [
             'bestellnummer',
