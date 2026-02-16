@@ -1,4 +1,5 @@
 import template from './external-orders-lieferzeit-empty.html.twig';
+import './external-orders-lieferzeit-empty.scss';
 
 const DEFAULT_STATISTICS_METRICS = Object.freeze({
     openOrders: 0,

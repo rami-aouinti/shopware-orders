@@ -1,5 +1,19 @@
 <div class="external-orders-lieferzeit-empty">
-    <h2>Lieferzeit</h2>
+    <header class="external-orders-lieferzeit-empty__header">
+        <div>
+            <p class="external-orders-lieferzeit-empty__eyebrow">Logistikmonitor</p>
+            <h2>Lieferzeit</h2>
+            <p class="external-orders-lieferzeit-empty__subtitle">
+                Überwachen Sie Versand- und Lieferfristen und filtern Sie offene Aufträge gezielt.
+            </p>
+        </div>
+
+        <div class="external-orders-lieferzeit-empty__kpi" v-if="!isLoading && !loadError">
+            <span class="external-orders-lieferzeit-empty__kpi-label">Treffer</span>
+            <span class="external-orders-lieferzeit-empty__kpi-value">{{ orders.length }}</span>
+        </div>
+    </header>
+
     <sw-card-view>
         <sw-card class="external-orders-lieferzeit-empty__filters" title="Filter">
             <sw-container columns="repeat(auto-fit, minmax(220px, 1fr))" gap="16px">
@@ -29,18 +43,21 @@
             </sw-container>
 
             <div class="external-orders-lieferzeit-empty__filter-actions">
-                <sw-button variant="primary" @click="applyFilters">Filtern</sw-button>
+                <sw-button variant="primary" @click="applyFilters">
+                    <sw-icon name="regular-search" size="16" small></sw-icon>
+                    Filtern
+                </sw-button>
                 <sw-button variant="ghost" @click="resetFilters">Zurücksetzen</sw-button>
             </div>
         </sw-card>
 
-        <sw-card>
+        <sw-card class="external-orders-lieferzeit-empty__results" title="Ergebnisse">
             <sw-loader v-if="isLoading"></sw-loader>
 
             <sw-empty-state
-                    v-if="loadError"
-                    title="Fehler beim Laden"
-                    subline="Die Lieferzeiten konnten nicht geladen werden."
+                v-if="loadError"
+                title="Fehler beim Laden"
+                subline="Die Lieferzeiten konnten nicht geladen werden."
             >
                 <template slot="actions">
                     <sw-button variant="primary" @click="loadOrders">
@@ -49,37 +66,39 @@
                 </template>
             </sw-empty-state>
 
-            <table v-if="!isLoading && !loadError && orders.length" class="sw-data-grid__table">
-                <thead>
-                <tr>
-                    <th>Bestellnummer</th>
-                    <th>SAN6</th>
-                    <th>Status</th>
-                    <th>User</th>
-                    <th>Sendenummer</th>
-                    <th>Domain</th>
-                    <th>Spätester Versand</th>
-                    <th>Späteste Lieferung</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-for="order in orders" :key="order.id">
-                    <td>{{ displayOrDash(order.bestellnummer || order.orderNumber) }}</td>
-                    <td>{{ displayOrDash(order.san6 || order.san6OrderNumber) }}</td>
-                    <td>{{ displayOrDash(order.status) }}</td>
-                    <td>{{ displayOrDash(order.user) }}</td>
-                    <td>{{ displayOrDash(order.sendenummer) }}</td>
-                    <td>{{ displayOrDash(order.domain || order.sourceSystem) }}</td>
-                    <td>{{ formatDate(order.latestShippingDate || order.shippingDate) }}</td>
-                    <td>{{ formatDate(order.latestDeliveryDate || order.deliveryDate) }}</td>
-                </tr>
-                </tbody>
-            </table>
+            <div v-if="!isLoading && !loadError && orders.length" class="external-orders-lieferzeit-empty__table-wrapper">
+                <table class="sw-data-grid__table external-orders-lieferzeit-empty__table">
+                    <thead>
+                        <tr>
+                            <th>Bestellnummer</th>
+                            <th>SAN6</th>
+                            <th>Status</th>
+                            <th>User</th>
+                            <th>Sendenummer</th>
+                            <th>Domain</th>
+                            <th>Spätester Versand</th>
+                            <th>Späteste Lieferung</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="order in orders" :key="order.id">
+                            <td>{{ displayOrDash(order.bestellnummer || order.orderNumber) }}</td>
+                            <td>{{ displayOrDash(order.san6 || order.san6OrderNumber) }}</td>
+                            <td>{{ displayOrDash(order.status) }}</td>
+                            <td>{{ displayOrDash(order.user) }}</td>
+                            <td>{{ displayOrDash(order.sendenummer) }}</td>
+                            <td>{{ displayOrDash(order.domain || order.sourceSystem) }}</td>
+                            <td>{{ formatDate(order.latestShippingDate || order.shippingDate) }}</td>
+                            <td>{{ formatDate(order.latestDeliveryDate || order.deliveryDate) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <sw-empty-state
-                    v-if="!isLoading && !loadError && orders.length === 0"
-                    title="Keine Lieferzeiten gefunden"
-                    subline="Für die aktuellen Filter gibt es keine Ergebnisse."
+                v-if="!isLoading && !loadError && orders.length === 0"
+                title="Keine Lieferzeiten gefunden"
+                subline="Für die aktuellen Filter gibt es keine Ergebnisse."
             />
         </sw-card>
     </sw-card-view>
