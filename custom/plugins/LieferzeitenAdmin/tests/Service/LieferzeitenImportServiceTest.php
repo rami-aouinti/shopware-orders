@@ -326,7 +326,7 @@ class LieferzeitenImportServiceTest extends TestCase
 
         $provider = new Status8TrackingMappingProvider($config);
         $service = $this->createService(status8TrackingMappingProvider: $provider, config: $config);
-        $method = new \ReflectionMethod($service, 'isClosedParcelStatusForStatus8');
+        $method = new \ReflectionMethod($service, 'isFinalDeliveredParcelStatusForStatus8');
         $method->setAccessible(true);
 
         static::assertTrue($method->invoke($service, ['trackingStatus' => 'paketshop_non_retire'], ['carrier' => 'DHL']));
@@ -658,6 +658,65 @@ class LieferzeitenImportServiceTest extends TestCase
         $method->invoke($service, $context);
     }
 
+
+
+    public function testProcessPendingStatusPushQueueMarksItemFailedAfterMaxAttempts(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $entity = new PaketEntity();
+        $entity->setUniqueIdentifier(Uuid::randomHex());
+        $entity->setSourceSystem('shopware');
+        $entity->setExternalOrderId('EXT-900');
+        $entity->setPaketNumber('PK-900');
+        $entity->setStatusPushQueue([[
+            'targetStatus' => 8,
+            'reason' => 'status8 mapped',
+            'attempts' => 5,
+            'state' => 'pending',
+            'triggerSource' => 'user_lms',
+            'nextAttemptAt' => date(DATE_ATOM, time() - 60),
+            'createdAt' => date(DATE_ATOM, time() - 120),
+        ]]);
+
+        $paketRepository = $this->createMock(EntityRepository::class);
+        $paketRepository->expects($this->once())
+            ->method('search')
+            ->willReturn($this->createSearchResult($entity));
+
+        $paketRepository->expects($this->once())
+            ->method('upsert')
+            ->with($this->callback(static function (array $payload): bool {
+                $queue = $payload[0]['statusPushQueue'] ?? [];
+
+                return ($queue[0]['state'] ?? null) === 'failed'
+                    && ($queue[0]['attempts'] ?? null) === 6
+                    && ($queue[0]['failedReason'] ?? null) === 'max_attempts_exceeded'
+                    && isset($queue[0]['failedAt']);
+            }), $context);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn(500);
+
+        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient->expects($this->once())
+            ->method('request')
+            ->willReturn($response);
+
+        $config = $this->createMock(SystemConfigService::class);
+        $config->method('get')->willReturnMap([
+            ['LieferzeitenAdmin.config.shopwareStatusPushApiUrl', null, 'https://example.test/push'],
+            ['LieferzeitenAdmin.config.shopwareStatusPushApiToken', null, 'secret'],
+            ['LieferzeitenAdmin.config.gambioStatusPushApiUrl', null, ''],
+            ['LieferzeitenAdmin.config.gambioStatusPushApiToken', null, ''],
+        ]);
+
+        $service = $this->createService($paketRepository, null, null, $httpClient, $config);
+        $method = new \ReflectionMethod($service, 'processPendingStatusPushQueue');
+        $method->setAccessible(true);
+
+        $method->invoke($service, $context);
+    }
 
     public function testEmitNotificationEventsDispatchesDeliveryDateAssignedWhenDateAppearsFirstTime(): void
     {
