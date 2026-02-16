@@ -15,6 +15,9 @@ class OrderStatusModelTest extends TestCase
         static::assertSame(['shopware', 'gambio'], $definitions[1]['readSources']);
         static::assertSame(['shopware', 'gambio'], $definitions[8]['writeBackTargets']);
         static::assertSame('bidirectional', $definitions[7]['syncMode']);
+        static::assertSame('source_read_only', $definitions[1]['matrixRule']);
+        static::assertSame('san6_shipping_gate', $definitions[7]['matrixRule']);
+        static::assertSame('tracking_completion_gate', $definitions[8]['matrixRule']);
     }
 
     public function testCanWriteBackOnlyForStatusesSevenAndEight(): void

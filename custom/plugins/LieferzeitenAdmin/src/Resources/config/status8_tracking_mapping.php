@@ -5,8 +5,10 @@ return [
     'global' => [
         'paketshop_non_retire' => false,
         'paketshop_not_collected' => false,
+        'paketshop_zugestellt' => false,
         'paketshop_retire' => true,
         'paketshop_collected' => true,
+        'paketshop_abgeholt' => true,
         'retoure' => false,
         'refus' => false,
         'verweigert' => false,
@@ -22,7 +24,9 @@ return [
     'carriers' => [
         'dhl' => [
             'paketshop_non_retire' => false,
+            'paketshop_zugestellt' => false,
             'paketshop_retire' => true,
+            'paketshop_abgeholt' => true,
             'retoure' => false,
             'verweigert' => false,
             'zoll_abgelehnt' => false,

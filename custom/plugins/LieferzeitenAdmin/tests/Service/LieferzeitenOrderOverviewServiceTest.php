@@ -3,6 +3,9 @@
 namespace LieferzeitenAdmin\Tests\Service;
 
 use Doctrine\DBAL\Connection;
+use LieferzeitenAdmin\Service\BaseDateResolver;
+use LieferzeitenAdmin\Service\BusinessDayDeliveryDateCalculator;
+use LieferzeitenAdmin\Service\ChannelDateSettingsProvider;
 use LieferzeitenAdmin\Service\LieferzeitenOrderOverviewService;
 use PHPUnit\Framework\TestCase;
 
@@ -27,7 +30,7 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
             )
             ->willReturn([]);
 
-        $service = new LieferzeitenOrderOverviewService($connection);
+        $service = $this->createService($connection);
 
         $result = $service->listOrders();
 
@@ -52,7 +55,7 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
                 return [];
             });
 
-        $service = new LieferzeitenOrderOverviewService($connection);
+        $service = $this->createService($connection);
         $service->listOrders();
 
         static::assertCount(2, $capturedSql);
@@ -79,7 +82,7 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
                 return [];
             });
 
-        $service = new LieferzeitenOrderOverviewService($connection);
+        $service = $this->createService($connection);
         $service->listOrders(1, 25, 'orderDate', 'DESC', [
             'bestellnummer' => 'SO-',
             'status' => '2',
@@ -120,7 +123,7 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
             )
             ->willReturn([]);
 
-        $service = new LieferzeitenOrderOverviewService($connection);
+        $service = $this->createService($connection);
 
         $service->listOrders(1, 25, 'spaetesterVersand', 'ASC', [
             'paymentDateFrom' => '2026-01-01',
@@ -150,7 +153,7 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
                 return [];
             });
 
-        $service = new LieferzeitenOrderOverviewService($connection);
+        $service = $this->createService($connection);
         $service->listOrders(1, 25, null, null, [
             'lieferterminLieferantFrom' => '2026-01-05',
             'lieferterminLieferantTo' => '2026-01-20',
@@ -186,7 +189,7 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
                 ],
             ]);
 
-        $service = new LieferzeitenOrderOverviewService($connection);
+        $service = $this->createService($connection);
 
         $result = $service->listOrders();
 
@@ -218,7 +221,7 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
             )
             ->willReturn([]);
 
-        $service = new LieferzeitenOrderOverviewService($connection);
+        $service = $this->createService($connection);
         $service->listOrders();
     }
 
@@ -244,7 +247,7 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
                 return [];
             });
 
-        $service = new LieferzeitenOrderOverviewService($connection);
+        $service = $this->createService($connection);
         $service->listOrders(1, 25, null, null, ['domain' => 'Medical Solutions']);
 
         static::assertCount(2, $capturedSql);
@@ -276,7 +279,7 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
             )
             ->willReturn([]);
 
-        $service = new LieferzeitenOrderOverviewService($connection);
+        $service = $this->createService($connection);
 
         $result = $service->listOrders(1, 25, 'DROP TABLE', 'DESC');
 
@@ -354,7 +357,7 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
                 return [];
             });
 
-        $service = new LieferzeitenOrderOverviewService($connection);
+        $service = $this->createService($connection);
 
         $result = $service->getOrderDetails('f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1');
 
@@ -368,4 +371,20 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
         static::assertSame('2', $result['positions'][0]['shippedQuantity']);
         static::assertSame('DHL', $result['positions'][0]['trackingEntries'][0]['carrier']);
     }
+    private function createService(Connection $connection): LieferzeitenOrderOverviewService
+    {
+        $settingsProvider = $this->createMock(ChannelDateSettingsProvider::class);
+        $settingsProvider->method('getForChannel')->willReturn([
+            'shipping' => ['workingDays' => 0, 'cutoff' => '12:00'],
+            'delivery' => ['workingDays' => 2, 'cutoff' => '12:00'],
+        ]);
+
+        return new LieferzeitenOrderOverviewService(
+            $connection,
+            new BaseDateResolver(),
+            $settingsProvider,
+            new BusinessDayDeliveryDateCalculator(),
+        );
+    }
+
 }

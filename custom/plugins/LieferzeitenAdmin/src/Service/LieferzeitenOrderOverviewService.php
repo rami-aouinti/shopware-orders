@@ -6,7 +6,7 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 
-readonly class LieferzeitenOrderOverviewService
+class LieferzeitenOrderOverviewService
 {
     /**
      * @var array<int, string>
@@ -110,8 +110,12 @@ readonly class LieferzeitenOrderOverviewService
         'shippingAssignmentType' => 'p.shipping_assignment_type',
     ];
 
-    public function __construct(private Connection $connection)
-    {
+    public function __construct(
+        private Connection $connection,
+        private BaseDateResolver $baseDateResolver,
+        private ChannelDateSettingsProvider $settingsProvider,
+        private BusinessDayDeliveryDateCalculator $dateCalculator,
+    ) {
     }
 
     /**
@@ -661,7 +665,47 @@ readonly class LieferzeitenOrderOverviewService
             $row['quantity'] = (string) $row['positionsCount'];
         }
 
+        return $this->applyCalculatedLatestDeadlines($row);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function applyCalculatedLatestDeadlines(array $row): array
+    {
+        $payload = [
+            'paymentMethod' => $row['paymentMethod'] ?? null,
+            'orderDate' => $this->formatDateString($row['orderDate'] ?? null),
+            'paymentReceivedDate' => $this->formatDateString($row['paymentDate'] ?? null),
+        ];
+
+        $resolution = $this->baseDateResolver->resolve($payload);
+        if ($resolution['baseDate'] === null) {
+            $row['latestShippingDate'] = null;
+            $row['latestDeliveryDate'] = null;
+
+            return $row;
+        }
+
+        $settings = $this->settingsProvider->getForChannel((string) ($row['sourceSystem'] ?? 'shopware'));
+        $row['latestShippingDate'] = $this->dateCalculator->calculate($resolution['baseDate'], $settings['shipping'])?->format('Y-m-d H:i:s');
+        $row['latestDeliveryDate'] = $this->dateCalculator->calculate($resolution['baseDate'], $settings['delivery'])?->format('Y-m-d H:i:s');
+
         return $row;
+    }
+
+    private function formatDateString(mixed $value): ?string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format(DATE_ATOM);
+        }
+
+        if (!is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        return trim($value);
     }
 
     /**
@@ -856,12 +900,13 @@ readonly class LieferzeitenOrderOverviewService
                 LOWER(HEX(sh.position_id)) AS positionId,
                 sh.sendenummer AS number,
                 sh.carrier AS carrier,
+                sh.is_active AS isActive,
                 sh.last_changed_by AS lastChangedBy,
                 sh.last_changed_at AS lastChangedAt,
                 sh.created_at AS createdAt
              FROM `lieferzeiten_sendenummer_history` sh
              WHERE LOWER(HEX(sh.position_id)) IN (:positionIds)
-             ORDER BY sh.created_at DESC',
+             ORDER BY sh.is_active DESC, sh.created_at DESC',
             ['positionIds' => $positionIds],
             ['positionIds' => ArrayParameterType::STRING],
         );

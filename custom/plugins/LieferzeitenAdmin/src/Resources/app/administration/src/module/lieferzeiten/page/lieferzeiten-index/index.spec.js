@@ -52,48 +52,32 @@ describe('lieferzeiten/page/lieferzeiten-index', () => {
         });
     });
 
-    it('uses paymentReceivedDate as base date for Vorkasse orders', () => {
-        const context = {
-            parseOrderDate: component.methods.parseOrderDate,
-            addBusinessDays: component.methods.addBusinessDays,
-            computeDateByRule: component.methods.computeDateByRule,
-            resolveCalculationBaseDate: component.methods.resolveCalculationBaseDate,
-        };
+
+
+    it('loadOrders keeps backend latest deadline fields unchanged', async () => {
         const order = {
-            paymentMethod: 'Vorkasse',
-            orderDate: '2026-01-10T08:00:00.000Z',
-            paymentReceivedDate: '2026-01-12T08:00:00.000Z',
+            id: '1',
+            sourceSystem: 'shopware',
+            latestShippingDate: '2026-01-13 08:00:00',
+            latestDeliveryDate: '2026-01-14 08:00:00',
         };
 
-        const result = component.methods.computeLatestShippingDate.call(context, order, {
-            shipping: { workingDays: 0, cutoff: '12:00' },
-        });
-
-        expect(result.toISOString()).toBe('2026-01-12T08:00:00.000Z');
-    });
-
-    it('enriches normalized order with computed deadline fields', () => {
         const context = {
-            parseOrderDate: component.methods.parseOrderDate,
-            addBusinessDays: component.methods.addBusinessDays,
-            computeDateByRule: component.methods.computeDateByRule,
-            resolveCalculationBaseDate: component.methods.resolveCalculationBaseDate,
-            computeLatestShippingDate: component.methods.computeLatestShippingDate,
-            computeLatestDeliveryDate: component.methods.computeLatestDeliveryDate,
-            delaySettingsCollection: null,
-            lieferzeitenOrderDeadlineConfigService: {
-                resolveSettingsForOrder: jest.fn(() => ({
-                    shipping: { workingDays: 1, cutoff: '12:00' },
-                    delivery: { workingDays: 2, cutoff: '12:00' },
-                })),
+            isLoading: false,
+            loadError: null,
+            orders: [],
+            selectedDomain: null,
+            filters: component.data().filters,
+            lieferzeitenOrdersService: {
+                getOrders: jest.fn(async () => [order]),
             },
+            buildFilterParams: component.methods.buildFilterParams,
         };
 
-        const normalized = component.methods.enrichOrderWithCalculatedDeadlines.call(context, {
-            orderDate: '2026-01-12T08:00:00.000Z',
-        });
+        await component.methods.loadOrders.call(context);
 
-        expect(normalized.latestShippingDate).toBe('2026-01-13T08:00:00.000Z');
-        expect(normalized.latestDeliveryDate).toBe('2026-01-14T08:00:00.000Z');
+        expect(context.orders[0].latestShippingDate).toBe('2026-01-13 08:00:00');
+        expect(context.orders[0].latestDeliveryDate).toBe('2026-01-14 08:00:00');
     });
+
 });

@@ -121,6 +121,8 @@ Component.register('external-orders-list', {
             limitOptions: [10, 25, 50, 100],
             sortBy: 'date',
             sortDirection: 'DESC',
+            deliveryDateEditor: null,
+            isSavingDeliveryDates: false,
         };
     },
 
@@ -184,6 +186,17 @@ Component.register('external-orders-list', {
         },
         activeChannelSource() {
             return this.channelSources[this.activeChannel] || '';
+        },
+        activeDeliveryPositionId() {
+            const firstItem = this.selectedOrder?.items?.[0] ?? null;
+            return String(firstItem?.positionId ?? firstItem?.id ?? '').trim();
+        },
+        deliveryDateValidationErrors() {
+            const errors = this.deliveryDateEditor?.errors;
+            return Array.isArray(errors) ? errors : [];
+        },
+        deliveryDateCanSave() {
+            return Boolean(this.deliveryDateEditor?.canSave);
         },
         filteredOrders() {
             const searchTerm = this.tableSearchTerm.trim().toLowerCase();
@@ -705,6 +718,7 @@ Component.register('external-orders-list', {
                     this.selectedOrder = this.normalizeOrderDetail(detail);
                 }
                 this.showDetailModal = true;
+                await this.loadDeliveryDateEditorState();
             } catch (error) {
                 this.createNotificationError({
                     title: 'Bestelldetails konnten nicht geladen werden',
@@ -718,6 +732,7 @@ Component.register('external-orders-list', {
         closeDetail() {
             this.showDetailModal = false;
             this.selectedOrder = null;
+            this.deliveryDateEditor = null;
         },
         normalizeOrderDetail(order) {
             const base = order ?? {};
@@ -765,6 +780,7 @@ Component.register('external-orders-list', {
 
             return {
                 ...base,
+                internalOrderId: base.internalOrderId ?? base.id ?? '',
                 customer: {
                     firstName: '',
                     lastName: '',
@@ -902,6 +918,120 @@ Component.register('external-orders-list', {
                 return `Order ${number}`;
             }
             return customer || 'Order';
+        },
+
+        normalizeDateRange(value) {
+            if (!value || typeof value !== 'object') {
+                return { from: null, to: null, calendarWeek: null };
+            }
+
+            return {
+                from: value.from ?? null,
+                to: value.to ?? null,
+                calendarWeek: value.calendarWeek ?? null,
+            };
+        },
+
+        async loadDeliveryDateEditorState() {
+            const orderId = this.selectedOrder?.internalOrderId ?? this.selectedOrder?.id ?? '';
+            const positionId = this.activeDeliveryPositionId;
+
+            if (!orderId || !positionId || !this.externalOrderService) {
+                this.deliveryDateEditor = null;
+                return;
+            }
+
+            try {
+                const response = await this.externalOrderService.getDeliveryDateEditorState(orderId, positionId);
+                this.deliveryDateEditor = {
+                    orderId: response?.orderId ?? orderId,
+                    positionId: response?.positionId ?? positionId,
+                    supplierDeliveryDateRange: this.normalizeDateRange(response?.supplierDeliveryDateRange),
+                    newDeliveryDateRange: this.normalizeDateRange(response?.newDeliveryDateRange),
+                    canSave: Boolean(response?.canSave),
+                    errors: Array.isArray(response?.errors) ? response.errors : [],
+                    history: response?.history ?? { supplierDeliveryDateRange: [], newDeliveryDateRange: [] },
+                };
+            } catch (error) {
+                this.deliveryDateEditor = null;
+            }
+        },
+
+        async saveDeliveryDateEditor() {
+            if (!this.deliveryDateEditor || !this.externalOrderService) {
+                return;
+            }
+
+            this.isSavingDeliveryDates = true;
+
+            try {
+                const payload = {
+                    orderId: this.deliveryDateEditor.orderId,
+                    positionId: this.deliveryDateEditor.positionId,
+                    supplierDeliveryDateRange: {
+                        from: this.deliveryDateEditor.supplierDeliveryDateRange?.from ?? null,
+                        to: this.deliveryDateEditor.supplierDeliveryDateRange?.to ?? null,
+                    },
+                    newDeliveryDateRange: {
+                        from: this.deliveryDateEditor.newDeliveryDateRange?.from ?? null,
+                        to: this.deliveryDateEditor.newDeliveryDateRange?.to ?? null,
+                    },
+                    changedByUser: Shopware?.State?.get('session')?.currentUser?.username ?? null,
+                };
+
+                const response = await this.externalOrderService.saveDeliveryDateEditorState(payload);
+                const state = response?.state ?? response;
+
+                this.deliveryDateEditor = {
+                    ...this.deliveryDateEditor,
+                    supplierDeliveryDateRange: this.normalizeDateRange(state?.supplierDeliveryDateRange),
+                    newDeliveryDateRange: this.normalizeDateRange(state?.newDeliveryDateRange),
+                    canSave: Boolean(state?.canSave),
+                    errors: Array.isArray(state?.errors) ? state.errors : [],
+                    history: state?.history ?? this.deliveryDateEditor.history,
+                };
+
+                this.createNotificationSuccess({
+                    title: 'Liefertermine gespeichert',
+                    message: 'Die Liefertermine wurden erfolgreich gespeichert.',
+                });
+            } catch (error) {
+                const payload = error?.response?.data ?? {};
+                const state = payload?.state ?? null;
+
+                if (state) {
+                    this.deliveryDateEditor = {
+                        ...this.deliveryDateEditor,
+                        supplierDeliveryDateRange: this.normalizeDateRange(state?.supplierDeliveryDateRange),
+                        newDeliveryDateRange: this.normalizeDateRange(state?.newDeliveryDateRange),
+                        canSave: Boolean(state?.canSave),
+                        errors: Array.isArray(state?.errors) ? state.errors : [],
+                        history: state?.history ?? this.deliveryDateEditor.history,
+                    };
+                }
+
+                this.createNotificationError({
+                    title: 'Liefertermine konnten nicht gespeichert werden',
+                    message: payload?.errors?.[0]?.message || error?.message || 'Validierung fehlgeschlagen.',
+                });
+            } finally {
+                this.isSavingDeliveryDates = false;
+            }
+        },
+
+        formatDateRangeLabel(range) {
+            if (!range) {
+                return '—';
+            }
+
+            const from = range.from ?? null;
+            const to = range.to ?? null;
+
+            if (!from && !to) {
+                return '—';
+            }
+
+            return `${from ?? '—'} bis ${to ?? '—'}`;
         },
 
         formatCurrency(value) {

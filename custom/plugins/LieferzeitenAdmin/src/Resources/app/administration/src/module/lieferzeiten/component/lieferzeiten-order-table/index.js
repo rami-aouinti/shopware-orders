@@ -709,7 +709,8 @@ Shopware.Component.register('lieferzeiten-order-table', {
                     lastChangedBy: entry?.lastChangedBy || null,
                     lastChangedAt: entry?.lastChangedAt || null,
                     createdAt: entry?.createdAt || null,
-                    isCurrent: index === 0,
+                    isCurrent: Boolean(entry?.isActive) || index === 0,
+                    isActive: Boolean(entry?.isActive) || index === 0,
                 })).filter((entry) => entry.number !== '');
             }
 

@@ -92,8 +92,8 @@ describe('lieferzeiten/component/lieferzeiten-order-table', () => {
         const entries = methods.resolveTrackingEntries.call(context, order, position);
 
         expect(entries).toHaveLength(2);
-        expect(entries[0]).toEqual(expect.objectContaining({ number: 'NEW-001', isCurrent: true }));
-        expect(entries[1]).toEqual(expect.objectContaining({ number: 'OLD-001', isCurrent: false }));
+        expect(entries[0]).toEqual(expect.objectContaining({ number: 'NEW-001', isCurrent: true, isActive: true }));
+        expect(entries[1]).toEqual(expect.objectContaining({ number: 'OLD-001', isCurrent: false, isActive: false }));
     });
 
     it('disables comment save when order has no positions', () => {

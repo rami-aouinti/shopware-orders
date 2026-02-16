@@ -194,6 +194,7 @@ class ExternalOrderServiceTest extends TestCase
 
         $payload = [
             'orderNumber' => 'SW-60001',
+            'orderDate' => '2026-04-07T10:00:00+00:00',
             'auftragNumber' => 'SAN6-60001',
             'san6' => 'SAN6-60001',
             'status' => 'versendet',
@@ -205,6 +206,14 @@ class ExternalOrderServiceTest extends TestCase
             'lieferterminAuftragsbearbeitung' => '2026-04-08',
             'changedByUser' => 'Max Mustermann',
             'sendenummer' => 'DHL-60001',
+            'detail' => [
+                'items' => [[
+                    'positionId' => '10',
+                    'positionNumber' => '1',
+                    'name' => 'Artikel 1',
+                    'orderedQuantity' => 5,
+                ]],
+            ],
         ];
 
         $connection = $this->createMock(Connection::class);
@@ -224,10 +233,15 @@ class ExternalOrderServiceTest extends TestCase
         static::assertSame('SAN6-60001', $unfiltered['orders'][0]['san6']);
         static::assertSame('SAN6-60001', $unfiltered['orders'][0]['san6OrderNumber']);
         static::assertSame('shipped', $unfiltered['orders'][0]['statusCode']);
+        static::assertSame('2026-04-07T10:00:00+00:00', $unfiltered['orders'][0]['orderDate']);
+        static::assertSame(5, $unfiltered['orders'][0]['positions'][0]['orderedQuantity']);
 
         $filtered = $service->fetchOrders($context, filters: [
             'bestellnummer' => 'SW-60001',
             'san6OrderNumber' => 'SAN6-60001',
+            'orderDateFrom' => '2026-04-07',
+            'orderDateTo' => '2026-04-07',
+            'orderedQuantity' => '5',
             'latestShippingDateFrom' => '2026-04-11',
             'latestShippingDateTo' => '2026-04-11',
             'shippingDateFrom' => '2026-04-10',

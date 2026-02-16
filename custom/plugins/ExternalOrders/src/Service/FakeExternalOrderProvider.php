@@ -503,6 +503,7 @@ class FakeExternalOrderProvider
                     'customersEmailAddress' => $email,
                     'date' => $this->randomOrderDate($id),
                     'datePurchased' => $this->randomOrderDateIso8601($id),
+                    'orderDate' => $this->randomOrderDateIso8601($id),
                     'status' => $status,
                     'statusLabel' => $statusLabel,
                     'ordersStatusName' => $statusLabel,
@@ -564,7 +565,11 @@ class FakeExternalOrderProvider
             }
 
             $itemDelivery = $this->randomOrderDateYmd($id, 20 + $itemIndex);
+            $orderedQuantity = (int) ($item['orderedQuantity'] ?? $item['quantity'] ?? 0);
             $items[] = array_merge($item, [
+                'quantity' => $orderedQuantity,
+                'orderedQuantity' => $orderedQuantity,
+                'shippedQuantity' => (int) ($item['shippedQuantity'] ?? $orderedQuantity),
                 'lieferterminLieferant' => $itemDelivery,
                 'lieferzeitpunktLatest' => $itemDelivery,
             ]);
@@ -573,6 +578,7 @@ class FakeExternalOrderProvider
         return [
             'orderId' => (int) ($order['orderId'] ?? 0),
             'datePurchased' => $orderDateIso,
+            'orderDate' => $orderDateIso,
             'paymentMethod' => (string) $detailTemplate['paymentMethod'],
             'orderStatus' => $statusLabel,
             'orderStatusColor' => $statusColor,
@@ -590,6 +596,7 @@ class FakeExternalOrderProvider
                 'lieferterminAuftragsbearbeitung' => $lieferterminAuftragsbearbeitung,
                 'newDeliveryDate' => $lieferterminAuftragsbearbeitung,
                 'neuerLiefertermin' => $lieferterminAuftragsbearbeitung,
+                'orderDate' => $orderDateIso,
                 'status' => $statusLabel,
             ],
             'customer' => array_merge($customer, ['emailAddress' => $email]),

@@ -60,6 +60,7 @@ class LieferzeitenImportService
         private readonly ChannelDateSettingsProvider $settingsProvider,
         private readonly BusinessDayDeliveryDateCalculator $deliveryDateCalculator,
         private readonly Status8TrackingMappingProvider $status8TrackingMappingProvider,
+        private readonly ParcelStatusAggregationPolicy $parcelStatusAggregationPolicy,
         private readonly LockFactory $lockFactory,
         private readonly NotificationEventService $notificationEventService,
         private readonly SalesChannelResolver $salesChannelResolver,
@@ -362,18 +363,32 @@ class LieferzeitenImportService
             $trackingNumbers[] = self::INTERNAL_SHIPPING_LABEL;
         }
 
+        $newTrackingCreated = false;
+
         foreach ($trackingNumbers as $trackingNumber) {
             if ($this->trackingNumberExists($positionId, $trackingNumber, $context)) {
+                $this->markTrackingNumberAsActive($positionId, $trackingNumber, $context);
                 continue;
             }
+
+            $this->deactivateTrackingNumbers($positionId, $context);
 
             $this->sendenummerHistoryRepository->create([[
                 'id' => Uuid::randomHex(),
                 'positionId' => $positionId,
                 'sendenummer' => $trackingNumber,
                 'carrier' => $trackingCarrier,
+                'isActive' => true,
             ]], $context);
+
+            $newTrackingCreated = true;
         }
+
+        if ($trackingNumbers !== [] && !$newTrackingCreated) {
+            $this->markTrackingNumberAsActive($positionId, $trackingNumbers[0], $context);
+        }
+
+        $this->synchronizePaketStatusFromTrackingPayload($paketId, $payload, $context);
 
         return $trackingNumbers;
     }
@@ -590,6 +605,93 @@ class LieferzeitenImportService
         $criteria->addFilter(new EqualsFilter('sendenummer', $trackingNumber));
 
         return $this->sendenummerHistoryRepository->search($criteria, $context)->first() !== null;
+    }
+
+    private function deactivateTrackingNumbers(string $positionId, Context $context): void
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('positionId', $positionId));
+
+        $existing = $this->sendenummerHistoryRepository->search($criteria, $context)->getEntities();
+        if ($existing->count() === 0) {
+            return;
+        }
+
+        $updates = [];
+        foreach ($existing as $entry) {
+            $updates[] = [
+                'id' => $entry->getUniqueIdentifier(),
+                'isActive' => false,
+            ];
+        }
+
+        if ($updates !== []) {
+            $this->sendenummerHistoryRepository->upsert($updates, $context);
+        }
+    }
+
+    private function markTrackingNumberAsActive(string $positionId, string $trackingNumber, Context $context): void
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('positionId', $positionId));
+
+        $existing = $this->sendenummerHistoryRepository->search($criteria, $context)->getEntities();
+        if ($existing->count() === 0) {
+            return;
+        }
+
+        $updates = [];
+        foreach ($existing as $entry) {
+            $updates[] = [
+                'id' => $entry->getUniqueIdentifier(),
+                'isActive' => $entry->get('sendenummer') === $trackingNumber,
+            ];
+        }
+
+        $this->sendenummerHistoryRepository->upsert($updates, $context);
+    }
+
+    /** @param array<string,mixed> $payload */
+    private function synchronizePaketStatusFromTrackingPayload(string $paketId, array $payload, Context $context): void
+    {
+        $parcels = $payload['parcels'] ?? null;
+        if (!is_array($parcels) || $parcels === []) {
+            return;
+        }
+
+        $finalStates = [];
+        $inTransitStates = [];
+
+        foreach ($parcels as $parcel) {
+            if (!is_array($parcel)) {
+                continue;
+            }
+
+            $normalizedState = $this->normalizeParcelState($parcel);
+            if ($normalizedState === '') {
+                continue;
+            }
+
+            if (OrderStatusModel::isFinalDeliveredParcelState($normalizedState)) {
+                $finalStates[] = $normalizedState;
+                continue;
+            }
+
+            $inTransitStates[] = $normalizedState;
+        }
+
+        if ($finalStates === [] && $inTransitStates === []) {
+            return;
+        }
+
+        $status = $finalStates !== [] && $inTransitStates === []
+            ? 'delivered'
+            : 'shipped';
+
+        $this->paketRepository->upsert([[
+            'id' => $paketId,
+            'status' => $status,
+        ]], $context);
     }
 
     /**
@@ -939,23 +1041,7 @@ class LieferzeitenImportService
 
         $parcels = $order['parcels'] ?? $san6Payload['parcels'] ?? [];
         if (is_array($parcels) && $parcels !== []) {
-            $finalDeliveredParcels = 0;
-            foreach ($parcels as $parcel) {
-                if (!is_array($parcel)) {
-                    continue;
-                }
-
-                $parcelState = $this->normalizeParcelState($parcel);
-                if (OrderStatusModel::isBlockingParcelState($parcelState)) {
-                    return false;
-                }
-
-                if ($this->isFinalDeliveredParcelStatusForStatus8($parcel, $order)) {
-                    ++$finalDeliveredParcels;
-                }
-            }
-
-            return $finalDeliveredParcels > 0 && $finalDeliveredParcels === count($parcels);
+            return $this->parcelStatusAggregationPolicy->areAllParcelsCompleted($parcels, $order, $this->status8TrackingMappingProvider);
         }
 
         return $this->isSan6InternalDeliveryCompleted($order, $san6Payload);
@@ -1011,23 +1097,13 @@ class LieferzeitenImportService
             return $mapped;
         }
 
-        $state = $this->normalizeParcelState($parcel);
-
-        $closed = $parcel['closed'] ?? null;
-        if ($closed !== null) {
-            return (bool) $closed;
-        }
-
-        return OrderStatusModel::isFinalDeliveredParcelState($state);
+        return $this->parcelStatusAggregationPolicy->isFinalState($parcel, $order, $this->status8TrackingMappingProvider);
     }
 
     /** @param array<string,mixed> $parcel */
     private function normalizeParcelState(array $parcel): string
     {
-        $rawState = (string) ($parcel['trackingStatus'] ?? $parcel['san6Status'] ?? $parcel['status'] ?? $parcel['state'] ?? '');
-        $state = mb_strtolower(trim($rawState));
-
-        return str_replace([' ', '-', '/'], '_', $state);
+        return $this->parcelStatusAggregationPolicy->normalizeState($parcel);
     }
 
 
