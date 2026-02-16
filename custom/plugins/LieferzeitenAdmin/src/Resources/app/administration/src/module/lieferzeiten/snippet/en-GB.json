@@ -140,7 +140,15 @@
       "empty": "No tracking events found.",
       "loadError": "Unable to load tracking history.",
       "missingCarrier": "Tracking unavailable: carrier is missing.",
-      "internalShipmentInfo": "Shipped by First Medical (internal dispatch, no external carrier tracking available)."
+      "internalShipmentInfo": "Shipped by First Medical (internal dispatch, no external carrier tracking available).",
+      "openNumber": "Tracking number {number}",
+      "historical": "Historical tracking number (reshipment)",
+      "historicalMeta": "Replaced on {changedAt}",
+      "historicalMetaWithActor": "Replaced by {actor} on {changedAt}"
+    },
+    "validation": {
+      "supplierSaveRequiresCombinedRange": "Supplier delivery date can only be saved when at least one new delivery date (1-4 days) exists.",
+      "newDeliveryRangeInvalid": "New delivery date must span 1-4 days and stay within supplier date bounds."
     },
     "statistics": {
       "periodLabel": "Period",
