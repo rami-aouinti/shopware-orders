@@ -126,7 +126,7 @@
 
     &__filters-bar {
         display: flex;
-        justify-content: space-between;
+        flex-direction: column;
         gap: 12px;
         margin-bottom: 12px;
         padding: 12px;
@@ -136,7 +136,7 @@
         flex-wrap: wrap;
     }
 
-    &__filters,
+    &__filters-row,
     &__filters-actions {
         display: flex;
         gap: 8px;
@@ -144,8 +144,41 @@
         flex-wrap: wrap;
     }
 
+    &__filters-row {
+        width: 100%;
+
+        &--primary {
+            flex-wrap: nowrap;
+        }
+
+        &--secondary {
+            flex-wrap: nowrap;
+        }
+    }
+
+    &__field {
+        min-width: 0;
+
+        &--third {
+            flex: 1 1 0;
+        }
+
+        &--date {
+            flex: 0 1 220px;
+        }
+
+        &--search {
+            flex: 1 1 260px;
+        }
+    }
+
     &__search {
-        min-width: 200px;
+        min-width: 240px;
+    }
+
+    &__filters-actions {
+        margin-left: auto;
+        flex: 0 0 auto;
     }
 
     &__button {
@@ -236,6 +269,10 @@
         tbody tr:hover td {
             background: #f9fcff;
         }
+    }
+
+    &__cell--actions {
+        width: 120px;
     }
 
     &__cell--actions {
@@ -470,13 +507,27 @@
             align-items: stretch;
         }
 
-        &__filters,
-        &__filters-actions {
+        &__filters-row {
             width: 100%;
+            flex-wrap: wrap;
         }
 
         &__search {
             width: 100%;
+        }
+
+        &__field {
+            &--third,
+            &--date,
+            &--search {
+                flex: 1 1 100%;
+            }
+        }
+
+        &__filters-actions {
+            margin-left: 0;
+            width: 100%;
+            justify-content: flex-start;
         }
 
         &__pagination-limit {
