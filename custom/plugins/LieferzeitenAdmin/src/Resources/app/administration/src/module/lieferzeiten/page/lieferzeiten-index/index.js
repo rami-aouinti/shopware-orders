@@ -43,6 +43,7 @@ Shopware.Component.register('lieferzeiten-index', {
 
     inject: [
         'lieferzeitenOrdersService',
+        'lieferzeitenOrderDeadlineConfigService',
     ],
 
     data() {
@@ -59,6 +60,7 @@ Shopware.Component.register('lieferzeiten-index', {
                 overdueShipping: 0,
                 overdueDelivery: 0,
             },
+            delaySettingsCollection: null,
         };
     },
 
@@ -117,6 +119,92 @@ Shopware.Component.register('lieferzeiten-index', {
             }
         },
 
+
+
+        parseOrderDate(value) {
+            if (!value) {
+                return null;
+            }
+
+            const parsedDate = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+            return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+        },
+
+        addBusinessDays(baseDate, days) {
+            if (!(baseDate instanceof Date) || !Number.isFinite(baseDate.getTime())) {
+                return null;
+            }
+
+            const nextDate = new Date(baseDate.getTime());
+            let remainingDays = Math.max(0, Number(days) || 0);
+
+            while (remainingDays > 0) {
+                nextDate.setDate(nextDate.getDate() + 1);
+                const day = nextDate.getDay();
+                if (day !== 0 && day !== 6) {
+                    remainingDays -= 1;
+                }
+            }
+
+            while (nextDate.getDay() === 0 || nextDate.getDay() === 6) {
+                nextDate.setDate(nextDate.getDate() + 1);
+            }
+
+            return nextDate;
+        },
+
+        computeDateByRule(baseDateValue, ruleSettings = {}) {
+            const baseDate = this.parseOrderDate(baseDateValue);
+            if (!baseDate) {
+                return null;
+            }
+
+            const [hour, minute] = String(ruleSettings.cutoff || '12:00').split(':').map((part) => Number(part));
+            const safeHour = Number.isFinite(hour) ? hour : 12;
+            const safeMinute = Number.isFinite(minute) ? minute : 0;
+
+            const cutoffDate = new Date(baseDate.getTime());
+            cutoffDate.setHours(safeHour, safeMinute, 0, 0);
+
+            const startDate = new Date(baseDate.getTime());
+            if (baseDate.getTime() > cutoffDate.getTime()) {
+                startDate.setDate(startDate.getDate() + 1);
+            }
+
+            return this.addBusinessDays(startDate, ruleSettings.workingDays);
+        },
+
+        resolveCalculationBaseDate(order) {
+            const paymentMethod = String(order?.paymentMethod ?? '').toLowerCase();
+            const statusLabel = String(order?.status ?? order?.packageStatus ?? '').toLowerCase();
+            const isVorkasse = paymentMethod.includes('vorkasse') || statusLabel.includes('vorkasse');
+
+            if (isVorkasse) {
+                return order?.paymentReceivedDate ?? order?.paymentDate ?? order?.orderDate ?? order?.date;
+            }
+
+            return order?.orderDate ?? order?.date;
+        },
+
+        computeLatestShippingDate(order, delaySettings) {
+            return this.computeDateByRule(this.resolveCalculationBaseDate(order), delaySettings?.shipping ?? {});
+        },
+
+        computeLatestDeliveryDate(order, delaySettings) {
+            return this.computeDateByRule(this.resolveCalculationBaseDate(order), delaySettings?.delivery ?? {});
+        },
+
+        enrichOrderWithCalculatedDeadlines(order) {
+            const settings = this.lieferzeitenOrderDeadlineConfigService.resolveSettingsForOrder(order, this.delaySettingsCollection);
+            const latestShippingDate = this.computeLatestShippingDate(order, settings);
+            const latestDeliveryDate = this.computeLatestDeliveryDate(order, settings);
+
+            return {
+                ...order,
+                latestShippingDate: latestShippingDate ? latestShippingDate.toISOString() : null,
+                latestDeliveryDate: latestDeliveryDate ? latestDeliveryDate.toISOString() : null,
+            };
+        },
         resolveOrderDomainKey(order) {
             const orderDomain = String(order?.domain || order?.sourceSystem || '').trim();
             if (orderDomain === '') {
@@ -153,8 +241,9 @@ Shopware.Component.register('lieferzeiten-index', {
                     ...(domainKey ? { domain: domainKey } : {}),
                 });
                 const orders = Array.isArray(result) ? result : [];
+                this.delaySettingsCollection = await this.lieferzeitenOrderDeadlineConfigService.getDelaySettingsCollection();
 
-                this.orders = orders.map((order) => ({
+                this.orders = orders.map((order) => this.enrichOrderWithCalculatedDeadlines({
                     ...order,
                     domainKey: resolveDomainKeyForSourceSystem(order.sourceSystem || order.domain),
                 }));
