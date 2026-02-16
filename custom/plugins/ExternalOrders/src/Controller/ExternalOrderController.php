@@ -5,9 +5,11 @@ namespace ExternalOrders\Controller;
 use ExternalOrders\Service\ExternalOrderService;
 use ExternalOrders\Service\ExternalOrderSyncService;
 use ExternalOrders\Service\ExternalOrderTestDataService;
+use ExternalOrders\Service\SupplierRequestTaskService;
 use ExternalOrders\Service\TopmSan6OrderExportService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Log\Package;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,6 +27,7 @@ class ExternalOrderController extends AbstractController
         private readonly ExternalOrderTestDataService $testDataService,
         private readonly ExternalOrderSyncService $syncService,
         private readonly TopmSan6OrderExportService $orderExportService,
+        private readonly SupplierRequestTaskService $supplierRequestTaskService,
         private readonly Connection $connection,
     ) {
     }
@@ -217,6 +220,50 @@ class ExternalOrderController extends AbstractController
         return new JsonResponse([
             'hasDemoData' => $this->testDataService->hasSeededFakeOrders($context),
         ]);
+    }
+
+    #[Route(
+        path: '/api/_action/external-orders/create-supplier-request-task',
+        name: 'api.admin.external-orders.create-supplier-request-task',
+        defaults: ['_acl' => ['admin']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function createSupplierRequestTask(Request $request, Context $context): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        $orderId = trim((string) ($payload['orderId'] ?? ''));
+        $positionId = trim((string) ($payload['positionId'] ?? ''));
+        $initiatorUserId = trim((string) ($payload['initiatorUserId'] ?? ''));
+
+        if ($orderId === '' || !Uuid::isValid($orderId) || $positionId === '') {
+            return new JsonResponse(['message' => 'orderId und positionId sind erforderlich.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $task = $this->supplierRequestTaskService->createTask(
+            $orderId,
+            $positionId,
+            $initiatorUserId !== '' ? $initiatorUserId : null,
+        );
+
+        return new JsonResponse($task, Response::HTTP_CREATED);
+    }
+
+    #[Route(
+        path: '/api/_action/external-orders/complete-supplier-request-task/{taskId}',
+        name: 'api.admin.external-orders.complete-supplier-request-task',
+        defaults: ['_acl' => ['admin']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function completeSupplierRequestTask(string $taskId, Context $context): Response
+    {
+        if (!Uuid::isValid($taskId)) {
+            return new JsonResponse(['message' => 'Ungültige Task-ID.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $this->supplierRequestTaskService->completeTask($taskId, $context);
+
+        return new JsonResponse(['success' => true]);
     }
 
     #[Route(

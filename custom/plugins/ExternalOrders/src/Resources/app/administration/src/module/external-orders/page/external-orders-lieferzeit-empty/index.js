@@ -127,6 +127,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
     template,
 
     inject: ['externalOrderService'],
+    mixins: [Shopware.Mixin.getByName('notification')],
 
     data() {
         return {
@@ -162,6 +163,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             limitOptions: [10, 25, 50, 100],
             selectedOrder: null,
             showDetailModal: false,
+            pendingSupplierRequestKeys: {},
         };
     },
 
@@ -397,6 +399,25 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             return [];
         },
 
+        expandOrdersByPosition(orders) {
+            return orders.flatMap((order) => {
+                const positions = Array.isArray(order?.positions) ? order.positions : [];
+
+                if (!positions.length) {
+                    return [order];
+                }
+
+                return positions.map((position, index) => ({
+                    ...order,
+                    rowId: `${order?.id || order?.orderId || order?.orderNumber || 'order'}-${position?.positionId || index}`,
+                    positionId: position?.positionId ?? position?.id ?? `${index + 1}`,
+                    positionNumber: position?.positionNumber ?? `${index + 1}`,
+                    productLabel: position?.productLabel ?? position?.label ?? '',
+                    lieferterminLieferant: position?.lieferterminLieferant ?? order?.lieferterminLieferant,
+                }));
+            });
+        },
+
         normalizeOrder(order) {
             const trackingNumbers = Array.isArray(order?.trackingNumbers)
                 ? order.trackingNumbers.filter((trackingNumber) => String(trackingNumber || '').trim() !== '')
@@ -426,6 +447,8 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 neuerLiefertermin: order?.neuerLiefertermin ?? order?.newDeliveryDate ?? order?.lieferterminAuftragsbearbeitung ?? '',
                 latestShippingDate: order?.latestShippingDate ?? order?.shippingDateLatest ?? '',
                 latestDeliveryDate: order?.latestDeliveryDate ?? order?.lieferzeitpunktLatest ?? order?.lieferterminLieferant ?? '',
+                positionId: order?.positionId ?? order?.orderLineItemId ?? order?.lineItemId ?? '',
+                positionNumber: order?.positionNumber ?? order?.lineItemNumber ?? '',
             };
         },
 
@@ -460,7 +483,8 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                     ? await this.externalOrderService.list(params)
                     : await this.fetchOrdersFallback(params);
 
-                this.orders = this.extractOrders(result).map((order) => this.normalizeOrder(order));
+                const normalizedOrders = this.extractOrders(result).map((order) => this.normalizeOrder(order));
+                this.orders = this.expandOrdersByPosition(normalizedOrders);
 
                 if (!this.channels.some((channel) => channel.id === this.activeChannel)) {
                     this.activeChannel = 'all';
@@ -615,6 +639,57 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         openDetail(order) {
             this.selectedOrder = order;
             this.showDetailModal = true;
+        },
+
+        getRowKey(order) {
+            return order?.rowId || order?.id || order?.orderNumber;
+        },
+
+        isSupplierRequestPending(order) {
+            return Boolean(this.pendingSupplierRequestKeys[this.getRowKey(order)]);
+        },
+
+        resolveInitiatorUserId() {
+            return Shopware.State.get('session')?.currentUser?.id || null;
+        },
+
+        async requestAdditionalSupplierDeliveryDate(order) {
+            const key = this.getRowKey(order);
+
+            if (!order?.id || !order?.positionId || this.pendingSupplierRequestKeys[key]) {
+                this.createNotificationError({
+                    title: 'Zusätzliche Liefertermin-Anfrage',
+                    message: 'Auftrag oder Auftragsposition fehlen für die Anfrage.',
+                });
+                return;
+            }
+
+            this.pendingSupplierRequestKeys = {
+                ...this.pendingSupplierRequestKeys,
+                [key]: true,
+            };
+
+            try {
+                await this.externalOrderService.createSupplierRequestTask({
+                    orderId: order.id,
+                    positionId: order.positionId,
+                    initiatorUserId: this.resolveInitiatorUserId(),
+                });
+
+                this.createNotificationSuccess({
+                    title: 'Zusätzliche Liefertermin-Anfrage',
+                    message: 'Die Anfrage wurde erfolgreich erstellt.',
+                });
+            } catch (error) {
+                this.createNotificationError({
+                    title: 'Zusätzliche Liefertermin-Anfrage',
+                    message: error?.response?.data?.message || error?.message || 'Die Anfrage konnte nicht erstellt werden.',
+                });
+            } finally {
+                const pendingSupplierRequestKeys = { ...this.pendingSupplierRequestKeys };
+                delete pendingSupplierRequestKeys[key];
+                this.pendingSupplierRequestKeys = pendingSupplierRequestKeys;
+            }
         },
 
         closeDetail() {

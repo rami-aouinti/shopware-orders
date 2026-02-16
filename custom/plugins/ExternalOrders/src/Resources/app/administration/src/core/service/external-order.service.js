@@ -117,6 +117,15 @@ class ExternalOrderService extends ApiService {
         const data = ApiService.handleResponse(response) ?? response?.data;
         return data?.data ?? data;
     }
+
+    async createSupplierRequestTask(payload) {
+        const response = await this.httpClient.post(`_action/${this.getApiBasePath()}/create-supplier-request-task`, payload, {
+            headers: this.getBasicHeaders(),
+        });
+
+        const data = ApiService.handleResponse(response) ?? response?.data;
+        return data?.data ?? data;
+    }
 }
 
 Shopware.Application.addServiceProvider('externalOrderService', (container) => {
