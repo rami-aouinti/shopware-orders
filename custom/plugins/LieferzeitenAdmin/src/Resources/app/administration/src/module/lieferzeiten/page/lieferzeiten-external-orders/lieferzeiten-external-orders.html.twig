@@ -6,15 +6,15 @@
                 <div class="lieferzeiten-external-orders__summary-metrics">
                     <div class="lieferzeiten-external-orders__summary-item">
                         <span class="lieferzeiten-external-orders__summary-label">Bestellungen</span>
-                        <span class="lieferzeiten-external-orders__summary-value">{{ summary.orderCount }}</span>
+                        <span class="lieferzeiten-external-orders__summary-value">{{ metricsSummary.orderCount }}</span>
                     </div>
                     <div class="lieferzeiten-external-orders__summary-item">
                         <span class="lieferzeiten-external-orders__summary-label">Gesamtumsatz</span>
-                        <span class="lieferzeiten-external-orders__summary-value">{{ formatCurrency(summary.totalRevenue) }}</span>
+                        <span class="lieferzeiten-external-orders__summary-value">{{ formatCurrency(metricsSummary.totalRevenue) }}</span>
                     </div>
                     <div class="lieferzeiten-external-orders__summary-item">
                         <span class="lieferzeiten-external-orders__summary-label">Stück</span>
-                        <span class="lieferzeiten-external-orders__summary-value">{{ summary.totalItems }}</span>
+                        <span class="lieferzeiten-external-orders__summary-value">{{ metricsSummary.totalItems }}</span>
                     </div>
                 </div>
                 <div class="lieferzeiten-external-orders__summary-actions">
