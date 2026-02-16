@@ -49,34 +49,48 @@
 
         <div class="external-orders-lieferzeit-empty__filters-bar">
             <div class="external-orders-lieferzeit-empty__filters-row external-orders-lieferzeit-empty__filters-row--primary">
-                <sw-text-field v-model:value="filters.bestellnummer" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Bestellnummer" />
-                <sw-text-field v-model:value="filters.san6OrderNumber" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="SAN6-Auftragsnummer" />
-                <sw-text-field v-model:value="filters.changedByUser" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Änderung durch User" />
-                <sw-text-field v-model:value="filters.sendenummer" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Sendungsnummer" />
-                <sw-single-select
-                    v-model:value="filters.status"
-                    class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third"
-                    size="small"
-                    placeholder="Status"
-                    :options="statusFilterOptions"
-                    value-property="value"
-                    label-property="label"
-                />
+                <template v-for="column in primaryFilters">
+                    <sw-text-field
+                        v-if="column.filterType === 'text'"
+                        :key="`primary-${column.key}`"
+                        v-model:value="filters[column.filterKey]"
+                        class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third"
+                        size="small"
+                        :placeholder="column.label"
+                    />
+                    <sw-single-select
+                        v-else-if="column.filterType === 'select'"
+                        :key="`primary-${column.key}`"
+                        v-model:value="filters[column.filterKey]"
+                        class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third"
+                        size="small"
+                        :placeholder="column.label"
+                        :options="statusFilterOptions"
+                        value-property="value"
+                        label-property="label"
+                    />
+                </template>
             </div>
 
             <div class="external-orders-lieferzeit-empty__filters-row external-orders-lieferzeit-empty__filters-row--secondary">
-                <sw-datepicker v-model:value="filters.latestShippingDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Spätester Versandzeitpunkt von" />
-                <sw-datepicker v-model:value="filters.latestShippingDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Spätester Versandzeitpunkt bis" />
-                <sw-datepicker v-model:value="filters.shippingDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Versand-Datum von" />
-                <sw-datepicker v-model:value="filters.shippingDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Versand-Datum bis" />
-                <sw-datepicker v-model:value="filters.latestDeliveryDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Spätester Lieferzeitpunkt von" />
-                <sw-datepicker v-model:value="filters.latestDeliveryDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Spätester Lieferzeitpunkt bis" />
-                <sw-datepicker v-model:value="filters.deliveryDateFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefer-Datum von" />
-                <sw-datepicker v-model:value="filters.deliveryDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefer-Datum bis" />
-                <sw-datepicker v-model:value="filters.lieferterminLieferantFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Lieferant von" />
-                <sw-datepicker v-model:value="filters.lieferterminLieferantTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Lieferant bis" />
-                <sw-datepicker v-model:value="filters.lieferterminAuftragsbearbeitungFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Auftragsbearbeitung von" />
-                <sw-datepicker v-model:value="filters.lieferterminAuftragsbearbeitungTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Auftragsbearbeitung bis" />
+                <template v-for="column in dateRangeFilters">
+                    <sw-datepicker
+                        :key="`date-from-${column.key}`"
+                        v-model:value="filters[column.filterFromKey]"
+                        class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date"
+                        size="small"
+                        date-type="date"
+                        :placeholder="`${column.label} von`"
+                    />
+                    <sw-datepicker
+                        :key="`date-to-${column.key}`"
+                        v-model:value="filters[column.filterToKey]"
+                        class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date"
+                        size="small"
+                        date-type="date"
+                        :placeholder="`${column.label} bis`"
+                    />
+                </template>
                 <sw-text-field
                     v-model:value="tableSearchTerm"
                     class="external-orders-lieferzeit-empty__search external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--search"
@@ -123,13 +137,14 @@
                                     <button
                                         class="external-orders-lieferzeit-empty__column-filter-button"
                                         :class="{ 'is--active': isColumnFilterActive(column.key) }"
+                                        :disabled="!column.filterable"
                                         type="button"
                                         @click.stop="toggleColumnFilter(column.key)"
                                     >
                                         <sw-icon name="regular-filter" size="14"></sw-icon>
                                     </button>
                                     <div
-                                        v-if="activeColumnFilter === column.key"
+                                        v-if="column.filterable && activeColumnFilter === column.key"
                                         class="external-orders-lieferzeit-empty__column-filter-panel"
                                         @click.stop
                                     >

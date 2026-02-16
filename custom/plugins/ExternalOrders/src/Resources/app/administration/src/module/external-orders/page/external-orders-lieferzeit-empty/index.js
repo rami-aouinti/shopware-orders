@@ -30,24 +30,129 @@ const CHANNEL_LABELS = Object.freeze({
     san6: 'SAN6',
 });
 
-const COLUMN_DEFINITIONS = Object.freeze([
-    { key: 'bestellnummer', label: 'Bestellnummer', group: 'Bestellung' },
-    { key: 'san6', label: 'SAN6-Auftragsnummer', group: 'Bestellung' },
-    { key: 'user', label: 'Änderung durch User', group: 'Bestellung' },
-    { key: 'sendenummer', label: 'Sendungsnummer', group: 'Lieferung' },
-    { key: 'shippingDate', label: 'Versand-Datum', group: 'Lieferung', type: 'date' },
-    { key: 'deliveryDate', label: 'Liefer-Datum', group: 'Lieferung', type: 'date' },
-    { key: 'lieferterminLieferant', label: 'Liefertermin Lieferant', group: 'Lieferung', type: 'date' },
-    { key: 'neuerLiefertermin', label: 'Liefertermin Auftragsbearbeitung', group: 'Lieferung', type: 'date' },
-    { key: 'latestShippingDate', label: 'Spätester Versandzeitpunkt', group: 'Status', type: 'date' },
-    { key: 'latestDeliveryDate', label: 'Spätester Lieferzeitpunkt', group: 'Status', type: 'date' },
-    { key: 'status', label: 'Status', group: 'Status' },
+export const tableColumnsMeta = Object.freeze([
+    {
+        key: 'bestellnummer',
+        label: 'Bestellnummer',
+        group: 'Bestellung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'bestellnummer',
+    },
+    {
+        key: 'san6',
+        label: 'SAN6-Auftragsnummer',
+        group: 'Bestellung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'san6OrderNumber',
+    },
+    {
+        key: 'san6Auftragsposition',
+        label: 'San6 Auftragsposition',
+        group: 'Bestellung',
+        filterable: false,
+        filterType: 'none',
+    },
+    {
+        key: 'user',
+        label: 'Änderung durch User',
+        group: 'Bestellung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'changedByUser',
+    },
+    {
+        key: 'sendenummer',
+        label: 'Sendungsnummer',
+        group: 'Lieferung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'sendenummer',
+    },
+    {
+        key: 'shippingDate',
+        label: 'Versand-Datum',
+        group: 'Lieferung',
+        type: 'date',
+        filterable: true,
+        filterType: 'dateRange',
+        filterFromKey: 'shippingDateFrom',
+        filterToKey: 'shippingDateTo',
+    },
+    {
+        key: 'deliveryDate',
+        label: 'Liefer-Datum',
+        group: 'Lieferung',
+        type: 'date',
+        filterable: true,
+        filterType: 'dateRange',
+        filterFromKey: 'deliveryDateFrom',
+        filterToKey: 'deliveryDateTo',
+    },
+    {
+        key: 'lieferterminLieferant',
+        label: 'Liefertermin Lieferant',
+        group: 'Lieferung',
+        type: 'date',
+        filterable: true,
+        filterType: 'dateRange',
+        filterFromKey: 'lieferterminLieferantFrom',
+        filterToKey: 'lieferterminLieferantTo',
+    },
+    {
+        key: 'neuerLiefertermin',
+        label: 'Liefertermin Auftragsbearbeitung',
+        group: 'Lieferung',
+        type: 'date',
+        filterable: true,
+        filterType: 'dateRange',
+        filterFromKey: 'lieferterminAuftragsbearbeitungFrom',
+        filterToKey: 'lieferterminAuftragsbearbeitungTo',
+    },
+    {
+        key: 'latestShippingDate',
+        label: 'Spätester Versandzeitpunkt',
+        group: 'Status',
+        type: 'date',
+        filterable: true,
+        filterType: 'dateRange',
+        filterFromKey: 'latestShippingDateFrom',
+        filterToKey: 'latestShippingDateTo',
+    },
+    {
+        key: 'latestDeliveryDate',
+        label: 'Spätester Lieferzeitpunkt',
+        group: 'Status',
+        type: 'date',
+        filterable: true,
+        filterType: 'dateRange',
+        filterFromKey: 'latestDeliveryDateFrom',
+        filterToKey: 'latestDeliveryDateTo',
+    },
+    {
+        key: 'status',
+        label: 'Status',
+        group: 'Status',
+        filterable: true,
+        filterType: 'select',
+        filterKey: 'status',
+    },
+    {
+        key: 'kommentar',
+        label: 'Kommentar',
+        group: 'Status',
+        filterable: false,
+        filterType: 'none',
+    },
 ]);
 
-const COLUMN_KEYS = COLUMN_DEFINITIONS.map((column) => column.key);
-const DATE_COLUMN_KEYS = COLUMN_DEFINITIONS
+const COLUMN_KEYS = tableColumnsMeta.map((column) => column.key);
+const DATE_COLUMN_KEYS = tableColumnsMeta
     .filter((column) => column.type === 'date')
     .map((column) => column.key);
+
+const FILTERABLE_COLUMNS = tableColumnsMeta.filter((column) => column.filterable);
 
 const BUSINESS_STATUS_LABELS = Object.freeze({
     processing: 'Bezahlt / in Bearbeitung',
@@ -98,29 +203,22 @@ function normalizeBusinessStatus(statusValue) {
     };
 }
 
-const createDefaultFilters = () => ({
-    bestellnummer: '',
-    san6OrderNumber: '',
-    changedByUser: '',
-    domain: '',
-    sendenummer: '',
-    status: '',
-    latestShippingDateFrom: null,
-    latestShippingDateTo: null,
-    shippingDateFrom: null,
-    shippingDateTo: null,
-    latestDeliveryDateFrom: null,
-    latestDeliveryDateTo: null,
-    deliveryDateFrom: null,
-    deliveryDateTo: null,
-    lieferterminLieferantFrom: null,
-    lieferterminLieferantTo: null,
-    lieferterminAuftragsbearbeitungFrom: null,
-    lieferterminAuftragsbearbeitungTo: null,
-});
+const createDefaultFilters = () => FILTERABLE_COLUMNS.reduce((filters, column) => {
+    if (column.filterType === 'dateRange') {
+        filters[column.filterFromKey] = null;
+        filters[column.filterToKey] = null;
+        return filters;
+    }
 
-const createDefaultColumnFilters = () => COLUMN_KEYS.reduce((filters, key) => {
-    filters[key] = { value: '', operator: 'contains' };
+    if (column.filterType === 'text' || column.filterType === 'select') {
+        filters[column.filterKey] = '';
+    }
+
+    return filters;
+}, {});
+
+const createDefaultColumnFilters = () => FILTERABLE_COLUMNS.reduce((filters, column) => {
+    filters[column.key] = { value: '', operator: 'contains' };
     return filters;
 }, {});
 
@@ -170,10 +268,18 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
     computed: {
         tableColumns() {
-            return COLUMN_DEFINITIONS.map((column) => ({
+            return tableColumnsMeta.map((column) => ({
                 ...column,
                 label: `${column.group} · ${column.label}`,
             }));
+        },
+
+        primaryFilters() {
+            return FILTERABLE_COLUMNS.filter((column) => ['text', 'select'].includes(column.filterType));
+        },
+
+        dateRangeFilters() {
+            return FILTERABLE_COLUMNS.filter((column) => column.filterType === 'dateRange');
         },
 
         channels() {
@@ -348,20 +454,11 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 return match ? match[1] : rawValue;
             };
 
-            const dateFilterKeys = new Set([
-                'latestShippingDateFrom',
-                'latestShippingDateTo',
-                'shippingDateFrom',
-                'shippingDateTo',
-                'latestDeliveryDateFrom',
-                'latestDeliveryDateTo',
-                'deliveryDateFrom',
-                'deliveryDateTo',
-                'lieferterminLieferantFrom',
-                'lieferterminLieferantTo',
-                'lieferterminAuftragsbearbeitungFrom',
-                'lieferterminAuftragsbearbeitungTo',
-            ]);
+            const dateFilterKeys = new Set(
+                FILTERABLE_COLUMNS
+                    .filter((column) => column.filterType === 'dateRange')
+                    .flatMap((column) => [column.filterFromKey, column.filterToKey]),
+            );
 
             return Object.entries(this.filters).reduce((params, [key, value]) => {
                 if (value === null || value === undefined) {
@@ -542,6 +639,10 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         },
 
         toggleColumnFilter(columnKey) {
+            const column = this.tableColumns.find((candidate) => candidate.key === columnKey);
+            if (!column?.filterable) {
+                return;
+            }
             this.activeColumnFilter = this.activeColumnFilter === columnKey ? null : columnKey;
         },
 
@@ -568,6 +669,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             return Boolean(String(this.columnFilters[columnKey]?.value || '').trim());
         },
 
+
         matchesColumnFilter(value, filter) {
             const candidate = String(value ?? '').toLowerCase();
             const needle = String(filter?.value || '').toLowerCase();
@@ -592,6 +694,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             const mapping = {
                 bestellnummer: order?.bestellnummer ?? order?.orderNumber,
                 san6: order?.san6 ?? order?.san6OrderNumber,
+                san6Auftragsposition: order?.san6Auftragsposition ?? order?.positionNumber ?? order?.positionId,
                 user: order?.user,
                 sendenummer: order?.sendenummer,
                 shippingDate: order?.shippingDate,
@@ -601,6 +704,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 latestShippingDate: order?.latestShippingDate,
                 latestDeliveryDate: order?.latestDeliveryDate,
                 status: order?.status,
+                kommentar: order?.kommentar ?? order?.comment,
             };
 
             return mapping[column] ?? '';
