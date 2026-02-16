@@ -30,6 +30,16 @@ const CHANNEL_LABELS = Object.freeze({
     san6: 'SAN6',
 });
 
+const AREA_OPTIONS = Object.freeze([
+    { value: 'order-monitoring', label: 'Auftragsmonitoring' },
+    { value: 'delivery-monitoring', label: 'Liefermonitoring' },
+]);
+
+const MAIN_VIEW_OPTIONS = Object.freeze([
+    { value: 'overview', label: 'Übersicht' },
+    { value: 'details', label: 'Detailansicht' },
+]);
+
 export const tableColumnsMeta = Object.freeze([
     {
         key: 'bestellnummer',
@@ -313,6 +323,10 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
     data() {
         return {
             pageTitle: 'Lieferzeiten',
+            selectedArea: null,
+            selectedMainView: null,
+            areaOptions: AREA_OPTIONS,
+            mainViewOptions: MAIN_VIEW_OPTIONS,
             filters: createDefaultFilters(),
             orders: [],
             isLoading: false,
@@ -459,6 +473,10 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
             return Array.from({ length: end - start + 1 }, (_, index) => start + index);
         },
+
+        hasRequiredSelections() {
+            return Boolean(this.selectedArea && this.selectedMainView);
+        },
     },
 
     watch: {
@@ -470,8 +488,6 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
     },
 
     created() {
-        this.loadOrders();
-        this.loadStatistics();
         this.startSupplierTaskCompletionPolling();
     },
 
@@ -503,7 +519,14 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         },
 
         async loadStatistics() {
-            return DEFAULT_STATISTICS_METRICS;
+            if (!this.hasRequiredSelections) {
+                this.statisticsMetrics = { ...DEFAULT_STATISTICS_METRICS };
+                return this.statisticsMetrics;
+            }
+
+            this.statisticsMetrics = { ...DEFAULT_STATISTICS_METRICS };
+
+            return this.statisticsMetrics;
         },
 
         displayOrDash(value) {
@@ -553,9 +576,9 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                     .flatMap((column) => [column.filterFromKey, column.filterToKey]),
             );
 
-            return Object.entries(this.filters).reduce((params, [key, value]) => {
+            const params = Object.entries(this.filters).reduce((result, [key, value]) => {
                 if (value === null || value === undefined) {
-                    return params;
+                    return result;
                 }
 
                 const normalizedValue = dateFilterKeys.has(key)
@@ -563,13 +586,23 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                     : (typeof value === 'string' ? value.trim() : value);
 
                 if (normalizedValue === '') {
-                    return params;
+                    return result;
                 }
 
-                params[key] = normalizedValue;
+                result[key] = normalizedValue;
 
-                return params;
+                return result;
             }, {});
+
+            if (this.selectedArea) {
+                params.selectedArea = this.selectedArea;
+            }
+
+            if (this.selectedMainView) {
+                params.selectedMainView = this.selectedMainView;
+            }
+
+            return params;
         },
 
         extractOrders(result) {
@@ -783,11 +816,23 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         },
 
         async loadOrders() {
+            if (!this.hasRequiredSelections) {
+                this.orders = [];
+                this.statisticsMetrics = { ...DEFAULT_STATISTICS_METRICS };
+                this.loadError = null;
+                this.isLoading = false;
+                return;
+            }
+
             this.isLoading = true;
             this.loadError = null;
 
             try {
-                const params = this.buildFilterParams();
+                const params = {
+                    ...this.buildFilterParams(),
+                    selectedArea: this.selectedArea,
+                    selectedMainView: this.selectedMainView,
+                };
                 const result = this.externalOrderService
                     ? await this.externalOrderService.list(params)
                     : await this.fetchOrdersFallback(params);
@@ -810,6 +855,12 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
         applyFilters() {
             this.loadOrders();
+        },
+
+        applyEntrySelection() {
+            this.page = 1;
+            this.loadOrders();
+            this.loadStatistics();
         },
 
         resetFilters() {

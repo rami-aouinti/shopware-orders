@@ -14,6 +14,40 @@
     </header>
 
     <main id="main" class="sw-page__main-content external-orders-lieferzeit-empty__main" tabindex="-1">
+        <sw-card class="external-orders-lieferzeit-empty__entry-card">
+            <div class="external-orders-lieferzeit-empty__entry-step">
+                <h3>Schritt 1: Bereichsauswahl</h3>
+                <sw-single-select
+                    v-model:value="selectedArea"
+                    placeholder="Bereich auswählen"
+                    :options="areaOptions"
+                    value-property="value"
+                    label-property="label"
+                />
+            </div>
+            <div class="external-orders-lieferzeit-empty__entry-step">
+                <h3>Schritt 2: Hauptansichtsauswahl</h3>
+                <sw-single-select
+                    v-model:value="selectedMainView"
+                    placeholder="Hauptansicht auswählen"
+                    :options="mainViewOptions"
+                    value-property="value"
+                    label-property="label"
+                />
+            </div>
+            <div class="external-orders-lieferzeit-empty__entry-actions">
+                <button
+                    class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--primary"
+                    type="button"
+                    :disabled="!hasRequiredSelections"
+                    @click="applyEntrySelection"
+                >
+                    Schritt 3 anzeigen
+                </button>
+            </div>
+        </sw-card>
+
+        <template v-if="hasRequiredSelections">
         <div class="external-orders-lieferzeit-empty__summary">
             <div class="external-orders-lieferzeit-empty__summary-item">
                 <span class="external-orders-lieferzeit-empty__summary-label">Treffer</span>
@@ -236,6 +270,7 @@
             subline="Für die aktuellen Filter gibt es keine Ergebnisse."
         />
         </sw-card>
+        </template>
     </main>
 
     <div v-if="showDetailModal && selectedOrder" class="external-orders-lieferzeit-empty__detail-overlay" @click.self="closeDetail">
