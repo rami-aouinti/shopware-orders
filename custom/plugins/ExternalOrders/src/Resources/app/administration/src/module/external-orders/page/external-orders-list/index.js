@@ -125,6 +125,12 @@ Component.register('external-orders-list', {
     },
 
     computed: {
+        isLieferzeitRoute() {
+            const routeName = this.$route?.name || "";
+            const routePath = this.$route?.path || "";
+
+            return routeName === "external.orders.lieferzeit" || routePath.endsWith("/lieferzeit");
+        },
         columns() {
             return [
                 {
@@ -313,6 +319,10 @@ Component.register('external-orders-list', {
     },
 
     created() {
+        if (this.isLieferzeitRoute) {
+            return;
+        }
+
         this.initializePage();
     },
 
