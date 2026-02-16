@@ -50,10 +50,18 @@
         <div class="external-orders-lieferzeit-empty__filters-bar">
             <div class="external-orders-lieferzeit-empty__filters-row external-orders-lieferzeit-empty__filters-row--primary">
                 <sw-text-field v-model:value="filters.bestellnummer" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Bestellnummer" />
-                <sw-text-field v-model:value="filters.san6" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="SAN6-Auftragsnummer" />
-                <sw-text-field v-model:value="filters.user" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Änderung durch User" />
+                <sw-text-field v-model:value="filters.san6OrderNumber" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="SAN6-Auftragsnummer" />
+                <sw-text-field v-model:value="filters.changedByUser" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Änderung durch User" />
                 <sw-text-field v-model:value="filters.sendenummer" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Sendungsnummer" />
-                <sw-text-field v-model:value="filters.status" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third" size="small" placeholder="Status" />
+                <sw-single-select
+                    v-model:value="filters.status"
+                    class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--third"
+                    size="small"
+                    placeholder="Status"
+                    :options="statusFilterOptions"
+                    value-property="value"
+                    label-property="label"
+                />
             </div>
 
             <div class="external-orders-lieferzeit-empty__filters-row external-orders-lieferzeit-empty__filters-row--secondary">
@@ -67,8 +75,8 @@
                 <sw-datepicker v-model:value="filters.deliveryDateTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefer-Datum bis" />
                 <sw-datepicker v-model:value="filters.lieferterminLieferantFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Lieferant von" />
                 <sw-datepicker v-model:value="filters.lieferterminLieferantTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Lieferant bis" />
-                <sw-datepicker v-model:value="filters.neuerLieferterminFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Auftragsbearbeitung von" />
-                <sw-datepicker v-model:value="filters.neuerLieferterminTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Auftragsbearbeitung bis" />
+                <sw-datepicker v-model:value="filters.lieferterminAuftragsbearbeitungFrom" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Auftragsbearbeitung von" />
+                <sw-datepicker v-model:value="filters.lieferterminAuftragsbearbeitungTo" class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date" size="small" date-type="date" placeholder="Liefertermin Auftragsbearbeitung bis" />
                 <sw-text-field
                     v-model:value="tableSearchTerm"
                     class="external-orders-lieferzeit-empty__search external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--search"

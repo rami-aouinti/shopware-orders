@@ -100,9 +100,8 @@ function normalizeBusinessStatus(statusValue) {
 
 const createDefaultFilters = () => ({
     bestellnummer: '',
-    san6: '',
-    user: '',
-    domain: '',
+    san6OrderNumber: '',
+    changedByUser: '',
     sendenummer: '',
     status: '',
     latestShippingDateFrom: null,
@@ -115,8 +114,8 @@ const createDefaultFilters = () => ({
     deliveryDateTo: null,
     lieferterminLieferantFrom: null,
     lieferterminLieferantTo: null,
-    neuerLieferterminFrom: null,
-    neuerLieferterminTo: null,
+    lieferterminAuftragsbearbeitungFrom: null,
+    lieferterminAuftragsbearbeitungTo: null,
 });
 
 const createDefaultColumnFilters = () => COLUMN_KEYS.reduce((filters, key) => {
@@ -147,6 +146,14 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 { value: 'contains', label: 'Contains' },
                 { value: 'equals', label: 'Equals' },
                 { value: 'startsWith', label: 'Starts with' },
+            ],
+            statusFilterOptions: [
+                { value: '', label: 'Alle Status' },
+                { value: 'processing', label: BUSINESS_STATUS_LABELS.processing },
+                { value: 'shipped', label: BUSINESS_STATUS_LABELS.shipped },
+                { value: 'completed', label: BUSINESS_STATUS_LABELS.completed },
+                { value: 'cancelled', label: BUSINESS_STATUS_LABELS.cancelled },
+                { value: 'test', label: BUSINESS_STATUS_LABELS.test },
             ],
             sortBy: 'latestShippingDate',
             sortDirection: 'DESC',
@@ -315,12 +322,53 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         },
 
         buildFilterParams() {
+            const normalizeDateValue = (value) => {
+                if (!value) {
+                    return null;
+                }
+
+                if (value instanceof Date) {
+                    return Number.isNaN(value.getTime()) ? null : value.toISOString().slice(0, 10);
+                }
+
+                const normalizedDate = new Date(value);
+                if (!Number.isNaN(normalizedDate.getTime())) {
+                    return normalizedDate.toISOString().slice(0, 10);
+                }
+
+                const rawValue = String(value).trim();
+                if (!rawValue) {
+                    return null;
+                }
+
+                const match = rawValue.match(/^(\d{4}-\d{2}-\d{2})/);
+                return match ? match[1] : rawValue;
+            };
+
+            const dateFilterKeys = new Set([
+                'latestShippingDateFrom',
+                'latestShippingDateTo',
+                'shippingDateFrom',
+                'shippingDateTo',
+                'latestDeliveryDateFrom',
+                'latestDeliveryDateTo',
+                'deliveryDateFrom',
+                'deliveryDateTo',
+                'lieferterminLieferantFrom',
+                'lieferterminLieferantTo',
+                'lieferterminAuftragsbearbeitungFrom',
+                'lieferterminAuftragsbearbeitungTo',
+            ]);
+
             return Object.entries(this.filters).reduce((params, [key, value]) => {
                 if (value === null || value === undefined) {
                     return params;
                 }
 
-                const normalizedValue = typeof value === 'string' ? value.trim() : value;
+                const normalizedValue = dateFilterKeys.has(key)
+                    ? normalizeDateValue(value)
+                    : (typeof value === 'string' ? value.trim() : value);
+
                 if (normalizedValue === '') {
                     return params;
                 }
@@ -363,15 +411,18 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             return {
                 ...order,
                 bestellnummer: order?.bestellnummer ?? order?.orderNumber ?? order?.orderId ?? '',
+                san6OrderNumber: order?.san6OrderNumber ?? order?.san6 ?? order?.orderReference ?? order?.auftragNumber ?? '',
                 san6: order?.san6 ?? order?.san6OrderNumber ?? order?.orderReference ?? order?.auftragNumber ?? '',
                 status: normalizedBusinessStatus.label,
                 statusCode: normalizedBusinessStatus.code,
+                changedByUser: order?.changedByUser ?? order?.user ?? order?.customerName ?? order?.customersName ?? '',
                 user: order?.user ?? order?.customerName ?? order?.customersName ?? '',
                 sendenummer: order?.sendenummer ?? order?.trackingNumber ?? trackingNumbers.join(', '),
                 domain: order?.domain ?? order?.sourceSystem ?? order?.channel ?? '',
                 shippingDate: order?.shippingDate ?? order?.versandDatum ?? order?.shippingAt ?? '',
                 deliveryDate: order?.deliveryDate ?? order?.lieferDatum ?? order?.deliveredAt ?? '',
                 lieferterminLieferant: order?.lieferterminLieferant ?? order?.supplierDeliveryDate ?? '',
+                lieferterminAuftragsbearbeitung: order?.lieferterminAuftragsbearbeitung ?? order?.neuerLiefertermin ?? order?.newDeliveryDate ?? '',
                 neuerLiefertermin: order?.neuerLiefertermin ?? order?.newDeliveryDate ?? order?.lieferterminAuftragsbearbeitung ?? '',
                 latestShippingDate: order?.latestShippingDate ?? order?.shippingDateLatest ?? '',
                 latestDeliveryDate: order?.latestDeliveryDate ?? order?.lieferzeitpunktLatest ?? order?.lieferterminLieferant ?? '',
