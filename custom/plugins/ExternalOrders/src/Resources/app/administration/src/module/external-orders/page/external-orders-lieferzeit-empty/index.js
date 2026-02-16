@@ -227,6 +227,13 @@ const DATE_COLUMN_KEYS = tableColumnsMeta
     .map((column) => column.key);
 
 const FILTERABLE_COLUMNS = tableColumnsMeta.filter((column) => column.filterable);
+const TOP_BAR_DATE_FILTER_KEYS = Object.freeze([
+    'shippingDate',
+    'latestDeliveryDate',
+    'deliveryDate',
+    'lieferterminLieferant',
+    'neuerLiefertermin',
+]);
 const SUPPLIER_TASK_POLL_INTERVAL_MS = 15000;
 
 const BUSINESS_STATUS_LABELS = Object.freeze({
@@ -357,7 +364,10 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         },
 
         dateRangeFilters() {
-            return FILTERABLE_COLUMNS.filter((column) => column.filterType === 'dateRange');
+            return FILTERABLE_COLUMNS.filter((column) => (
+                column.filterType === 'dateRange'
+                && TOP_BAR_DATE_FILTER_KEYS.includes(column.key)
+            ));
         },
 
         channels() {
