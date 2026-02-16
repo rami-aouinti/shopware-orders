@@ -14,7 +14,7 @@ class BaseDateResolver
         $isPrepayment = str_contains($paymentMethod, 'vorkasse') || str_contains($paymentMethod, 'prepayment');
 
         $orderDate = $this->parseDate($payload['orderDate'] ?? $payload['date'] ?? null);
-        $paymentDate = $this->parseDate($payload['paymentDate'] ?? null);
+        $paymentDate = $this->parseDate($payload['paymentReceivedDate'] ?? $payload['paymentDate'] ?? null);
 
         if ($isPrepayment) {
             if ($paymentDate !== null) {
