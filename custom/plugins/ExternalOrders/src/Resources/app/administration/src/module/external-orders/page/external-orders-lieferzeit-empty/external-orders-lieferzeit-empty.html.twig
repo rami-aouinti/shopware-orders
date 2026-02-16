@@ -1,4 +1,33 @@
 {% block external_orders_lieferzeit_empty %}
     <sw-page class="external-orders-lieferzeit-empty">
+        <template slot="smart-bar-header">
+            <h2>Lieferzeit</h2>
+        </template>
+
+        <template slot="content">
+            <sw-card-view>
+                <sw-card>
+                    <sw-loader v-if="isLoading"></sw-loader>
+
+                    <sw-empty-state
+                        v-if="loadError"
+                        title="Fehler beim Laden"
+                        subline="Die Lieferzeiten konnten nicht geladen werden."
+                    >
+                        <template slot="actions">
+                            <sw-button variant="primary" @click="loadOrders">
+                                Erneut versuchen
+                            </sw-button>
+                        </template>
+                    </sw-empty-state>
+
+                    <lieferzeiten-order-table
+                        v-if="!isLoading && !loadError"
+                        :orders="orders"
+                        :on-reload-order="loadOrders"
+                    />
+                </sw-card>
+            </sw-card-view>
+        </template>
     </sw-page>
 {% endblock %}
