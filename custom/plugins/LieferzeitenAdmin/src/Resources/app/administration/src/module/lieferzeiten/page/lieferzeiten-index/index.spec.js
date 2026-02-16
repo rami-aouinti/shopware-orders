@@ -38,7 +38,6 @@ describe('lieferzeiten/page/lieferzeiten-index', () => {
         expect(component.computed.filteredOrders.call(context)).toEqual([{ id: '1', domainKey: 'ebay.de' }]);
     });
 
-
     it('buildFilterParams returns values from default filters on first render', () => {
         const context = {
             filters: component.data().filters,
@@ -51,5 +50,50 @@ describe('lieferzeiten/page/lieferzeiten-index', () => {
             bestellnummer: 'BN-1001',
             status: 'offen',
         });
+    });
+
+    it('uses paymentReceivedDate as base date for Vorkasse orders', () => {
+        const context = {
+            parseOrderDate: component.methods.parseOrderDate,
+            addBusinessDays: component.methods.addBusinessDays,
+            computeDateByRule: component.methods.computeDateByRule,
+            resolveCalculationBaseDate: component.methods.resolveCalculationBaseDate,
+        };
+        const order = {
+            paymentMethod: 'Vorkasse',
+            orderDate: '2026-01-10T08:00:00.000Z',
+            paymentReceivedDate: '2026-01-12T08:00:00.000Z',
+        };
+
+        const result = component.methods.computeLatestShippingDate.call(context, order, {
+            shipping: { workingDays: 0, cutoff: '12:00' },
+        });
+
+        expect(result.toISOString()).toBe('2026-01-12T08:00:00.000Z');
+    });
+
+    it('enriches normalized order with computed deadline fields', () => {
+        const context = {
+            parseOrderDate: component.methods.parseOrderDate,
+            addBusinessDays: component.methods.addBusinessDays,
+            computeDateByRule: component.methods.computeDateByRule,
+            resolveCalculationBaseDate: component.methods.resolveCalculationBaseDate,
+            computeLatestShippingDate: component.methods.computeLatestShippingDate,
+            computeLatestDeliveryDate: component.methods.computeLatestDeliveryDate,
+            delaySettingsCollection: null,
+            lieferzeitenOrderDeadlineConfigService: {
+                resolveSettingsForOrder: jest.fn(() => ({
+                    shipping: { workingDays: 1, cutoff: '12:00' },
+                    delivery: { workingDays: 2, cutoff: '12:00' },
+                })),
+            },
+        };
+
+        const normalized = component.methods.enrichOrderWithCalculatedDeadlines.call(context, {
+            orderDate: '2026-01-12T08:00:00.000Z',
+        });
+
+        expect(normalized.latestShippingDate).toBe('2026-01-13T08:00:00.000Z');
+        expect(normalized.latestDeliveryDate).toBe('2026-01-14T08:00:00.000Z');
     });
 });

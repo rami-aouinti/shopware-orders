@@ -22,6 +22,7 @@ import './init/translation.init';
 
 import './core/service/lieferzeiten-tracking.service';
 import './core/service/lieferzeiten-orders.service';
+import './core/service/lieferzeiten-order-deadline-config.service';
 
 import './init/store-api-fallback.init';
 import './init/dashboard-order-fallback.init';
