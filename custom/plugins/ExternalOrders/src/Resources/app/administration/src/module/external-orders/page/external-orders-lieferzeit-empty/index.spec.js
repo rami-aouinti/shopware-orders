@@ -71,13 +71,15 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             'status',
         ]));
         expect(dateRangeKeys).toEqual(expect.arrayContaining([
-            'paymentReceivedDate',
-            'latestShippingDate',
             'shippingDate',
             'latestDeliveryDate',
             'deliveryDate',
             'lieferterminLieferant',
             'neuerLiefertermin',
+        ]));
+        expect(dateRangeKeys).not.toEqual(expect.arrayContaining([
+            'paymentReceivedDate',
+            'latestShippingDate',
         ]));
 
         expect(primaryKeys).not.toContain('san6Auftragsposition');
