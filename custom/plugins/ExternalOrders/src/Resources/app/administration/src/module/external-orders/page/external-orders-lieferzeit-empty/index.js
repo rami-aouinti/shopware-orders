@@ -55,6 +55,16 @@ export const tableColumnsMeta = Object.freeze([
         filterType: 'none',
     },
     {
+        key: 'orderDate',
+        label: 'Bestelldatum',
+        group: 'Bestellung',
+        type: 'date',
+        filterable: true,
+        filterType: 'dateRange',
+        filterFromKey: 'orderDateFrom',
+        filterToKey: 'orderDateTo',
+    },
+    {
         key: 'paymentMethod',
         label: 'Zahlungsart',
         group: 'Bestellung',
@@ -103,6 +113,14 @@ export const tableColumnsMeta = Object.freeze([
         filterable: true,
         filterType: 'text',
         filterKey: 'changedByUser',
+    },
+    {
+        key: 'orderedQuantity',
+        label: 'Stückzahl Auftragsposition',
+        group: 'Bestellung',
+        filterable: true,
+        filterType: 'text',
+        filterKey: 'orderedQuantity',
     },
     {
         key: 'sendenummer',
@@ -228,6 +246,7 @@ const DATE_COLUMN_KEYS = tableColumnsMeta
 
 const FILTERABLE_COLUMNS = tableColumnsMeta.filter((column) => column.filterable);
 const TOP_BAR_DATE_FILTER_KEYS = Object.freeze([
+    'orderDate',
     'shippingDate',
     'latestDeliveryDate',
     'deliveryDate',
@@ -640,6 +659,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                         packageId: '',
                         trackingNumberPerPackage: '',
                         shippedQuantity: '',
+                        orderedQuantity: order?.orderedQuantity ?? '',
                         packageStatus: '',
                     }];
                 }
@@ -661,6 +681,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                         lieferterminLieferant: position?.lieferterminLieferant ?? order?.lieferterminLieferant,
                         shippingDate: position?.shippingDate ?? order?.shippingDate ?? '',
                         deliveryDate: position?.deliveryDate ?? order?.deliveryDate ?? '',
+                        orderedQuantity,
                         packageId: '',
                         trackingNumberPerPackage: '',
                         shippedQuantity: '',
@@ -689,6 +710,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                             lieferterminLieferant: position?.lieferterminLieferant ?? order?.lieferterminLieferant,
                             packageId,
                             trackingNumberPerPackage: packageTrackingNumber,
+                            orderedQuantity,
                             shippedQuantity,
                             packageStatus: this.normalizePackageStatus(
                                 pkg?.packageStatus ?? pkg?.status,
@@ -741,6 +763,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 sendenummer: order?.sendenummer ?? order?.trackingNumber ?? trackingNumbers.join(', '),
                 domain: order?.domain ?? order?.sourceSystem ?? order?.channel ?? '',
                 paymentMethod: order?.paymentMethod ?? payment?.method ?? payment?.name ?? '',
+                orderDate: order?.orderDate ?? order?.datePurchased ?? order?.date ?? order?.orderDateTime ?? '',
                 paymentReceivedDate: order?.paymentReceivedDate ?? order?.zahlungseingangDate ?? payment?.receivedDate ?? payment?.paidAt ?? '',
                 customerFirstName: order?.customerFirstName ?? customer?.firstName ?? order?.firstname ?? '',
                 customerLastName: order?.customerLastName ?? customer?.lastName ?? order?.lastname ?? '',
@@ -756,6 +779,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 packageStatus: order?.packageStatus ?? '',
                 shippedQuantity: order?.shippedQuantity ?? '',
                 trackingNumberPerPackage: order?.trackingNumberPerPackage ?? '',
+                orderedQuantity: order?.orderedQuantity ?? order?.quantity ?? '',
                 positionId: order?.positionId ?? order?.orderLineItemId ?? order?.lineItemId ?? '',
                 positionNumber: order?.positionNumber ?? order?.lineItemNumber ?? '',
             };
@@ -907,6 +931,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 san6: order?.san6 ?? order?.san6OrderNumber,
                 san6Auftragsposition: order?.san6Auftragsposition ?? order?.positionNumber ?? order?.positionId,
                 paymentMethod: order?.paymentMethod,
+                orderDate: order?.orderDate ?? order?.datePurchased ?? order?.date,
                 paymentReceivedDate: order?.paymentReceivedDate,
                 customerFirstName: order?.customerFirstName,
                 customerLastName: order?.customerLastName,
@@ -915,6 +940,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 sendenummer: order?.sendenummer,
                 packageId: order?.packageId,
                 trackingNumberPerPackage: order?.trackingNumberPerPackage,
+                orderedQuantity: order?.orderedQuantity ?? order?.quantity,
                 shippedQuantity: order?.shippedQuantity,
                 shippingDate: order?.shippingDate,
                 deliveryDate: order?.deliveryDate,

@@ -35,8 +35,10 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(metaByKey.bestellnummer).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
         expect(metaByKey.status).toEqual(expect.objectContaining({ filterable: true, filterType: 'select' }));
         expect(metaByKey.shippingDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
+        expect(metaByKey.orderDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
         expect(metaByKey.paymentMethod).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
         expect(metaByKey.paymentReceivedDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
+        expect(metaByKey.orderedQuantity).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
         expect(metaByKey.packageStatus).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
 
         expect(metaByKey.san6Auftragsposition).toEqual(expect.objectContaining({ filterable: false, filterType: 'none' }));
@@ -59,6 +61,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             'bestellnummer',
             'san6',
             'paymentMethod',
+            'orderedQuantity',
             'customerFirstName',
             'customerLastName',
             'customerAdditionalNames',
@@ -71,6 +74,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             'status',
         ]));
         expect(dateRangeKeys).toEqual(expect.arrayContaining([
+            'orderDate',
             'shippingDate',
             'latestDeliveryDate',
             'deliveryDate',
@@ -103,6 +107,9 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         const [expanded] = componentConfig.methods.expandOrdersByPosition.call(context, [{
             id: 'order-1',
             bestellnummer: '10001',
+            orderedQuantity: '5',
+            orderDateFrom: '2026-01-20',
+            orderDateTo: '2026-01-22',
             latestShippingDate: '2026-02-20',
             positions: [{
                 positionId: '10',
@@ -122,6 +129,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         }]);
 
         expect(expanded.rowType).toBe('position');
+        expect(expanded.orderedQuantity).toBe(5);
 
         const rows = componentConfig.methods.expandOrdersByPosition.call(context, [{
             id: 'order-1',
@@ -144,6 +152,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             positionId: '10',
             packageId: 'PKG-1',
             trackingNumberPerPackage: 'TRK-1',
+            orderedQuantity: 5,
             shippedQuantity: 2,
             packageStatus: 'Teillieferung',
         }));
@@ -158,6 +167,9 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             filters: {
                 ...state.filters,
                 bestellnummer: ' 10001 ',
+                orderedQuantity: ' 5 ',
+                orderDateFrom: '2026-01-20T10:20:00+01:00',
+                orderDateTo: '2026-01-22',
                 shippingDateFrom: '2026-02-01T10:20:00+01:00',
                 shippingDateTo: new Date('2026-02-10T00:00:00.000Z'),
                 status: 'processing',
@@ -177,6 +189,9 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
 
         expect(list).toHaveBeenCalledWith(expect.objectContaining({
             bestellnummer: '10001',
+            orderedQuantity: '5',
+            orderDateFrom: '2026-01-20',
+            orderDateTo: '2026-01-22',
             shippingDateFrom: '2026-02-01',
             shippingDateTo: '2026-02-10',
             status: 'processing',
