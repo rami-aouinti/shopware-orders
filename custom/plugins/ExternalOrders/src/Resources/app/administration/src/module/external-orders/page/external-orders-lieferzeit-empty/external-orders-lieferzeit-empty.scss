@@ -56,6 +56,19 @@
         }
     }
 
+    &__task-assignment-hint {
+        margin: 2px 0 0;
+        font-size: 12px;
+        line-height: 1.35;
+        color: #6b7b8d;
+        text-align: right;
+
+        strong {
+            color: #52667a;
+            font-weight: 600;
+        }
+    }
+
     &__main {
         height: calc(100vh - 180px);
         overflow-y: auto;
@@ -563,6 +576,10 @@
 
         &__active-channel {
             align-items: flex-start;
+        }
+
+        &__task-assignment-hint {
+            text-align: left;
         }
 
         &__filters-row {
