@@ -8,7 +8,7 @@ namespace LieferzeitenAdmin\Service;
  * matrixRule beschreibt die fachliche Herkunft der Statusentscheidung:
  * - source_read_only: reiner Lesestatus aus Shopware/Gambio
  * - san6_shipping_gate: SAN6-Versandfreigabe steuert Status 7
- * - tracking_completion_gate: Tracking + Sonderfälle steuern Status 8
+ * - tracking_completion_gate: Tracking steuert Status 8, fallback auf SAN6 ohne Tracking
  *
  * @phpstan-type StatusRule array{
  *     code:int,
@@ -42,7 +42,7 @@ final class TicketStatusRuleMatrixPolicy
         3 => [
             'code' => 3,
             'label' => 'Warten auf Lieferanten',
-            'readSources' => ['shopware', 'gambio', 'san6'],
+            'readSources' => ['shopware', 'gambio'],
             'writeBackTargets' => [],
             'syncMode' => 'read_only',
             'matrixRule' => 'source_read_only',
@@ -50,7 +50,7 @@ final class TicketStatusRuleMatrixPolicy
         4 => [
             'code' => 4,
             'label' => 'Teilweise verfügbar',
-            'readSources' => ['shopware', 'gambio', 'san6'],
+            'readSources' => ['shopware', 'gambio'],
             'writeBackTargets' => [],
             'syncMode' => 'read_only',
             'matrixRule' => 'source_read_only',
@@ -58,7 +58,7 @@ final class TicketStatusRuleMatrixPolicy
         5 => [
             'code' => 5,
             'label' => 'Versandbereit',
-            'readSources' => ['shopware', 'gambio', 'san6'],
+            'readSources' => ['shopware', 'gambio'],
             'writeBackTargets' => [],
             'syncMode' => 'read_only',
             'matrixRule' => 'source_read_only',
@@ -66,7 +66,7 @@ final class TicketStatusRuleMatrixPolicy
         6 => [
             'code' => 6,
             'label' => 'Teilversendet',
-            'readSources' => ['shopware', 'gambio', 'san6', 'tracking'],
+            'readSources' => ['shopware', 'gambio'],
             'writeBackTargets' => [],
             'syncMode' => 'read_only',
             'matrixRule' => 'source_read_only',
@@ -74,15 +74,15 @@ final class TicketStatusRuleMatrixPolicy
         7 => [
             'code' => 7,
             'label' => 'Versendet',
-            'readSources' => ['shopware', 'gambio', 'san6', 'tracking'],
+            'readSources' => ['san6'],
             'writeBackTargets' => ['shopware', 'gambio'],
             'syncMode' => 'bidirectional',
             'matrixRule' => 'san6_shipping_gate',
         ],
         8 => [
             'code' => 8,
-            'label' => 'Abgeschlossen',
-            'readSources' => ['shopware', 'gambio', 'san6', 'tracking'],
+            'label' => 'Bestellung abgeschlossen',
+            'readSources' => ['tracking', 'san6'],
             'writeBackTargets' => ['shopware', 'gambio'],
             'syncMode' => 'bidirectional',
             'matrixRule' => 'tracking_completion_gate',
