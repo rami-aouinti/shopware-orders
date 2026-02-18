@@ -22,6 +22,7 @@ class QueuedNotificationEmailProcessor
         private readonly Connection $connection,
         private readonly LoggerInterface $logger,
         private readonly AuditLogService $auditLogService,
+        private readonly NotificationToggleResolver $toggleResolver,
     ) {
     }
 
@@ -49,13 +50,34 @@ class QueuedNotificationEmailProcessor
         }
 
         $payload = $event->getPayload();
+        $salesChannelId = isset($payload['salesChannelId']) && is_string($payload['salesChannelId']) && $payload['salesChannelId'] !== ''
+            ? $payload['salesChannelId']
+            : null;
+
+        if (!$this->toggleResolver->isEnabled($event->getTriggerKey(), $event->getChannel(), $context, $salesChannelId)) {
+            $this->updateStatus($event->getId(), 'skipped');
+            $this->logger->info('Notification event skipped by toggle during processing.', [
+                'eventKey' => $event->getEventKey(),
+                'triggerKey' => $event->getTriggerKey(),
+                'channel' => $event->getChannel(),
+                'salesChannelId' => $salesChannelId,
+            ]);
+            $this->auditLogService->log('skipped_by_toggle', 'notification_event', $event->getEventKey(), $context, [
+                'triggerKey' => $event->getTriggerKey(),
+                'channel' => $event->getChannel(),
+                'salesChannelId' => $salesChannelId,
+            ], 'mails');
+
+            return;
+        }
+
         $variables = [
             'eventKey' => $event->getEventKey(),
             'triggerKey' => $event->getTriggerKey(),
             'channel' => $event->getChannel(),
             'externalOrderId' => $event->getExternalOrderId(),
             'sourceSystem' => $event->getSourceSystem(),
-            'salesChannelId' => $payload['salesChannelId'] ?? null,
+            'salesChannelId' => $salesChannelId,
             'languageId' => $payload['languageId'] ?? null,
             'customerEmail' => $payload['customerEmail'] ?? null,
             'occurredAt' => $event->getDispatchedAt()?->format(DATE_ATOM),

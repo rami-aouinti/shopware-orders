@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use LieferzeitenAdmin\Entity\NotificationEventEntity;
 use LieferzeitenAdmin\Service\Audit\AuditLogService;
 use LieferzeitenAdmin\Service\Notification\NotificationTemplateResolver;
+use LieferzeitenAdmin\Service\Notification\NotificationToggleResolver;
 use LieferzeitenAdmin\Service\Notification\QueuedNotificationEmailProcessor;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -90,6 +91,9 @@ class QueuedNotificationEmailProcessorTest extends TestCase
             )
             ->willReturn('resolved-user@example.com');
 
+        $toggleResolver = $this->createMock(NotificationToggleResolver::class);
+        $toggleResolver->method('isEnabled')->willReturn(true);
+
         $processor = new QueuedNotificationEmailProcessor(
             $notificationEventRepository,
             $templateResolver,
@@ -97,6 +101,7 @@ class QueuedNotificationEmailProcessorTest extends TestCase
             $connection,
             $this->createMock(LoggerInterface::class),
             $this->createMock(AuditLogService::class),
+            $toggleResolver,
         );
 
         $processor->run(Context::createDefaultContext(), 10);
@@ -169,6 +174,9 @@ class QueuedNotificationEmailProcessorTest extends TestCase
                 return 0;
             });
 
+        $toggleResolver = $this->createMock(NotificationToggleResolver::class);
+        $toggleResolver->method('isEnabled')->willReturn(true);
+
         $processor = new QueuedNotificationEmailProcessor(
             $notificationEventRepository,
             $templateResolver,
@@ -176,8 +184,73 @@ class QueuedNotificationEmailProcessorTest extends TestCase
             $connection,
             $this->createMock(LoggerInterface::class),
             $this->createMock(AuditLogService::class),
+            $toggleResolver,
         );
 
         $processor->run(Context::createDefaultContext(), 10);
     }
+
+    public function testRunSkipsSendingWhenToggleDisabledDuringProcessing(): void
+    {
+        $event = new NotificationEventEntity();
+        $event->setId(Uuid::randomHex());
+        $event->setEventKey('payment-reminder:EXT-300:email');
+        $event->setTriggerKey('paiement.rappel.vorkasse');
+        $event->setChannel('email');
+        $event->setStatus('queued');
+        $event->setPayload([
+            'customerEmail' => 'buyer@example.com',
+            'salesChannelId' => 'sales-channel-2',
+        ]);
+
+        $notificationEventRepository = $this->createMock(EntityRepository::class);
+        $notificationEventRepository->method('search')->willReturn(new EntitySearchResult(
+            'lieferzeiten_notification_event',
+            1,
+            new EntityCollection([$event]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        ));
+
+        $templateRepository = $this->createMock(EntityRepository::class);
+        $templateResolver = new NotificationTemplateResolver($templateRepository);
+
+        $mailService = $this->createMock(AbstractMailService::class);
+        $mailService->expects($this->never())->method('send');
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->exactly(2))
+            ->method('executeStatement')
+            ->willReturnCallback(static function (string $sql): int {
+                if (str_contains($sql, 'WHERE `id` = :id AND `status` = :queued')) {
+                    return 1;
+                }
+
+                if (str_contains($sql, 'SET `status` = :status, `updated_at` = :updatedAt')) {
+                    return 1;
+                }
+
+                return 0;
+            });
+
+        $toggleResolver = $this->createMock(NotificationToggleResolver::class);
+        $toggleResolver->expects($this->once())
+            ->method('isEnabled')
+            ->with('paiement.rappel.vorkasse', 'email', $this->isInstanceOf(Context::class), 'sales-channel-2')
+            ->willReturn(false);
+
+        $processor = new QueuedNotificationEmailProcessor(
+            $notificationEventRepository,
+            $templateResolver,
+            $mailService,
+            $connection,
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(AuditLogService::class),
+            $toggleResolver,
+        );
+
+        $processor->run(Context::createDefaultContext(), 10);
+    }
+
 }

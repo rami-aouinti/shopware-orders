@@ -146,4 +146,40 @@ class NotificationEventServiceTest extends TestCase
             true,
         ));
     }
+
+    public function testDispatchSkipsQueueWhenToggleDisabled(): void
+    {
+        $repository = $this->createMock(EntityRepository::class);
+        $toggleResolver = $this->createMock(NotificationToggleResolver::class);
+        $reliability = $this->createMock(IntegrationReliabilityService::class);
+
+        $toggleResolver->expects($this->once())
+            ->method('isEnabled')
+            ->with(NotificationTriggerCatalog::DELIVERY_DATE_ASSIGNED, 'email', $this->isInstanceOf(Context::class), 'sales-channel-1')
+            ->willReturn(false);
+
+        $repository->expects($this->never())->method('search');
+        $repository->expects($this->never())->method('create');
+        $reliability->expects($this->never())->method('executeWithRetry');
+
+        $service = new NotificationEventService(
+            $repository,
+            $toggleResolver,
+            $this->createMock(LoggerInterface::class),
+            $reliability,
+            $this->createMock(AuditLogService::class),
+        );
+
+        static::assertFalse($service->dispatch(
+            'event-key-disabled',
+            NotificationTriggerCatalog::DELIVERY_DATE_ASSIGNED,
+            'email',
+            ['externalOrderId' => 'EXT-102'],
+            Context::createDefaultContext(),
+            'EXT-102',
+            'shopware',
+            'sales-channel-1',
+        ));
+    }
+
 }
