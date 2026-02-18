@@ -14,6 +14,9 @@ class DemoDataSeederService
 
     private const SEED_MARKER_PREFIX = 'demo.seeder.run:';
 
+    /** @var array<string, array<string, bool>> */
+    private array $tableColumnCache = [];
+
     public function __construct(
         private readonly Connection $connection,
         private readonly LieferzeitenExternalOrderLinkService $externalOrderLinkService,
@@ -256,7 +259,7 @@ class DemoDataSeederService
                 'delivery_date' => $dataset['deliveryDate']->format('Y-m-d H:i:s'),
                 'business_date_from' => $dataset['businessFrom']->format('Y-m-d H:i:s'),
                 'business_date_to' => $dataset['businessTo']->format('Y-m-d H:i:s'),
-                'payment_date' => $dataset['paymentDate']->format('Y-m-d H:i:s'),
+                'payment_date' => $dataset['paymentDate']?->format('Y-m-d H:i:s'),
                 'calculated_delivery_date' => $dataset['calculatedDeliveryDate']->format('Y-m-d H:i:s'),
                 'is_test_order' => $dataset['isTestOrder'] ? 1 : 0,
                 'last_changed_by' => $seedMarker,
@@ -267,17 +270,26 @@ class DemoDataSeederService
 
             foreach ($dataset['positions'] as $index => $positionData) {
                 $positionId = $this->uuidBytes();
-                $this->connection->insert('lieferzeiten_position', [
+                $positionPayload = [
                     'id' => $positionId,
                     'paket_id' => $paketId,
-                    'position_number' => sprintf('%s-%d', $dataset['externalOrderId'], $index + 1),
-                    'article_number' => sprintf('SKU-%d%d', $dataset['status'], $index + 1),
+                    'position_number' => $positionData['positionNumber'] ?? sprintf('%s-%d', $dataset['externalOrderId'], $index + 1),
+                    'article_number' => $positionData['articleNumber'] ?? sprintf('SKU-%d%d', $dataset['status'], $index + 1),
                     'status' => $positionData['status'],
                     'ordered_at' => $dataset['orderDate']->format('Y-m-d H:i:s'),
                     'last_changed_by' => 'demo.seeder',
                     'last_changed_at' => $now->format('Y-m-d H:i:s'),
                     'created_at' => $now->format('Y-m-d H:i:s'),
-                ]);
+                ];
+
+                if ($this->tableHasColumn('lieferzeiten_position', 'ordered_quantity') && isset($positionData['orderedQuantity'])) {
+                    $positionPayload['ordered_quantity'] = $positionData['orderedQuantity'];
+                }
+                if ($this->tableHasColumn('lieferzeiten_position', 'shipped_quantity') && isset($positionData['shippedQuantity'])) {
+                    $positionPayload['shipped_quantity'] = $positionData['shippedQuantity'];
+                }
+
+                $this->connection->insert('lieferzeiten_position', $positionPayload);
                 ++$counts['position'];
 
                 $this->connection->insert('lieferzeiten_liefertermin_lieferant_history', [
@@ -302,15 +314,34 @@ class DemoDataSeederService
                 ]);
                 ++$counts['neuerLieferterminHistory'];
 
-                if ($positionData['trackingNumber'] !== null) {
-                    $this->connection->insert('lieferzeiten_sendenummer_history', [
+                $trackingHistory = $positionData['trackingHistory'] ?? [];
+                if ($trackingHistory === [] && ($positionData['trackingNumber'] ?? null) !== null) {
+                    $trackingHistory[] = [
+                        'sendenummer' => $positionData['trackingNumber'],
+                        'carrier' => $dataset['shippingAssignmentType'] === 'eigenversand' ? null : $dataset['shippingAssignmentType'],
+                        'isActive' => true,
+                    ];
+                }
+
+                foreach ($trackingHistory as $historyIndex => $trackingData) {
+                    $trackingPayload = [
                         'id' => $this->uuidBytes(),
                         'position_id' => $positionId,
-                        'sendenummer' => $positionData['trackingNumber'],
+                        'sendenummer' => $trackingData['sendenummer'],
                         'last_changed_by' => 'demo.seeder',
-                        'last_changed_at' => $now->format('Y-m-d H:i:s'),
-                        'created_at' => $now->format('Y-m-d H:i:s'),
-                    ]);
+                        'last_changed_at' => $now->modify(sprintf('+%d seconds', $historyIndex + 1))->format('Y-m-d H:i:s'),
+                        'created_at' => $now->modify(sprintf('+%d seconds', $historyIndex + 1))->format('Y-m-d H:i:s'),
+                    ];
+
+                    if ($this->tableHasColumn('lieferzeiten_sendenummer_history', 'carrier')) {
+                        $trackingPayload['carrier'] = $trackingData['carrier'] ?? null;
+                    }
+
+                    if ($this->tableHasColumn('lieferzeiten_sendenummer_history', 'is_active')) {
+                        $trackingPayload['is_active'] = ($trackingData['isActive'] ?? true) ? 1 : 0;
+                    }
+
+                    $this->connection->insert('lieferzeiten_sendenummer_history', $trackingPayload);
                     ++$counts['sendenummerHistory'];
                 }
             }
@@ -325,6 +356,7 @@ class DemoDataSeederService
                     'externalOrderId' => $dataset['externalOrderId'],
                     'sourceSystem' => $dataset['statusSource'],
                     'taskType' => $dataset['taskType'],
+                    'scenarioKey' => $dataset['scenarioKey'],
                 ], JSON_THROW_ON_ERROR),
                 'closed_at' => $dataset['taskStatus'] === 'closed' ? $now->format('Y-m-d H:i:s') : null,
                 'created_at' => $now->format('Y-m-d H:i:s'),
@@ -337,8 +369,8 @@ class DemoDataSeederService
                 'trigger_key' => 'demo_shipping_delay',
                 'channel' => 'email',
                 'external_order_id' => $dataset['externalOrderId'],
-                'source_system' => $dataset['statusSource'],
-                'payload' => json_encode(['message' => 'Demo event', 'externalOrderId' => $dataset['externalOrderId']], JSON_THROW_ON_ERROR),
+                'source_system' => $dataset['domain'],
+                'payload' => json_encode(['message' => 'Demo event', 'externalOrderId' => $dataset['externalOrderId'], 'scenarioKey' => $dataset['scenarioKey']], JSON_THROW_ON_ERROR),
                 'status' => 'queued',
                 'created_at' => $now->format('Y-m-d H:i:s'),
             ]);
@@ -352,7 +384,7 @@ class DemoDataSeederService
                 'source_system' => $dataset['statusSource'],
                 'user_id' => 'demo.seeder',
                 'correlation_id' => 'demo-seeder',
-                'payload' => json_encode(['externalOrderId' => $dataset['externalOrderId']], JSON_THROW_ON_ERROR),
+                'payload' => json_encode(['externalOrderId' => $dataset['externalOrderId'], 'scenarioKey' => $dataset['scenarioKey']], JSON_THROW_ON_ERROR),
                 'created_at' => $now->format('Y-m-d H:i:s'),
             ]);
             ++$counts['auditLogs'];
@@ -427,35 +459,275 @@ class DemoDataSeederService
      */
     private function buildOrderDataset(\DateTimeImmutable $base, array $externalOrderIds): array
     {
-        $orderTemplates = [
-            [self::DOMAINS[0], 'shopware', 1, 'dhl', false, false, 'open', '-2 days', false],
-            [self::DOMAINS[1], 'gambio', 2, 'gls', false, true, 'open', '-3 days', false],
-            [self::DOMAINS[2], 'san6', 3, 'eigenversand', false, false, 'open', '-4 days', false],
-            [self::DOMAINS[0], 'san6', 4, 'dhl', true, false, 'closed', '-5 days', false],
-            [self::DOMAINS[1], 'san6', 5, 'gls', false, true, 'open', '-6 days', false],
-            [self::DOMAINS[2], 'tracking', 6, 'eigenversand', true, false, 'closed', '-7 days', false],
-            [self::DOMAINS[0], 'san6', 7, 'dhl', false, true, 'open', '-8 days', false],
-            [self::DOMAINS[1], 'tracking', 8, 'gls', true, true, 'closed', '-9 days', false],
+        $scenarioTemplates = [
+            [
+                'scenarioKey' => 'multi_position_gesamtversand_reexpedition',
+                'domain' => self::DOMAINS[0],
+                'status' => 1,
+                'shippingType' => 'dhl',
+                'orderDateModifier' => '-2 days',
+                'taskStatus' => 'open',
+                'taskType' => 'status_check',
+                'isTestOrder' => false,
+                'paymentDateMode' => 'set',
+                'businessDays' => 6,
+                'positions' => [
+                    [
+                        'status' => 'open',
+                        'orderedQuantity' => 10,
+                        'shippedQuantity' => 7,
+                        'splitReference' => 'LINE-A',
+                        'trackingHistory' => [
+                            ['sendenummer' => 'DHL-OLD-{suffix}-A', 'carrier' => 'dhl', 'isActive' => false],
+                            ['sendenummer' => 'DHL-NEW-{suffix}-A', 'carrier' => 'dhl', 'isActive' => true],
+                        ],
+                    ],
+                    [
+                        'status' => 'open',
+                        'orderedQuantity' => 2,
+                        'shippedQuantity' => 2,
+                        'splitReference' => 'LINE-B',
+                        'trackingHistory' => [
+                            ['sendenummer' => 'DHL-{suffix}-B', 'carrier' => 'dhl', 'isActive' => true],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'scenarioKey' => 'split_position_partial_7_10',
+                'domain' => self::DOMAINS[1],
+                'status' => 2,
+                'shippingType' => 'gls',
+                'orderDateModifier' => '-3 days',
+                'taskStatus' => 'open',
+                'taskType' => 'partial_shipment_followup',
+                'isTestOrder' => false,
+                'paymentDateMode' => 'set',
+                'partialShipmentQuantity' => '7/10',
+                'businessDays' => 7,
+                'positions' => [
+                    [
+                        'status' => 'open',
+                        'orderedQuantity' => 10,
+                        'shippedQuantity' => 7,
+                        'splitReference' => 'LINE-C',
+                        'trackingHistory' => [
+                            ['sendenummer' => 'GLS-{suffix}-PART1', 'carrier' => 'gls', 'isActive' => true],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'scenarioKey' => 'split_position_partial_3_10_terminal_pending',
+                'domain' => self::DOMAINS[2],
+                'status' => 3,
+                'shippingType' => 'gls',
+                'orderDateModifier' => '-4 days',
+                'taskStatus' => 'open',
+                'taskType' => 'partial_shipment_complete',
+                'isTestOrder' => false,
+                'paymentDateMode' => 'set',
+                'partialShipmentQuantity' => '3/10',
+                'terminalDelivery' => false,
+                'businessDays' => 8,
+                'positions' => [
+                    [
+                        'status' => 'open',
+                        'orderedQuantity' => 10,
+                        'shippedQuantity' => 3,
+                        'splitReference' => 'LINE-C',
+                        'trackingHistory' => [
+                            ['sendenummer' => 'GLS-{suffix}-PART2-OLD', 'carrier' => 'gls', 'isActive' => false],
+                            ['sendenummer' => 'GLS-{suffix}-PART2-NEW', 'carrier' => 'gls', 'isActive' => true],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'scenarioKey' => 'teillieferung_multicolis_terminal_mix',
+                'domain' => self::DOMAINS[0],
+                'status' => 4,
+                'shippingType' => 'dhl',
+                'orderDateModifier' => '-5 days',
+                'taskStatus' => 'open',
+                'taskType' => 'delivery_terminal_check',
+                'isTestOrder' => false,
+                'paymentDateMode' => 'set',
+                'partialShipmentQuantity' => '1/2',
+                'terminalDelivery' => false,
+                'businessDays' => 9,
+                'positions' => [
+                    [
+                        'status' => 'open',
+                        'orderedQuantity' => 1,
+                        'shippedQuantity' => 1,
+                        'splitReference' => 'COLLI-1',
+                        'trackingHistory' => [
+                            ['sendenummer' => 'DHL-{suffix}-C1', 'carrier' => 'dhl', 'isActive' => true],
+                        ],
+                    ],
+                    [
+                        'status' => 'open',
+                        'orderedQuantity' => 1,
+                        'shippedQuantity' => 0,
+                        'splitReference' => 'COLLI-2',
+                        'trackingHistory' => [
+                            ['sendenummer' => 'DHL-{suffix}-C2', 'carrier' => 'dhl', 'isActive' => true],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'scenarioKey' => 'gesamtversand_all_terminal_closed',
+                'domain' => self::DOMAINS[1],
+                'status' => 5,
+                'shippingType' => 'dhl',
+                'orderDateModifier' => '-6 days',
+                'taskStatus' => 'closed',
+                'taskType' => 'delivery_terminal_check',
+                'isTestOrder' => false,
+                'paymentDateMode' => 'set',
+                'partialShipmentQuantity' => '2/2',
+                'terminalDelivery' => true,
+                'businessDays' => 9,
+                'positions' => [
+                    [
+                        'status' => 'closed',
+                        'orderedQuantity' => 1,
+                        'shippedQuantity' => 1,
+                        'splitReference' => 'COLLI-1',
+                        'trackingHistory' => [
+                            ['sendenummer' => 'DHL-{suffix}-DONE1', 'carrier' => 'dhl', 'isActive' => true],
+                        ],
+                    ],
+                    [
+                        'status' => 'closed',
+                        'orderedQuantity' => 1,
+                        'shippedQuantity' => 1,
+                        'splitReference' => 'COLLI-2',
+                        'trackingHistory' => [
+                            ['sendenummer' => 'DHL-{suffix}-DONE2', 'carrier' => 'dhl', 'isActive' => true],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'scenarioKey' => 'eigenversand_without_external_tracking',
+                'domain' => self::DOMAINS[2],
+                'status' => 6,
+                'shippingType' => 'eigenversand',
+                'orderDateModifier' => '-7 days',
+                'taskStatus' => 'open',
+                'taskType' => 'eigenversand_manual_followup',
+                'isTestOrder' => false,
+                'paymentDateMode' => 'set',
+                'partialShipmentQuantity' => '1/1',
+                'terminalDelivery' => false,
+                'businessDays' => 10,
+                'positions' => [
+                    [
+                        'status' => 'open',
+                        'orderedQuantity' => 1,
+                        'shippedQuantity' => 1,
+                        'splitReference' => 'EIGEN-1',
+                        'trackingHistory' => [],
+                    ],
+                ],
+            ],
+            [
+                'scenarioKey' => 'vorkasse_without_payment_date',
+                'domain' => self::DOMAINS[0],
+                'status' => 7,
+                'shippingType' => 'gls',
+                'orderDateModifier' => '-8 days',
+                'taskStatus' => 'open',
+                'taskType' => 'payment_date_missing',
+                'isTestOrder' => false,
+                'paymentDateMode' => 'missing',
+                'partialShipmentQuantity' => '1/1',
+                'businessDays' => 10,
+                'positions' => [
+                    [
+                        'status' => 'open',
+                        'orderedQuantity' => 1,
+                        'shippedQuantity' => 1,
+                        'splitReference' => 'PAY-0',
+                        'trackingHistory' => [
+                            ['sendenummer' => 'GLS-{suffix}-PAY0', 'carrier' => 'gls', 'isActive' => true],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'scenarioKey' => 'vorkasse_with_payment_date',
+                'domain' => self::DOMAINS[1],
+                'status' => 8,
+                'shippingType' => 'gls',
+                'orderDateModifier' => '-9 days',
+                'taskStatus' => 'closed',
+                'taskType' => 'payment_date_available',
+                'isTestOrder' => false,
+                'paymentDateMode' => 'set',
+                'partialShipmentQuantity' => '1/1',
+                'terminalDelivery' => true,
+                'businessDays' => 10,
+                'positions' => [
+                    [
+                        'status' => 'closed',
+                        'orderedQuantity' => 1,
+                        'shippedQuantity' => 1,
+                        'splitReference' => 'PAY-1',
+                        'trackingHistory' => [
+                            ['sendenummer' => 'GLS-{suffix}-PAY1', 'carrier' => 'gls', 'isActive' => true],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'scenarioKey' => 'test_order_multi_position',
+                'domain' => self::DOMAINS[2],
+                'status' => 8,
+                'shippingType' => 'dhl',
+                'orderDateModifier' => '-1 day',
+                'taskStatus' => 'open',
+                'taskType' => 'status_check',
+                'isTestOrder' => true,
+                'paymentDateMode' => 'set',
+                'partialShipmentQuantity' => '2/2',
+                'terminalDelivery' => false,
+                'businessDays' => 5,
+                'positions' => [
+                    [
+                        'status' => 'open',
+                        'orderedQuantity' => 3,
+                        'shippedQuantity' => 1,
+                        'splitReference' => 'TEST-1',
+                        'trackingHistory' => [
+                            ['sendenummer' => 'DHL-{suffix}-T1', 'carrier' => 'dhl', 'isActive' => true],
+                        ],
+                    ],
+                    [
+                        'status' => 'open',
+                        'orderedQuantity' => 2,
+                        'shippedQuantity' => 1,
+                        'splitReference' => 'TEST-2',
+                        'trackingHistory' => [
+                            ['sendenummer' => 'DHL-{suffix}-T2', 'carrier' => 'dhl', 'isActive' => true],
+                        ],
+                    ],
+                ],
+            ],
         ];
 
         $datasets = [];
-        $max = min(count($orderTemplates), count($externalOrderIds));
+        $max = min(count($scenarioTemplates), count($externalOrderIds));
 
         for ($index = 0; $index < $max; $index += 1) {
-            [$domain, $statusSource, $status, $shippingType, $closed, $overdue, $taskStatus, $orderDateModifier, $isTestOrder] = $orderTemplates[$index];
-
             $datasets[] = $this->buildOrder(
                 $externalOrderIds[$index],
                 sprintf('%04d', $index + 1),
-                $domain,
-                $status,
-                $statusSource,
-                $shippingType,
-                $closed,
-                $overdue,
-                $taskStatus,
-                $base->modify($orderDateModifier),
-                $isTestOrder,
+                $base->modify($scenarioTemplates[$index]['orderDateModifier']),
+                $scenarioTemplates[$index],
             );
         }
 
@@ -463,56 +735,87 @@ class DemoDataSeederService
     }
 
     /**
+     * @param array<string, mixed> $scenario
      * @return array<string, mixed>
      */
     private function buildOrder(
         string $externalOrderId,
         string $rowSuffix,
-        string $domain,
-        int $status,
-        string $statusSource,
-        string $shippingType,
-        bool $closed,
-        bool $overdue,
-        string $taskStatus,
         \DateTimeImmutable $orderDate,
-        bool $isTestOrder = false,
+        array $scenario,
     ): array {
-        $shippingDate = $overdue ? $orderDate->modify('-1 day') : $orderDate->modify('+2 days');
-        $deliveryDate = $overdue ? $orderDate->modify('-1 day') : $orderDate->modify('+4 days');
-        $supplierFrom = $orderDate->modify('+1 day');
-        $supplierTo = $orderDate->modify('+5 days');
+        $isTerminalDelivery = (bool) ($scenario['terminalDelivery'] ?? false);
+        $shippingDate = $orderDate->modify('+2 days');
+        $deliveryDate = $isTerminalDelivery ? $orderDate->modify('+5 days') : $orderDate->modify('+6 days');
+
+        $positions = [];
+        foreach ($scenario['positions'] as $index => $positionTemplate) {
+            $supplierFrom = $orderDate->modify(sprintf('+%d days', $index + 1));
+            $supplierTo = $supplierFrom->modify('+2 days');
+            $splitReference = $positionTemplate['splitReference'] ?? ('SPLIT-' . ($index + 1));
+
+            $trackingHistory = [];
+            foreach (($positionTemplate['trackingHistory'] ?? []) as $trackingTemplate) {
+                $trackingNumber = str_replace('{suffix}', $rowSuffix, (string) $trackingTemplate['sendenummer']);
+                $trackingHistory[] = [
+                    'sendenummer' => $trackingNumber,
+                    'carrier' => $trackingTemplate['carrier'] ?? null,
+                    'isActive' => (bool) ($trackingTemplate['isActive'] ?? true),
+                ];
+            }
+
+            $positions[] = [
+                'status' => $positionTemplate['status'],
+                'positionNumber' => sprintf('%s-%s-%02d', $externalOrderId, $splitReference, $index + 1),
+                'articleNumber' => sprintf('SKU-%s-%s-%02d', $scenario['status'], $rowSuffix, $index + 1),
+                'orderedQuantity' => (int) ($positionTemplate['orderedQuantity'] ?? 1),
+                'shippedQuantity' => (int) ($positionTemplate['shippedQuantity'] ?? 0),
+                'supplierFrom' => $supplierFrom,
+                'supplierTo' => $supplierTo,
+                'newFrom' => $supplierFrom->modify('+1 day'),
+                'newTo' => $supplierTo->modify('+1 day'),
+                'trackingHistory' => $trackingHistory,
+            ];
+        }
+
+        $paymentDateMode = (string) ($scenario['paymentDateMode'] ?? 'set');
+        $paymentDate = $paymentDateMode === 'missing' ? null : $orderDate->modify('-1 day');
 
         return [
             'externalOrderId' => $externalOrderId,
+            'scenarioKey' => $scenario['scenarioKey'],
             'paketNumber' => 'SAN6-' . $rowSuffix,
-            'domain' => $domain,
-            'status' => (string) $status,
-            'statusSource' => $statusSource,
-            'shippingAssignmentType' => $shippingType,
-            'partialShipmentQuantity' => $shippingType === 'eigenversand' ? '1/1' : '2/3',
+            'domain' => $scenario['domain'],
+            'status' => (string) $scenario['status'],
+            'shippingAssignmentType' => $scenario['shippingType'],
+            'partialShipmentQuantity' => $scenario['partialShipmentQuantity'] ?? sprintf('%d/%d', count($positions), count($positions)),
             'orderDate' => $orderDate,
             'shippingDate' => $shippingDate,
             'deliveryDate' => $deliveryDate,
             'businessFrom' => $orderDate,
-            'businessTo' => $orderDate->modify('+6 days'),
-            'paymentDate' => $orderDate->modify('-1 day'),
-            'calculatedDeliveryDate' => $orderDate->modify('+5 days'),
-            'isTestOrder' => $isTestOrder,
-            'taskStatus' => $taskStatus,
-            'taskAssignee' => $closed ? 'qa-team' : 'ops-team',
-            'taskType' => $overdue ? 'overdue_followup' : 'status_check',
-            'positions' => [
-                [
-                    'status' => $closed ? 'closed' : 'open',
-                    'supplierFrom' => $supplierFrom,
-                    'supplierTo' => $supplierTo,
-                    'newFrom' => $supplierFrom->modify('+1 day'),
-                    'newTo' => $supplierFrom->modify('+2 days'),
-                    'trackingNumber' => $shippingType === 'eigenversand' ? null : strtoupper($statusSource . '-' . $shippingType) . '-' . $rowSuffix,
-                ],
-            ],
+            'businessTo' => $orderDate->modify(sprintf('+%d days', (int) ($scenario['businessDays'] ?? 6))),
+            'paymentDate' => $paymentDate,
+            'calculatedDeliveryDate' => $deliveryDate,
+            'isTestOrder' => (bool) ($scenario['isTestOrder'] ?? false),
+            'taskStatus' => $scenario['taskStatus'],
+            'taskAssignee' => $scenario['taskStatus'] === 'closed' ? 'qa-team' : 'ops-team',
+            'taskType' => $scenario['taskType'],
+            'positions' => $positions,
         ];
+    }
+
+    private function tableHasColumn(string $table, string $column): bool
+    {
+        if (!isset($this->tableColumnCache[$table])) {
+            $columns = [];
+            foreach ($this->connection->createSchemaManager()->listTableColumns($table) as $name => $_definition) {
+                $columns[strtolower((string) $name)] = true;
+            }
+
+            $this->tableColumnCache[$table] = $columns;
+        }
+
+        return $this->tableColumnCache[$table][strtolower($column)] ?? false;
     }
 
     private function uuidBytes(): string
