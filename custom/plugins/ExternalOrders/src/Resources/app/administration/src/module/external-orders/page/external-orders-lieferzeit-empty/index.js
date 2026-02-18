@@ -286,6 +286,7 @@ const FILTERABLE_COLUMNS = tableColumnsMeta.filter((column) => column.filterable
 const TOP_BAR_DATE_FILTER_KEYS = Object.freeze([
     'orderDate',
     'shippingDate',
+    'latestShippingDate',
     'latestDeliveryDate',
     'deliveryDate',
     'lieferterminLieferant',

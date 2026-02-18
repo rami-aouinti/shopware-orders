@@ -77,6 +77,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(dateRangeKeys).toEqual(expect.arrayContaining([
             'orderDate',
             'shippingDate',
+            'latestShippingDate',
             'latestDeliveryDate',
             'deliveryDate',
             'lieferterminLieferant',
@@ -84,7 +85,6 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         ]));
         expect(dateRangeKeys).not.toEqual(expect.arrayContaining([
             'paymentReceivedDate',
-            'latestShippingDate',
         ]));
 
         expect(primaryKeys).not.toContain('san6Auftragsposition');
@@ -286,6 +286,8 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
                 orderDateTo: '2026-01-22',
                 shippingDateFrom: '2026-02-01T10:20:00+01:00',
                 shippingDateTo: new Date('2026-02-10T00:00:00.000Z'),
+                latestShippingDateFrom: '2026-02-03T10:20:00+01:00',
+                latestShippingDateTo: '2026-02-12',
                 status: 'processing',
             },
             externalOrderService: { list },
@@ -310,6 +312,8 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             orderDateTo: '2026-01-22',
             shippingDateFrom: '2026-02-01',
             shippingDateTo: '2026-02-10',
+            latestShippingDateFrom: '2026-02-03',
+            latestShippingDateTo: '2026-02-12',
             status: 'processing',
             selectedRowMode: 'aggregated',
         }));
