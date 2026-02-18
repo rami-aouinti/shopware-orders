@@ -230,6 +230,23 @@
                                         Zusätzliche Liefertermin-Anfrage
                                     </button>
                                 </template>
+                                <template v-else-if="column.key === 'sendenummer' || column.key === 'trackingNumberPerPackage'">
+                                    <template v-if="resolveTrackingEntries(order, column.key).length">
+                                        <button
+                                            v-for="(entry, entryIndex) in resolveTrackingEntries(order, column.key)"
+                                            :key="`${getRowKey(order)}-${column.key}-${entry.number}-${entryIndex}`"
+                                            class="external-orders-lieferzeit-empty__tracking-link"
+                                            type="button"
+                                            @click="openTrackingModal(entry, order)"
+                                        >
+                                            {{ entry.number }}
+                                            <small v-if="!entry.isCurrent">(historisch)</small>
+                                        </button>
+                                    </template>
+                                    <template v-else>
+                                        {{ displayOrDash(getColumnValue(order, column.key)) }}
+                                    </template>
+                                </template>
                                 <template v-else>
                                     {{ isDateColumn(column.key) ? formatDate(getColumnValue(order, column.key)) : displayOrDash(getColumnValue(order, column.key)) }}
                                 </template>
@@ -276,6 +293,14 @@
             title="Keine Lieferzeiten gefunden"
             subline="Für die aktuellen Filter gibt es keine Ergebnisse."
         />
+
+        <external-orders-tracking-modal
+            :visible="showTrackingModal"
+            :tracking-entry="selectedTrackingEntry"
+            :tracking-history="selectedTrackingHistory"
+            @close="closeTrackingModal"
+        />
+
         </sw-card>
         </template>
     </main>

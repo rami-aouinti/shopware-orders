@@ -505,6 +505,23 @@
         background: #fafcfe;
     }
 
+
+    &__tracking-link {
+        display: block;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        color: #1d72aa;
+        background: transparent;
+        text-decoration: underline;
+        cursor: pointer;
+        text-align: left;
+
+        small {
+            margin-left: 4px;
+        }
+    }
+
     @media (max-width: 1024px) {
         padding: 16px;
 

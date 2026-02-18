@@ -384,6 +384,9 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             limitOptions: [10, 25, 50, 100],
             selectedOrder: null,
             showDetailModal: false,
+            showTrackingModal: false,
+            selectedTrackingEntry: null,
+            selectedTrackingHistory: [],
             pendingSupplierRequestKeys: {},
             supplierTaskPollingTimer: null,
             supplierTaskLastCompletedAt: null,
@@ -871,6 +874,13 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 packageStatus: order?.packageStatus ?? '',
                 shippedQuantity: order?.shippedQuantity ?? '',
                 trackingNumberPerPackage: order?.trackingNumberPerPackage ?? '',
+                trackingNumbers,
+                trackingHistory: Array.isArray(order?.trackingHistory) ? order.trackingHistory : [],
+                shippingCarrier: order?.shippingCarrier
+                    ?? order?.carrier
+                    ?? order?.shipping?.carrier
+                    ?? '',
+                isInternalShipment: order?.isInternalShipment === true,
                 orderedQuantity: order?.orderedQuantity ?? order?.quantity ?? '',
                 positionId: order?.positionId ?? order?.orderLineItemId ?? order?.lineItemId ?? '',
                 positionNumber: order?.positionNumber ?? order?.lineItemNumber ?? '',
@@ -1113,6 +1123,68 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         openDetail(order) {
             this.selectedOrder = order;
             this.showDetailModal = true;
+        },
+
+        resolveTrackingEntries(order, columnKey = 'sendenummer') {
+            const normalizedHistory = Array.isArray(order?.trackingHistory)
+                ? order.trackingHistory.filter((entry) => String(entry?.number || '').trim() !== '')
+                : [];
+
+            if (normalizedHistory.length > 0) {
+                return normalizedHistory.map((entry, index) => ({
+                    number: String(entry?.number || '').trim(),
+                    isCurrent: entry?.isCurrent !== false && index === 0 ? true : Boolean(entry?.isCurrent),
+                    carrier: String(entry?.carrier || order?.shippingCarrier || '').trim(),
+                    isInternal: entry?.isInternal === true || order?.isInternalShipment === true,
+                    lastChangedAt: entry?.lastChangedAt || entry?.createdAt || null,
+                    lastChangedBy: entry?.lastChangedBy || '',
+                }));
+            }
+
+            const rawValue = columnKey === 'trackingNumberPerPackage'
+                ? order?.trackingNumberPerPackage
+                : (order?.sendenummer || order?.trackingNumber || '');
+
+            const parsedValues = String(rawValue || '')
+                .split(',')
+                .map((value) => value.trim())
+                .filter((value) => value !== '');
+
+            if (parsedValues.length > 0) {
+                return parsedValues.map((number, index) => ({
+                    number,
+                    isCurrent: index === 0,
+                    carrier: String(order?.shippingCarrier || '').trim(),
+                    isInternal: order?.isInternalShipment === true,
+                }));
+            }
+
+            const trackingNumbers = Array.isArray(order?.trackingNumbers)
+                ? order.trackingNumbers.map((value) => String(value || '').trim()).filter((value) => value !== '')
+                : [];
+
+            return trackingNumbers.map((number, index) => ({
+                number,
+                isCurrent: index === 0,
+                carrier: String(order?.shippingCarrier || '').trim(),
+                isInternal: order?.isInternalShipment === true,
+            }));
+        },
+
+        openTrackingModal(entry, order) {
+            this.selectedTrackingEntry = {
+                ...entry,
+                carrier: String(entry?.carrier || order?.shippingCarrier || '').trim(),
+                isInternal: entry?.isInternal === true || order?.isInternalShipment === true,
+            };
+            this.selectedTrackingHistory = this.resolveTrackingEntries(order);
+            this.showTrackingModal = true;
+        },
+
+        closeTrackingModal() {
+            this.showTrackingModal = false;
+            this.selectedTrackingEntry = null;
+            this.selectedTrackingHistory = [];
         },
 
         getRowKey(order) {
