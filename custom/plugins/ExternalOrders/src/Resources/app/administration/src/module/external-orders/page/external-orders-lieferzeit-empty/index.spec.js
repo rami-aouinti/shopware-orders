@@ -434,7 +434,10 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         const state = componentConfig.data();
         const context = {
             ...state,
+            detectCarrierFromTrackingNumber: componentConfig.methods.detectCarrierFromTrackingNumber,
+            resolveTrackingCarrier: componentConfig.methods.resolveTrackingCarrier,
             resolveTrackingEntries: componentConfig.methods.resolveTrackingEntries,
+            resolveTrackingHistoryWithCarrier: componentConfig.methods.resolveTrackingHistoryWithCarrier,
         };
         const order = {
             shippingCarrier: 'dhl',
@@ -463,7 +466,10 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         const state = componentConfig.data();
         const context = {
             ...state,
+            detectCarrierFromTrackingNumber: componentConfig.methods.detectCarrierFromTrackingNumber,
+            resolveTrackingCarrier: componentConfig.methods.resolveTrackingCarrier,
             resolveTrackingEntries: componentConfig.methods.resolveTrackingEntries,
+            resolveTrackingHistoryWithCarrier: componentConfig.methods.resolveTrackingHistoryWithCarrier,
         };
         const order = {
             shippingCarrier: 'gls',
@@ -486,6 +492,42 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
     });
 
 
+
+    it('infers carrier from tracking prefix and maps unknown fallback carrier', () => {
+        const state = componentConfig.data();
+        const context = {
+            ...state,
+            detectCarrierFromTrackingNumber: componentConfig.methods.detectCarrierFromTrackingNumber,
+            resolveTrackingCarrier: componentConfig.methods.resolveTrackingCarrier,
+            resolveTrackingEntries: componentConfig.methods.resolveTrackingEntries,
+            resolveTrackingHistoryWithCarrier: componentConfig.methods.resolveTrackingHistoryWithCarrier,
+        };
+        const order = {
+            sendenummer: 'DHL-123, ZZZ-999',
+            shippingCarrier: '',
+            isInternalShipment: false,
+        };
+
+        const entries = componentConfig.methods.resolveTrackingEntries.call(context, order, 'sendenummer');
+
+        expect(entries).toEqual([
+            expect.objectContaining({ number: 'DHL-123', carrier: 'dhl' }),
+            expect.objectContaining({ number: 'ZZZ-999', carrier: 'unknown' }),
+        ]);
+
+        componentConfig.methods.openTrackingModal.call(context, entries[1], order, 'sendenummer');
+
+        expect(context.selectedTrackingEntry).toEqual(expect.objectContaining({
+            number: 'ZZZ-999',
+            carrier: 'unknown',
+        }));
+        expect(context.selectedTrackingHistory).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ number: 'DHL-123', carrier: 'dhl' }),
+                expect.objectContaining({ number: 'ZZZ-999', carrier: 'unknown' }),
+            ]),
+        );
+    });
 
     it('navigates to task assignment rules for users with lieferzeiten.editor acl', () => {
         const state = componentConfig.data();

@@ -38,14 +38,28 @@ Shopware.Component.register('external-orders-tracking-modal', {
     computed: {
         isInternalShipment() {
             const carrier = String(this.trackingEntry?.carrier || '').trim().toLowerCase();
-            return this.trackingEntry?.isInternal === true || carrier === INTERNAL_SHIPPING_LABEL;
+            return this.trackingEntry?.isInternal === true || carrier === INTERNAL_SHIPPING_LABEL || carrier === 'internal';
         },
 
         headerTitle() {
-            const carrier = String(this.trackingEntry?.carrier || '').trim().toUpperCase();
+            const carrier = this.readableCarrierLabel;
             const number = String(this.trackingEntry?.number || '').trim();
 
             return `Tracking ${carrier} / ${number}`;
+        },
+
+        readableCarrierLabel() {
+            const carrier = String(this.trackingEntry?.carrier || '').trim().toLowerCase();
+
+            if (carrier === '' || carrier === 'unknown') {
+                return 'Versanddienstleister unbekannt';
+            }
+
+            if (carrier === 'internal') {
+                return 'INTERNAL';
+            }
+
+            return carrier.toUpperCase();
         },
 
         isHistoricalTrackingNumber() {
@@ -106,8 +120,16 @@ Shopware.Component.register('external-orders-tracking-modal', {
             const number = String(this.trackingEntry?.number || '').trim();
             const carrier = String(this.trackingEntry?.carrier || '').trim();
 
-            if (number === '' || carrier === '') {
-                this.error = 'Trackingnummer oder Versanddienstleister fehlen.';
+            if (number === '') {
+                this.error = 'Trackingnummer fehlt.';
+                this.events = [];
+                this.isLoading = false;
+
+                return;
+            }
+
+            if (carrier === '' || carrier.toLowerCase() === 'unknown') {
+                this.error = 'Versanddienstleister unbekannt';
                 this.events = [];
                 this.isLoading = false;
 
