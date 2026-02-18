@@ -21,6 +21,7 @@
                 Statistiken
             </sw-tabs-item>
         </sw-tabs>
+
         <sw-card :isLoading="isLoading" :title="$t('lieferzeiten.lms.notificationMatrix.title')">
             <sw-alert variant="info" appearance="default" :showIcon="true">
                 {{ $t('lieferzeiten.lms.notificationMatrix.source') }}
@@ -35,48 +36,61 @@
                 {{ $t('lieferzeiten.lms.notificationMatrix.invalidEntries', { count: invalidEntries.length }) }}
             </sw-alert>
 
-            <div class="sw-data-grid sw-data-grid--compact lieferzeiten-notification-toggle-list__grid">
-                <table class="sw-data-grid__table lieferzeiten-notification-toggle-list__table">
-                    <thead class="sw-data-grid__header">
-                        <tr class="sw-data-grid__row">
-                            <th class="sw-data-grid__cell lieferzeiten-notification-toggle-list__header-cell lieferzeiten-notification-toggle-list__header-cell--label">{{ $t('lieferzeiten.lms.notificationMatrix.notificationType') }}</th>
-                            <th
-                                v-for="scope in salesChannelColumns"
-                                :key="scope.id"
-                                class="sw-data-grid__cell lieferzeiten-notification-toggle-list__header-cell"
+            <div class="lieferzeiten-notification-toggle-list__toolbar">
+                <sw-single-select
+                    v-model:value="selectedSalesChannelId"
+                    class="lieferzeiten-notification-toggle-list__filter"
+                    :label="$t('lieferzeiten.lms.notificationMatrix.salesChannelFilterLabel')"
+                    :options="salesChannelFilterOptions"
+                />
+
+                <sw-button size="small" variant="primary" :disabled="isLoading" @click="onReload">
+                    {{ $t('lieferzeiten.lms.notificationMatrix.reload') }}
+                </sw-button>
+            </div>
+
+            <div class="lieferzeiten-notification-toggle-list__scope-grid">
+                <sw-card
+                    v-for="scope in visibleScopes"
+                    :key="scope.id"
+                    class="lieferzeiten-notification-toggle-list__scope-card"
+                    :title="scope.name"
+                >
+                    <template #toolbar>
+                        <div class="lieferzeiten-notification-toggle-list__quick-actions">
+                            <sw-button
+                                size="x-small"
+                                variant="primary"
+                                :disabled="isLoading || !hasEditAccess"
+                                @click="setScopeState(scope.id, true)"
                             >
-                                <span class="lieferzeiten-notification-toggle-list__header-title">{{ scope.name }}</span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="sw-data-grid__body">
-                        <tr
+                                {{ $t('lieferzeiten.lms.notificationMatrix.enableAll') }}
+                            </sw-button>
+                            <sw-button
+                                size="x-small"
+                                :disabled="isLoading || !hasEditAccess"
+                                @click="setScopeState(scope.id, false)"
+                            >
+                                {{ $t('lieferzeiten.lms.notificationMatrix.disableAll') }}
+                            </sw-button>
+                        </div>
+                    </template>
+
+                    <div class="lieferzeiten-notification-toggle-list__trigger-list">
+                        <div
                             v-for="triggerKey in triggerOptions"
-                            :key="triggerKey"
-                            class="sw-data-grid__row"
+                            :key="`${scope.id}-${triggerKey}`"
+                            class="lieferzeiten-notification-toggle-list__trigger-item"
                         >
-                            <td class="sw-data-grid__cell lieferzeiten-notification-toggle-list__trigger-cell"><strong>{{ getTriggerLabel(triggerKey) }}</strong></td>
-                            <td
-                                v-for="scope in salesChannelColumns"
-                                :key="`${triggerKey}-${scope.id}`"
-                                class="sw-data-grid__cell lieferzeiten-notification-toggle-list__cell"
-                            >
-                                <div
-                                    v-for="channel in channelOptions"
-                                    :key="`${triggerKey}-${scope.id}-${channel}`"
-                                    class="lieferzeiten-notification-toggle-list__channel-row"
-                                >
-                                    <sw-switch-field
-                                        :value="getToggleValue(triggerKey, channel, scope.id === 'global' ? null : scope.id)"
-                                        :disabled="!hasEditAccess || isCellDisabled(triggerKey, channel, scope.id === 'global' ? null : scope.id)"
-                                        @update:value="onToggleChanged(triggerKey, channel, scope.id === 'global' ? null : scope.id, $event)"
-                                    />
-                                    <span class="lieferzeiten-notification-toggle-list__channel-label">{{ channel }}</span>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            <span class="lieferzeiten-notification-toggle-list__trigger-label">{{ getTriggerLabel(triggerKey) }}</span>
+                            <sw-switch-field
+                                :value="getToggleValue(triggerKey, channelOptions[0], scope.id === 'global' ? null : scope.id)"
+                                :disabled="!hasEditAccess || isCellDisabled(triggerKey, channelOptions[0], scope.id === 'global' ? null : scope.id)"
+                                @update:value="onToggleChanged(triggerKey, channelOptions[0], scope.id === 'global' ? null : scope.id, $event)"
+                            />
+                        </div>
+                    </div>
+                </sw-card>
             </div>
         </sw-card>
     </template>

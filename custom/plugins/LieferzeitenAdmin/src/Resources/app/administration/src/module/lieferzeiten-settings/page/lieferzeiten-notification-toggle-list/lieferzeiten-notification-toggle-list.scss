@@ -1,53 +1,49 @@
 .lieferzeiten-notification-toggle-list {
-    &__grid {
-        border: 1px solid #d1d9e0;
-        border-radius: 8px;
-        overflow: hidden;
-        background: #ffffff;
+    &__toolbar {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin: 20px 0;
     }
 
-    &__table {
-        table-layout: fixed;
+    &__filter {
+        max-width: 320px;
     }
 
-    &__header-cell {
-        text-align: center;
-        background: #f0f4f8;
-        font-weight: 700;
-        vertical-align: middle;
+    &__scope-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 16px;
     }
 
-    &__header-cell--label {
-        text-align: left;
+    &__scope-card {
+        margin-bottom: 0;
     }
 
-    &__header-title {
-        display: inline-flex;
-        justify-content: center;
-        width: 100%;
-    }
-
-    &__trigger-cell {
-        font-weight: 600;
-        background: #f8fafc;
-    }
-
-    &__cell {
-        vertical-align: middle;
-        text-align: center;
-    }
-
-    &__channel-row {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+    &__quick-actions {
+        display: flex;
         gap: 8px;
-        min-height: 36px;
     }
 
-    &__channel-label {
-        font-weight: 500;
-        text-transform: capitalize;
+    &__trigger-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    &__trigger-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border: 1px solid #d1d9e0;
+        border-radius: 6px;
+        padding: 8px 12px;
+    }
+
+    &__trigger-label {
+        font-weight: 600;
     }
 
     .sw-field--switch {

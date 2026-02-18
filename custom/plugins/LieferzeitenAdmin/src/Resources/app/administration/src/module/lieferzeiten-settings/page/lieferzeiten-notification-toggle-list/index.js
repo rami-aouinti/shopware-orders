@@ -29,17 +29,10 @@ Component.register('lieferzeiten-notification-toggle-list', {
                 'douane.requise',
                 'commande.storno',
                 'livraison.impossible',
-                'livraison.retoure',
-                'rappel.vorkasse',
-                'paiement.recu.vorkasse',
-                'commande.terminee.rappel_evaluation',
-                'versand.datum.ueberfaellig',
-                'liefertermin.anfrage.zusaetzlich',
-                'liefertermin.anfrage.geschlossen',
-                'liefertermin.anfrage.wiedereroeffnet',
             ],
             channelOptions: ['email'],
             invalidEntries: [],
+            selectedSalesChannelId: 'all',
         };
     },
 
@@ -58,13 +51,34 @@ Component.register('lieferzeiten-notification-toggle-list', {
             return [
                 {
                     id: 'global',
-                    name: 'Global',
+                    name: this.$t('lieferzeiten.lms.notificationMatrix.globalScope'),
                 },
                 ...this.salesChannels.map((salesChannel) => ({
                     id: salesChannel.id,
                     name: salesChannel.name || salesChannel.id,
                 })),
             ];
+        },
+
+        salesChannelFilterOptions() {
+            return [
+                {
+                    label: this.$t('lieferzeiten.lms.notificationMatrix.salesChannelFilterAll'),
+                    value: 'all',
+                },
+                ...this.salesChannelColumns.map((scope) => ({
+                    label: scope.name,
+                    value: scope.id,
+                })),
+            ];
+        },
+
+        visibleScopes() {
+            if (this.selectedSalesChannelId === 'all') {
+                return this.salesChannelColumns;
+            }
+
+            return this.salesChannelColumns.filter((scope) => scope.id === this.selectedSalesChannelId);
         },
     },
 
@@ -132,6 +146,10 @@ Component.register('lieferzeiten-notification-toggle-list', {
             }
         },
 
+        getScopeLabel(scopeId) {
+            return this.salesChannelColumns.find((scope) => scope.id === scopeId)?.name || scopeId;
+        },
+
         getToggleEntity(triggerKey, channel, salesChannelId) {
             const scopeId = salesChannelId || null;
 
@@ -183,9 +201,9 @@ Component.register('lieferzeiten-notification-toggle-list', {
             return !this.isValidToggle(existingEntity);
         },
 
-        async onToggleChanged(triggerKey, channel, salesChannelId, enabled) {
+        async saveToggle(triggerKey, channel, salesChannelId, enabled) {
             if (!this.hasEditAccess) {
-                return;
+                return false;
             }
 
             if (!this.triggerOptions.includes(triggerKey)) {
@@ -194,7 +212,7 @@ Component.register('lieferzeiten-notification-toggle-list', {
                     message: `Ungültiger Trigger: ${triggerKey}`,
                 });
 
-                return;
+                return false;
             }
 
             if (!this.channelOptions.includes(channel)) {
@@ -203,7 +221,7 @@ Component.register('lieferzeiten-notification-toggle-list', {
                     message: `Ungültiger Kanal: ${channel}`,
                 });
 
-                return;
+                return false;
             }
 
             const normalizedSalesChannelId = salesChannelId || null;
@@ -215,7 +233,7 @@ Component.register('lieferzeiten-notification-toggle-list', {
                     message: 'Inkonsistenter Eintrag kann nicht geändert werden. Bitte triggerKey/channel/code per API korrigieren oder den Eintrag löschen.',
                 });
 
-                return;
+                return false;
             }
 
             if (!entity) {
@@ -228,13 +246,77 @@ Component.register('lieferzeiten-notification-toggle-list', {
             entity.code = `${triggerKey}:${channel}`;
             entity.enabled = Boolean(enabled);
 
+            await this.repository.save(entity, Shopware.Context.api);
+
+            return true;
+        },
+
+        async onToggleChanged(triggerKey, channel, salesChannelId, enabled) {
             this.isLoading = true;
 
             try {
-                await this.repository.save(entity, Shopware.Context.api);
+                const hasChanged = await this.saveToggle(triggerKey, channel, salesChannelId, enabled);
+
+                if (!hasChanged) {
+                    return;
+                }
+
                 await this.loadData();
+                this.createNotificationSuccess({
+                    title: this.$t('lieferzeiten.lms.notificationMatrix.saveSuccessTitle'),
+                    message: this.$t('lieferzeiten.lms.notificationMatrix.saveSuccessMessage', {
+                        scope: this.getScopeLabel(salesChannelId || 'global'),
+                    }),
+                });
             } catch (error) {
-                this.notifyRequestError(error, this.$t('lieferzeiten.lms.general.mainMenuItem'));
+                this.notifyRequestError(error, this.$t('lieferzeiten.lms.notificationMatrix.saveErrorTitle'));
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async setScopeState(scopeId, enabled) {
+            if (!this.hasEditAccess) {
+                return;
+            }
+
+            this.isLoading = true;
+            const normalizedScopeId = scopeId === 'global' ? null : scopeId;
+
+            try {
+                for (const triggerKey of this.triggerOptions) {
+                    // eslint-disable-next-line no-await-in-loop
+                    await this.saveToggle(triggerKey, this.channelOptions[0], normalizedScopeId, enabled);
+                }
+
+                await this.loadData();
+                this.createNotificationSuccess({
+                    title: this.$t('lieferzeiten.lms.notificationMatrix.bulkSuccessTitle'),
+                    message: this.$t('lieferzeiten.lms.notificationMatrix.bulkSuccessMessage', {
+                        state: enabled
+                            ? this.$t('lieferzeiten.lms.notificationMatrix.stateEnabled')
+                            : this.$t('lieferzeiten.lms.notificationMatrix.stateDisabled'),
+                        scope: this.getScopeLabel(scopeId),
+                    }),
+                });
+            } catch (error) {
+                this.notifyRequestError(error, this.$t('lieferzeiten.lms.notificationMatrix.saveErrorTitle'));
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async onReload() {
+            this.isLoading = true;
+
+            try {
+                await this.loadData();
+                this.createNotificationSuccess({
+                    title: this.$t('lieferzeiten.lms.notificationMatrix.reloadSuccessTitle'),
+                    message: this.$t('lieferzeiten.lms.notificationMatrix.reloadSuccessMessage'),
+                });
+            } catch (error) {
+                this.notifyRequestError(error, this.$t('lieferzeiten.lms.notificationMatrix.reloadErrorTitle'));
             } finally {
                 this.isLoading = false;
             }
