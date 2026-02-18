@@ -13,10 +13,14 @@ class OrderStatusModelTest extends TestCase
 
         static::assertCount(8, $definitions);
         static::assertSame(['shopware', 'gambio'], $definitions[1]['readSources']);
+        static::assertSame(['shopware', 'gambio'], $definitions[6]['readSources']);
         static::assertSame(['shopware', 'gambio'], $definitions[8]['writeBackTargets']);
         static::assertSame('bidirectional', $definitions[7]['syncMode']);
         static::assertSame('source_read_only', $definitions[1]['matrixRule']);
         static::assertSame('san6_shipping_gate', $definitions[7]['matrixRule']);
+        static::assertSame(['san6'], $definitions[7]['readSources']);
+        static::assertSame(['tracking', 'san6'], $definitions[8]['readSources']);
+        static::assertSame('Bestellung abgeschlossen', $definitions[8]['label']);
         static::assertSame('tracking_completion_gate', $definitions[8]['matrixRule']);
     }
 

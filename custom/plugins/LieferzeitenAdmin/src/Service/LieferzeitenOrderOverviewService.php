@@ -19,7 +19,7 @@ class LieferzeitenOrderOverviewService
         5 => 'Versandbereit',
         6 => 'Teilversendet',
         7 => 'Versendet',
-        8 => 'Abgeschlossen',
+        8 => 'Bestellung abgeschlossen',
     ];
 
 
