@@ -65,6 +65,8 @@
 
     &__channels {
         border-radius: 10px;
+        width: 100%;
+        max-width: none;
     }
 
     &__summary {
