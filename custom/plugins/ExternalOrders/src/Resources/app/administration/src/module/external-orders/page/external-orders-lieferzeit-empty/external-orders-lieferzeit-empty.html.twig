@@ -213,6 +213,7 @@
                                     </div>
                                 </div>
                             </th>
+                            <th class="external-orders-lieferzeit-empty__cell external-orders-lieferzeit-empty__cell--task">Aufgaben</th>
                             <th class="external-orders-lieferzeit-empty__cell external-orders-lieferzeit-empty__cell--actions">Aktion</th>
                         </tr>
                     </thead>
@@ -250,6 +251,41 @@
                                 <template v-else>
                                     {{ isDateColumn(column.key) ? formatDate(getColumnValue(order, column.key)) : displayOrDash(getColumnValue(order, column.key)) }}
                                 </template>
+                            </td>
+                            <td>
+                                <div class="external-orders-lieferzeit-empty__task-panel" v-if="resolveLieferzeitTask(order)">
+                                    <div class="external-orders-lieferzeit-empty__task-row"><strong>Trigger:</strong> {{ displayOrDash(resolveLieferzeitTask(order).triggerKey) }}</div>
+                                    <div class="external-orders-lieferzeit-empty__task-row"><strong>Assignee:</strong> {{ displayOrDash(resolveLieferzeitTask(order).assignee) }}</div>
+                                    <div class="external-orders-lieferzeit-empty__task-row"><strong>Due Date:</strong> {{ formatDate(resolveLieferzeitTask(order).dueDate) }}</div>
+                                    <div class="external-orders-lieferzeit-empty__task-row"><strong>Status:</strong> {{ getLieferzeitTaskStatusLabel(resolveLieferzeitTask(order)) }}</div>
+                                    <div class="external-orders-lieferzeit-empty__task-actions">
+                                        <button
+                                            class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small"
+                                            type="button"
+                                            :disabled="isTaskInProgress(resolveLieferzeitTask(order).id)"
+                                            @click="runTaskAction(resolveLieferzeitTask(order), 'assign')"
+                                        >
+                                            Übernehmen
+                                        </button>
+                                        <button
+                                            class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--primary external-orders-lieferzeit-empty__button--small"
+                                            type="button"
+                                            :disabled="isTaskInProgress(resolveLieferzeitTask(order).id)"
+                                            @click="runTaskAction(resolveLieferzeitTask(order), 'close')"
+                                        >
+                                            Schließen
+                                        </button>
+                                        <button
+                                            class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small"
+                                            type="button"
+                                            :disabled="isTaskInProgress(resolveLieferzeitTask(order).id)"
+                                            @click="runTaskAction(resolveLieferzeitTask(order), 'reopen')"
+                                        >
+                                            Wieder öffnen
+                                        </button>
+                                    </div>
+                                </div>
+                                <span v-else>-</span>
                             </td>
                             <td>
                                 <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small" type="button" @click="openDetail(order)">

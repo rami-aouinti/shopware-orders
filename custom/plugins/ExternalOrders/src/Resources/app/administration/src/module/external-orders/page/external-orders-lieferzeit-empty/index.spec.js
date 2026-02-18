@@ -208,7 +208,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             selectedArea: 'medical-solutions',
             selectedMainView: 'openOrders',
             selectedRowMode: 'position',
-            externalOrderService: { summary },
+            externalOrderService: { list },
             fetchOrdersFallback: jest.fn(),
             extractOrders: componentConfig.methods.extractOrders,
             normalizeOrder: (order) => order,
@@ -221,7 +221,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
 
         await componentConfig.methods.loadOrders.call(context);
 
-        expect(summary).toHaveBeenCalledWith(expect.objectContaining({
+        expect(list).toHaveBeenCalledWith(expect.objectContaining({
             selectedArea: 'medical-solutions',
             selectedMainView: 'openOrders',
             selectedRowMode: 'position',
@@ -288,7 +288,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
                 shippingDateTo: new Date('2026-02-10T00:00:00.000Z'),
                 status: 'processing',
             },
-            externalOrderService: { summary },
+            externalOrderService: { list },
             buildFilterParams: componentConfig.methods.buildFilterParams,
             fetchOrdersFallback: jest.fn(),
             extractOrders: componentConfig.methods.extractOrders,
@@ -483,6 +483,74 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             carrier: 'gls',
         }));
         expect(context.selectedTrackingHistory).toHaveLength(2);
+    });
+
+
+    it('maps lieferzeit tasks by order/position and filters by trigger', async () => {
+        const state = componentConfig.data();
+        const listLieferzeitTasks = jest.fn().mockResolvedValue({
+            data: [
+                {
+                    id: 'task-1',
+                    status: 'open',
+                    assignee: 'u-1',
+                    positionId: '10',
+                    triggerKey: 'versand.datum.ueberfaellig',
+                    dueDate: '2026-02-11',
+                    payload: { externalOrderId: 'order-1' },
+                },
+                {
+                    id: 'task-2',
+                    status: 'open',
+                    positionId: '11',
+                    triggerKey: 'other.trigger',
+                    payload: { externalOrderId: 'order-1' },
+                },
+            ],
+        });
+
+        const context = {
+            ...state,
+            hasRequiredSelections: true,
+            externalOrderService: { listLieferzeitTasks },
+            normalizeLieferzeitTask: componentConfig.methods.normalizeLieferzeitTask,
+            getTaskRowKey: componentConfig.methods.getTaskRowKey,
+        };
+
+        await componentConfig.methods.loadLieferzeitTasks.call(context);
+
+        expect(listLieferzeitTasks).toHaveBeenCalledWith(expect.objectContaining({ status: 'open' }));
+        expect(context.lieferzeitTasksByRowKey).toEqual({
+            'order-1:10': expect.objectContaining({ id: 'task-1', triggerKey: 'versand.datum.ueberfaellig' }),
+        });
+    });
+
+    it('runs task status actions and refreshes tasks', async () => {
+        const state = componentConfig.data();
+        const assignLieferzeitTask = jest.fn().mockResolvedValue({ status: 'ok' });
+        const closeLieferzeitTask = jest.fn().mockResolvedValue({ status: 'ok' });
+        const reopenLieferzeitTask = jest.fn().mockResolvedValue({ status: 'ok' });
+
+        const context = {
+            ...state,
+            externalOrderService: {
+                assignLieferzeitTask,
+                closeLieferzeitTask,
+                reopenLieferzeitTask,
+            },
+            resolveInitiatorUserId: jest.fn(() => 'current-user'),
+            loadLieferzeitTasks: jest.fn().mockResolvedValue(undefined),
+            createNotificationError: jest.fn(),
+        };
+
+        await componentConfig.methods.runTaskAction.call(context, { id: 'task-1' }, 'assign');
+        await componentConfig.methods.runTaskAction.call(context, { id: 'task-1' }, 'close');
+        await componentConfig.methods.runTaskAction.call(context, { id: 'task-1' }, 'reopen');
+
+        expect(assignLieferzeitTask).toHaveBeenCalledWith('task-1', 'current-user');
+        expect(closeLieferzeitTask).toHaveBeenCalledWith('task-1');
+        expect(reopenLieferzeitTask).toHaveBeenCalledWith('task-1');
+        expect(context.loadLieferzeitTasks).toHaveBeenCalledTimes(3);
     });
 
 });
