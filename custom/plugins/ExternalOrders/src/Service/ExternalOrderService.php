@@ -131,9 +131,8 @@ readonly class ExternalOrderService
 
         $orders = $this->sortOrders($orders, $sortField, $sortDirection);
         $total = count($orders);
-        $orders = array_slice($orders, ($page - 1) * $limit, $limit);
-
         $summary = $this->buildSummary($orders);
+        $orders = array_slice($orders, ($page - 1) * $limit, $limit);
 
         return [
             'total' => $total,
@@ -143,6 +142,33 @@ readonly class ExternalOrderService
             'totalElements' => $total,
             'summary' => $summary,
             'orders' => $orders,
+        ];
+    }
+
+    public function fetchOrdersSummary(
+        Context $context,
+        ?string $channel = null,
+        ?string $search = null,
+        array $filters = [],
+        ?string $selectedArea = null,
+        ?string $selectedMainView = null
+    ): array {
+        $result = $this->fetchOrders(
+            $context,
+            $channel,
+            $search,
+            1,
+            1,
+            null,
+            null,
+            $filters,
+            $selectedArea,
+            $selectedMainView
+        );
+
+        return [
+            'total' => (int) ($result['total'] ?? 0),
+            'summary' => $result['summary'] ?? $this->buildSummary([]),
         ];
     }
 

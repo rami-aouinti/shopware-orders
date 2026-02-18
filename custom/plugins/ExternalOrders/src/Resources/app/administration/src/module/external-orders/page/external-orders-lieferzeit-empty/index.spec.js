@@ -208,7 +208,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             selectedArea: 'medical-solutions',
             selectedMainView: 'openOrders',
             selectedRowMode: 'position',
-            externalOrderService: { list },
+            externalOrderService: { summary },
             fetchOrdersFallback: jest.fn(),
             extractOrders: componentConfig.methods.extractOrders,
             normalizeOrder: (order) => order,
@@ -221,7 +221,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
 
         await componentConfig.methods.loadOrders.call(context);
 
-        expect(list).toHaveBeenCalledWith(expect.objectContaining({
+        expect(summary).toHaveBeenCalledWith(expect.objectContaining({
             selectedArea: 'medical-solutions',
             selectedMainView: 'openOrders',
             selectedRowMode: 'position',
@@ -243,7 +243,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
                 shippingDateTo: new Date('2026-02-10T00:00:00.000Z'),
                 status: 'processing',
             },
-            externalOrderService: { list },
+            externalOrderService: { summary },
             buildFilterParams: componentConfig.methods.buildFilterParams,
             fetchOrdersFallback: jest.fn(),
             extractOrders: componentConfig.methods.extractOrders,
@@ -274,7 +274,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
 
     it('maps summary statistics to KPI metrics', async () => {
         const state = componentConfig.data();
-        const list = jest.fn().mockResolvedValue({
+        const summary = jest.fn().mockResolvedValue({
             summary: {
                 openOrdersTotal: 12,
                 overdueShippingTotal: 4,
@@ -287,14 +287,14 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             selectedArea: 'medical-solutions',
             selectedMainView: 'openOrders',
             hasRequiredSelections: true,
-            externalOrderService: { list },
+            externalOrderService: { summary },
             fetchOrdersFallback: jest.fn(),
             buildFilterParams: componentConfig.methods.buildFilterParams,
         };
 
         const result = await componentConfig.methods.loadStatistics.call(context);
 
-        expect(list).toHaveBeenCalledWith(expect.objectContaining({
+        expect(summary).toHaveBeenCalledWith(expect.objectContaining({
             selectedArea: 'medical-solutions',
             selectedMainView: 'openOrders',
             selectedRowMode: 'position',
@@ -309,12 +309,12 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
 
     it('falls back to default KPI metrics when statistics loading fails', async () => {
         const state = componentConfig.data();
-        const list = jest.fn().mockRejectedValue(new Error('boom'));
+        const summary = jest.fn().mockRejectedValue(new Error('boom'));
 
         const context = {
             ...state,
             hasRequiredSelections: true,
-            externalOrderService: { list },
+            externalOrderService: { summary },
             fetchOrdersFallback: jest.fn(),
             buildFilterParams: componentConfig.methods.buildFilterParams,
             statisticsMetrics: {
@@ -336,7 +336,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
 
     it('updates KPI metrics based on active filters', async () => {
         const state = componentConfig.data();
-        const list = jest
+        const summary = jest
             .fn()
             .mockResolvedValueOnce({
                 summary: {
@@ -358,7 +358,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             hasRequiredSelections: true,
             selectedArea: 'first-medical-ecommerce',
             selectedMainView: 'allOrders',
-            externalOrderService: { list },
+            externalOrderService: { summary },
             fetchOrdersFallback: jest.fn(),
             buildFilterParams: componentConfig.methods.buildFilterParams,
         };
@@ -377,7 +377,9 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             overdueShipping: 1,
             overdueDelivery: 0,
         });
-        expect(list).toHaveBeenNthCalledWith(2, expect.objectContaining({
+        expect(second.openOrders).toBeGreaterThan(0);
+        expect(second.overdueShipping).toBeGreaterThan(0);
+        expect(summary).toHaveBeenNthCalledWith(2, expect.objectContaining({
             bestellnummer: 'A-1000',
         }));
     });
