@@ -26,33 +26,55 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         componentConfig = global.Shopware.Component.register.mock.calls[0][1];
     });
 
-    it('declares required filter metadata and keeps non-required fields non-filterable', () => {
+    it('keeps only the official column/filter list', () => {
         const metaByKey = tableColumnsMeta.reduce((acc, column) => {
             acc[column.key] = column;
             return acc;
         }, {});
 
+        expect(tableColumnsMeta.map((column) => column.key)).toEqual([
+            'bestellnummer',
+            'san6',
+            'user',
+            'sendenummer',
+            'shippingDate',
+            'deliveryDate',
+            'lieferterminLieferant',
+            'neuerLiefertermin',
+            'latestShippingDate',
+            'latestDeliveryDate',
+            'status',
+        ]);
+
         expect(metaByKey.bestellnummer).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
-        expect(metaByKey.status).toEqual(expect.objectContaining({ filterable: true, filterType: 'select' }));
+        expect(metaByKey.san6).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
+        expect(metaByKey.user).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
+        expect(metaByKey.sendenummer).toEqual(expect.objectContaining({
+            filterable: true,
+            filterType: 'text',
+            label: 'Sendenummer',
+        }));
         expect(metaByKey.shippingDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
-        expect(metaByKey.latestShippingDate).toEqual(expect.objectContaining({ filterable: false, filterType: 'dateRange' }));
+        expect(metaByKey.deliveryDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
+        expect(metaByKey.lieferterminLieferant).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
+        expect(metaByKey.neuerLiefertermin).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
+        expect(metaByKey.latestShippingDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
         expect(metaByKey.latestDeliveryDate).toEqual(expect.objectContaining({
             filterable: true,
             filterType: 'dateRange',
             label: 'Spätester Versand-/Lieferzeitpunkt',
         }));
-        expect(metaByKey.orderDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
-        expect(metaByKey.paymentMethod).toEqual(expect.objectContaining({ filterable: false, filterType: 'text' }));
-        expect(metaByKey.paymentReceivedDate).toEqual(expect.objectContaining({ filterable: false, filterType: 'dateRange' }));
-        expect(metaByKey.orderedQuantity).toEqual(expect.objectContaining({ filterable: false, filterType: 'text' }));
-        expect(metaByKey.packageStatus).toEqual(expect.objectContaining({ filterable: false, filterType: 'text' }));
-        expect(metaByKey.shippedQuantity).toEqual(expect.objectContaining({ label: 'Versandmenge je Paket (versendet/bestellt)' }));
+        expect(metaByKey.status).toEqual(expect.objectContaining({ filterable: true, filterType: 'select' }));
 
-        expect(metaByKey.san6Auftragsposition).toEqual(expect.objectContaining({ filterable: false, filterType: 'none' }));
-        expect(metaByKey.kommentar).toEqual(expect.objectContaining({ filterable: false, filterType: 'none' }));
+        expect(metaByKey).not.toHaveProperty('san6Auftragsposition');
+        expect(metaByKey).not.toHaveProperty('kommentar');
+        expect(metaByKey).not.toHaveProperty('orderDate');
+        expect(metaByKey).not.toHaveProperty('paymentMethod');
+        expect(metaByKey).not.toHaveProperty('paymentReceivedDate');
+        expect(metaByKey).not.toHaveProperty('packageStatus');
     });
 
-    it('builds filter UI groups only from filterable metadata', () => {
+    it('builds filter UI groups only from official metadata', () => {
         const state = componentConfig.data();
         const context = {
             ...state,
@@ -64,39 +86,21 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         const primaryKeys = primaryFilters.map((column) => column.key);
         const dateRangeKeys = dateRangeFilters.map((column) => column.key);
 
-        expect(primaryKeys).toEqual(expect.arrayContaining([
+        expect(primaryKeys).toEqual([
             'bestellnummer',
             'san6',
             'user',
             'sendenummer',
             'status',
-        ]));
-        expect(primaryKeys).toHaveLength(5);
+        ]);
         expect(dateRangeKeys).toEqual([
-            'orderDate',
+            'latestShippingDate',
             'shippingDate',
             'deliveryDate',
             'lieferterminLieferant',
             'neuerLiefertermin',
             'latestDeliveryDate',
         ]);
-        expect(dateRangeKeys).toHaveLength(6);
-
-        expect(primaryKeys).not.toContain('san6Auftragsposition');
-        expect(primaryKeys).not.toContain('kommentar');
-        expect(primaryKeys).not.toContain('paymentMethod');
-        expect(primaryKeys).not.toContain('orderedQuantity');
-        expect(primaryKeys).not.toContain('customerFirstName');
-        expect(primaryKeys).not.toContain('customerLastName');
-        expect(primaryKeys).not.toContain('customerAdditionalNames');
-        expect(primaryKeys).not.toContain('packageId');
-        expect(primaryKeys).not.toContain('trackingNumberPerPackage');
-        expect(primaryKeys).not.toContain('shippedQuantity');
-        expect(primaryKeys).not.toContain('packageStatus');
-        expect(dateRangeKeys).not.toContain('san6Auftragsposition');
-        expect(dateRangeKeys).not.toContain('kommentar');
-        expect(dateRangeKeys).not.toContain('latestShippingDate');
-        expect(dateRangeKeys).not.toContain('paymentReceivedDate');
 
         expect(state.filters).toEqual(expect.objectContaining({
             bestellnummer: '',
@@ -104,22 +108,21 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             changedByUser: '',
             sendenummer: '',
             status: '',
-            orderDateFrom: null,
-            orderDateTo: null,
+            latestShippingDateFrom: null,
+            latestShippingDateTo: null,
             shippingDateFrom: null,
             shippingDateTo: null,
-            latestDeliveryDateFrom: null,
-            latestDeliveryDateTo: null,
             deliveryDateFrom: null,
             deliveryDateTo: null,
             lieferterminLieferantFrom: null,
             lieferterminLieferantTo: null,
             lieferterminAuftragsbearbeitungFrom: null,
             lieferterminAuftragsbearbeitungTo: null,
+            latestDeliveryDateFrom: null,
+            latestDeliveryDateTo: null,
         }));
         expect(Object.keys(state.filters)).toHaveLength(17);
     });
-
 
     it('provides date filter block labels and placeholders in expected order', () => {
         const state = componentConfig.data();
@@ -130,7 +133,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         const dateRangeFilters = componentConfig.computed.dateRangeFilters.call(context);
 
         expect(dateRangeFilters.map((column) => column.label)).toEqual([
-            'Bestelldatum',
+            'Spätester Versandzeitpunkt',
             'Versand-Datum',
             'Liefer-Datum',
             'Liefertermin Lieferant',
@@ -145,9 +148,9 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         }))).toMatchInlineSnapshot(`
 [
   {
-    "fromPlaceholder": "Bestelldatum – Von",
-    "key": "orderDate",
-    "toPlaceholder": "Bestelldatum – Bis",
+    "fromPlaceholder": "Spätester Versandzeitpunkt – Von",
+    "key": "latestShippingDate",
+    "toPlaceholder": "Spätester Versandzeitpunkt – Bis",
   },
   {
     "fromPlaceholder": "Versand-Datum – Von",

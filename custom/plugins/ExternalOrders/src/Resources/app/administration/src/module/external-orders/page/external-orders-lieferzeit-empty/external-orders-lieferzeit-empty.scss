@@ -163,13 +163,13 @@
 
         &--primary {
             display: grid;
-            grid-template-columns: repeat(5, minmax(220px, 1fr));
+            grid-template-columns: repeat(5, minmax(200px, 1fr));
             gap: 10px;
         }
 
         &--secondary {
             display: grid;
-            grid-template-columns: repeat(3, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 10px;
             align-items: stretch;
         }
@@ -217,6 +217,9 @@
         font-size: 13px;
         font-weight: 600;
         color: #1f2d3d;
+        line-height: 1.35;
+        white-space: normal;
+        overflow-wrap: anywhere;
     }
 
     &__date-filter-pickers {
@@ -242,14 +245,25 @@
         min-height: 38px;
     }
 
+
+    &__filters-bar {
+        .sw-field__label,
+        .sw-single-select__label,
+        .sw-datepicker__label {
+            white-space: normal;
+            line-height: 1.3;
+            overflow-wrap: anywhere;
+        }
+    }
+
     @media (max-width: 1640px) {
         &__filters-row {
             &--primary {
-                grid-template-columns: repeat(3, minmax(220px, 1fr));
+                grid-template-columns: repeat(3, minmax(200px, 1fr));
             }
 
             &--secondary {
-                grid-template-columns: repeat(2, minmax(220px, 1fr));
+                grid-template-columns: repeat(2, minmax(260px, 1fr));
             }
         }
     }
@@ -257,7 +271,7 @@
     @media (max-width: 1240px) {
         &__filters-row {
             &--primary {
-                grid-template-columns: repeat(2, minmax(220px, 1fr));
+                grid-template-columns: repeat(2, minmax(180px, 1fr));
             }
 
             &--secondary {
