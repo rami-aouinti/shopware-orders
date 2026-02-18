@@ -169,9 +169,9 @@
 
         &--secondary {
             display: grid;
-            grid-template-columns: repeat(4, minmax(220px, 1fr));
+            grid-template-columns: repeat(3, minmax(240px, 1fr));
             gap: 10px;
-            align-items: start;
+            align-items: stretch;
         }
 
         &--tertiary {
@@ -202,6 +202,29 @@
         min-width: 0;
     }
 
+    &__date-filter-block {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid #dce4eb;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    &__date-filter-title {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1f2d3d;
+    }
+
+    &__date-filter-pickers {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
     &__filters-actions {
         margin-left: 0;
         justify-content: flex-end;
@@ -226,7 +249,7 @@
             }
 
             &--secondary {
-                grid-template-columns: repeat(3, minmax(220px, 1fr));
+                grid-template-columns: repeat(2, minmax(220px, 1fr));
             }
         }
     }
@@ -238,7 +261,7 @@
             }
 
             &--secondary {
-                grid-template-columns: repeat(2, minmax(220px, 1fr));
+                grid-template-columns: minmax(0, 1fr);
             }
 
             &--tertiary {
@@ -258,6 +281,10 @@
             &--secondary {
                 grid-template-columns: minmax(0, 1fr);
             }
+        }
+
+        &__date-filter-pickers {
+            grid-template-columns: minmax(0, 1fr);
         }
 
         &__filters-actions {
