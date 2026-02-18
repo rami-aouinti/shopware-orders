@@ -1131,16 +1131,17 @@ readonly class ExternalOrderService
      */
     private function filterOrdersByArea(array $orders, ?string $selectedArea): array
     {
-        if ($selectedArea === null || $selectedArea === '') {
+        $normalizedArea = $this->normalizeSelectionKey($selectedArea);
+        if ($normalizedArea === null) {
             return $orders;
         }
 
         $areaToChannels = [
-            'first-medical-ecommerce' => ['b2b'],
-            'medical-solutions' => ['ebay_de', 'kaufland', 'ebay_at', 'zonami', 'peg', 'bezb'],
+            'first_medical_ecommerce' => ['b2b'],
+            'medical_solutions' => ['ebay_de', 'kaufland', 'ebay_at', 'zonami', 'peg', 'bezb'],
         ];
 
-        $allowedChannels = $areaToChannels[$selectedArea] ?? null;
+        $allowedChannels = $areaToChannels[$normalizedArea] ?? null;
         if ($allowedChannels === null) {
             return $orders;
         }
@@ -1158,7 +1159,12 @@ readonly class ExternalOrderService
      */
     private function filterOrdersByMainView(array $orders, ?string $selectedMainView): array
     {
-        if ($selectedMainView !== 'openOrders') {
+        $normalizedMainView = $this->normalizeSelectionKey($selectedMainView);
+        if ($normalizedMainView === null || $normalizedMainView === 'all_orders') {
+            return $orders;
+        }
+
+        if ($normalizedMainView !== 'open_orders') {
             return $orders;
         }
 
@@ -1166,6 +1172,24 @@ readonly class ExternalOrderService
             $orders,
             fn (array $orderItem): bool => $this->isOpenOrder($orderItem)
         ));
+    }
+
+    private function normalizeSelectionKey(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = trim($value);
+        if ($normalized === '') {
+            return null;
+        }
+
+        $normalized = preg_replace('/(?<!^)[A-Z]/', '_$0', $normalized) ?? $normalized;
+        $normalized = str_replace(['-', ' '], '_', $normalized);
+        $normalized = strtolower($normalized);
+
+        return trim($normalized, '_') ?: null;
     }
 
     /**

@@ -227,6 +227,51 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             selectedRowMode: 'position',
         }));
     });
+
+
+    it('exposes area and main view options and forwards each option value to API filters', async () => {
+        const state = componentConfig.data();
+        expect(state.areaOptions.map((option) => option.value)).toEqual([
+            'first-medical-ecommerce',
+            'medical-solutions',
+        ]);
+        expect(state.mainViewOptions.map((option) => option.value)).toEqual([
+            'allOrders',
+            'openOrders',
+        ]);
+
+        const list = jest.fn().mockResolvedValue({ orders: [] });
+        const context = {
+            ...state,
+            selectedRowMode: 'position',
+            externalOrderService: { list },
+            fetchOrdersFallback: jest.fn(),
+            extractOrders: componentConfig.methods.extractOrders,
+            normalizeOrder: (order) => order,
+            expandOrdersByPosition: (orders) => orders,
+            applyRowMode: componentConfig.methods.applyRowMode,
+            channels: [{ id: 'all' }],
+            activeChannel: 'all',
+            hasRequiredSelections: true,
+        };
+
+        for (const selectedArea of state.areaOptions.map((option) => option.value)) {
+            for (const selectedMainView of state.mainViewOptions.map((option) => option.value)) {
+                context.selectedArea = selectedArea;
+                context.selectedMainView = selectedMainView;
+
+                await componentConfig.methods.loadOrders.call(context);
+
+                expect(list).toHaveBeenLastCalledWith(expect.objectContaining({
+                    selectedArea,
+                    selectedMainView,
+                    selectedRowMode: 'position',
+                }));
+            }
+        }
+
+        expect(list).toHaveBeenCalledTimes(4);
+    });
     it('maps normalized filter params to externalOrderService.list', async () => {
         const state = componentConfig.data();
         const list = jest.fn().mockResolvedValue({ orders: [] });
