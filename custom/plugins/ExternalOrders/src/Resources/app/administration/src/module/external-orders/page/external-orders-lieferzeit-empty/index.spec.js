@@ -35,7 +35,13 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(metaByKey.bestellnummer).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
         expect(metaByKey.status).toEqual(expect.objectContaining({ filterable: true, filterType: 'select' }));
         expect(metaByKey.shippingDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
-        expect(metaByKey.orderDate).toEqual(expect.objectContaining({ filterable: false, filterType: 'dateRange' }));
+        expect(metaByKey.latestShippingDate).toEqual(expect.objectContaining({ filterable: false, filterType: 'dateRange' }));
+        expect(metaByKey.latestDeliveryDate).toEqual(expect.objectContaining({
+            filterable: true,
+            filterType: 'dateRange',
+            label: 'Spätester Versand-/Lieferzeitpunkt',
+        }));
+        expect(metaByKey.orderDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
         expect(metaByKey.paymentMethod).toEqual(expect.objectContaining({ filterable: false, filterType: 'text' }));
         expect(metaByKey.paymentReceivedDate).toEqual(expect.objectContaining({ filterable: false, filterType: 'dateRange' }));
         expect(metaByKey.orderedQuantity).toEqual(expect.objectContaining({ filterable: false, filterType: 'text' }));
@@ -66,14 +72,14 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             'status',
         ]));
         expect(primaryKeys).toHaveLength(5);
-        expect(dateRangeKeys).toEqual(expect.arrayContaining([
+        expect(dateRangeKeys).toEqual([
+            'orderDate',
             'shippingDate',
-            'latestShippingDate',
-            'latestDeliveryDate',
             'deliveryDate',
             'lieferterminLieferant',
             'neuerLiefertermin',
-        ]));
+            'latestDeliveryDate',
+        ]);
         expect(dateRangeKeys).toHaveLength(6);
 
         expect(primaryKeys).not.toContain('san6Auftragsposition');
@@ -89,7 +95,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(primaryKeys).not.toContain('packageStatus');
         expect(dateRangeKeys).not.toContain('san6Auftragsposition');
         expect(dateRangeKeys).not.toContain('kommentar');
-        expect(dateRangeKeys).not.toContain('orderDate');
+        expect(dateRangeKeys).not.toContain('latestShippingDate');
         expect(dateRangeKeys).not.toContain('paymentReceivedDate');
 
         expect(state.filters).toEqual(expect.objectContaining({
@@ -98,10 +104,10 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             changedByUser: '',
             sendenummer: '',
             status: '',
+            orderDateFrom: null,
+            orderDateTo: null,
             shippingDateFrom: null,
             shippingDateTo: null,
-            latestShippingDateFrom: null,
-            latestShippingDateTo: null,
             latestDeliveryDateFrom: null,
             latestDeliveryDateTo: null,
             deliveryDateFrom: null,
@@ -112,6 +118,64 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             lieferterminAuftragsbearbeitungTo: null,
         }));
         expect(Object.keys(state.filters)).toHaveLength(17);
+    });
+
+
+    it('provides date filter block labels and placeholders in expected order', () => {
+        const state = componentConfig.data();
+        const context = {
+            ...state,
+        };
+
+        const dateRangeFilters = componentConfig.computed.dateRangeFilters.call(context);
+
+        expect(dateRangeFilters.map((column) => column.label)).toEqual([
+            'Bestelldatum',
+            'Versand-Datum',
+            'Liefer-Datum',
+            'Liefertermin Lieferant',
+            'Liefertermin Auftragsbearbeitung',
+            'Spätester Versand-/Lieferzeitpunkt',
+        ]);
+
+        expect(dateRangeFilters.map((column) => ({
+            key: column.key,
+            fromPlaceholder: column.fromPlaceholder,
+            toPlaceholder: column.toPlaceholder,
+        }))).toMatchInlineSnapshot(`
+[
+  {
+    "fromPlaceholder": "Bestelldatum – Von",
+    "key": "orderDate",
+    "toPlaceholder": "Bestelldatum – Bis",
+  },
+  {
+    "fromPlaceholder": "Versand-Datum – Von",
+    "key": "shippingDate",
+    "toPlaceholder": "Versand-Datum – Bis",
+  },
+  {
+    "fromPlaceholder": "Liefer-Datum – Von",
+    "key": "deliveryDate",
+    "toPlaceholder": "Liefer-Datum – Bis",
+  },
+  {
+    "fromPlaceholder": "Liefertermin Lieferant – Von",
+    "key": "lieferterminLieferant",
+    "toPlaceholder": "Liefertermin Lieferant – Bis",
+  },
+  {
+    "fromPlaceholder": "Liefertermin Auftragsbearbeitung – Von",
+    "key": "neuerLiefertermin",
+    "toPlaceholder": "Liefertermin Auftragsbearbeitung – Bis",
+  },
+  {
+    "fromPlaceholder": "Spätester Versand-/Lieferzeitpunkt – Von",
+    "key": "latestDeliveryDate",
+    "toPlaceholder": "Spätester Versand-/Lieferzeitpunkt – Bis",
+  },
+]
+`);
     });
 
     it('derives package status from quantities, package assignment and split logic', () => {

@@ -127,24 +127,31 @@
             </div>
 
             <div class="external-orders-lieferzeit-empty__filters-row external-orders-lieferzeit-empty__filters-row--secondary">
-                <template v-for="column in dateRangeFilters">
-                    <sw-datepicker
-                        :key="`date-from-${column.key}`"
-                        v-model:value="filters[column.filterFromKey]"
-                        class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date"
-                        size="small"
-                        date-type="date"
-                        :placeholder="`${column.label} von`"
-                    />
-                    <sw-datepicker
-                        :key="`date-to-${column.key}`"
-                        v-model:value="filters[column.filterToKey]"
-                        class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date"
-                        size="small"
-                        date-type="date"
-                        :placeholder="`${column.label} bis`"
-                    />
-                </template>
+                <section
+                    v-for="column in dateRangeFilters"
+                    :key="`date-range-${column.key}`"
+                    class="external-orders-lieferzeit-empty__date-filter-block"
+                >
+                    <h4 class="external-orders-lieferzeit-empty__date-filter-title">{{ column.label }}</h4>
+                    <div class="external-orders-lieferzeit-empty__date-filter-pickers">
+                        <sw-datepicker
+                            :key="`date-from-${column.key}`"
+                            v-model:value="filters[column.filterFromKey]"
+                            class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date"
+                            size="small"
+                            date-type="date"
+                            :placeholder="column.fromPlaceholder"
+                        />
+                        <sw-datepicker
+                            :key="`date-to-${column.key}`"
+                            v-model:value="filters[column.filterToKey]"
+                            class="external-orders-lieferzeit-empty__field external-orders-lieferzeit-empty__field--date"
+                            size="small"
+                            date-type="date"
+                            :placeholder="column.toPlaceholder"
+                        />
+                    </div>
+                </section>
             </div>
 
             <div class="external-orders-lieferzeit-empty__filters-row external-orders-lieferzeit-empty__filters-row--tertiary">

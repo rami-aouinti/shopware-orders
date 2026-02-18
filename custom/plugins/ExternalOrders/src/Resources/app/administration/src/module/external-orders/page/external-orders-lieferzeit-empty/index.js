@@ -97,7 +97,7 @@ export const tableColumnsMeta = Object.freeze([
         label: 'Bestelldatum',
         group: 'Bestellung',
         type: 'date',
-        filterable: false,
+        filterable: true,
         filterType: 'dateRange',
         filterFromKey: 'orderDateFrom',
         filterToKey: 'orderDateTo',
@@ -245,14 +245,14 @@ export const tableColumnsMeta = Object.freeze([
         label: 'Spätester Versandzeitpunkt',
         group: 'Status',
         type: 'date',
-        filterable: true,
+        filterable: false,
         filterType: 'dateRange',
         filterFromKey: 'latestShippingDateFrom',
         filterToKey: 'latestShippingDateTo',
     },
     {
         key: 'latestDeliveryDate',
-        label: 'Spätester Lieferzeitpunkt',
+        label: 'Spätester Versand-/Lieferzeitpunkt',
         group: 'Status',
         type: 'date',
         filterable: true,
@@ -437,7 +437,30 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         },
 
         dateRangeFilters() {
-            return FILTERABLE_COLUMNS.filter((column) => column.filterType === 'dateRange');
+            const orderedDateFilterKeys = [
+                'orderDate',
+                'shippingDate',
+                'deliveryDate',
+                'lieferterminLieferant',
+                'neuerLiefertermin',
+                'latestDeliveryDate',
+            ];
+
+            const filterByKey = FILTERABLE_COLUMNS
+                .filter((column) => column.filterType === 'dateRange')
+                .reduce((acc, column) => {
+                    acc[column.key] = column;
+                    return acc;
+                }, {});
+
+            return orderedDateFilterKeys
+                .map((key) => filterByKey[key])
+                .filter(Boolean)
+                .map((column) => ({
+                    ...column,
+                    fromPlaceholder: `${column.label} – Von`,
+                    toPlaceholder: `${column.label} – Bis`,
+                }));
         },
 
         channels() {
