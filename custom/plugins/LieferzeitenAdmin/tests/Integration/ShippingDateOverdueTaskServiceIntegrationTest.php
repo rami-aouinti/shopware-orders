@@ -16,12 +16,12 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 
 class ShippingDateOverdueTaskServiceIntegrationTest extends TestCase
 {
-    public function testRunCreatesTaskWhenShippingDateIsNullCutoffPassedAndBusinessDateToIsToday(): void
+    public function testRunCreatesTaskWhenShippingDateIsNullCutoffPassedAndLatestShippingDateBusinessDateToIsToday(): void
     {
         $context = Context::createDefaultContext();
         $position = $this->buildPosition(
             shippingDate: null,
-            businessDateTo: new \DateTimeImmutable('today 09:00:00')
+            businessDateTo: new \DateTimeImmutable('today 09:00:00') // imported from latestShippingDate/shippingDateLatest
         );
 
         $positionRepository = $this->createMock(EntityRepository::class);
@@ -69,7 +69,7 @@ class ShippingDateOverdueTaskServiceIntegrationTest extends TestCase
         $context = Context::createDefaultContext();
         $position = $this->buildPosition(
             shippingDate: null,
-            businessDateTo: new \DateTimeImmutable('today 09:00:00')
+            businessDateTo: new \DateTimeImmutable('today 09:00:00') // imported from latestShippingDate/shippingDateLatest
         );
 
         $positionRepository = $this->createMock(EntityRepository::class);
@@ -104,7 +104,7 @@ class ShippingDateOverdueTaskServiceIntegrationTest extends TestCase
         $context = Context::createDefaultContext();
         $position = $this->buildPosition(
             shippingDate: new \DateTimeImmutable('today 08:00:00'),
-            businessDateTo: new \DateTimeImmutable('today 09:00:00')
+            businessDateTo: new \DateTimeImmutable('today 09:00:00') // imported from latestShippingDate/shippingDateLatest
         );
 
         $positionRepository = $this->createMock(EntityRepository::class);
