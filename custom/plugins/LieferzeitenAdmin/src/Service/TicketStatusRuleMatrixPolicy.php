@@ -25,7 +25,7 @@ final class TicketStatusRuleMatrixPolicy
     private const MATRIX = [
         1 => [
             'code' => 1,
-            'label' => 'New',
+            'label' => 'Neu',
             'readSources' => ['shopware', 'gambio'],
             'writeBackTargets' => [],
             'syncMode' => 'read_only',
@@ -33,7 +33,7 @@ final class TicketStatusRuleMatrixPolicy
         ],
         2 => [
             'code' => 2,
-            'label' => 'In clarification',
+            'label' => 'In Klärung',
             'readSources' => ['shopware', 'gambio'],
             'writeBackTargets' => [],
             'syncMode' => 'read_only',
@@ -41,7 +41,7 @@ final class TicketStatusRuleMatrixPolicy
         ],
         3 => [
             'code' => 3,
-            'label' => 'Awaiting supplier',
+            'label' => 'Warten auf Lieferanten',
             'readSources' => ['shopware', 'gambio', 'san6'],
             'writeBackTargets' => [],
             'syncMode' => 'read_only',
@@ -49,7 +49,7 @@ final class TicketStatusRuleMatrixPolicy
         ],
         4 => [
             'code' => 4,
-            'label' => 'Partially available',
+            'label' => 'Teilweise verfügbar',
             'readSources' => ['shopware', 'gambio', 'san6'],
             'writeBackTargets' => [],
             'syncMode' => 'read_only',
@@ -57,7 +57,7 @@ final class TicketStatusRuleMatrixPolicy
         ],
         5 => [
             'code' => 5,
-            'label' => 'Ready for shipping',
+            'label' => 'Versandbereit',
             'readSources' => ['shopware', 'gambio', 'san6'],
             'writeBackTargets' => [],
             'syncMode' => 'read_only',
@@ -65,7 +65,7 @@ final class TicketStatusRuleMatrixPolicy
         ],
         6 => [
             'code' => 6,
-            'label' => 'Partially shipped',
+            'label' => 'Teilversendet',
             'readSources' => ['shopware', 'gambio', 'san6', 'tracking'],
             'writeBackTargets' => [],
             'syncMode' => 'read_only',
@@ -73,7 +73,7 @@ final class TicketStatusRuleMatrixPolicy
         ],
         7 => [
             'code' => 7,
-            'label' => 'Shipped',
+            'label' => 'Versendet',
             'readSources' => ['shopware', 'gambio', 'san6', 'tracking'],
             'writeBackTargets' => ['shopware', 'gambio'],
             'syncMode' => 'bidirectional',
@@ -81,7 +81,7 @@ final class TicketStatusRuleMatrixPolicy
         ],
         8 => [
             'code' => 8,
-            'label' => 'Closed',
+            'label' => 'Abgeschlossen',
             'readSources' => ['shopware', 'gambio', 'san6', 'tracking'],
             'writeBackTargets' => ['shopware', 'gambio'],
             'syncMode' => 'bidirectional',
@@ -102,4 +102,3 @@ final class TicketStatusRuleMatrixPolicy
         return is_array($definition) && ($definition['writeBackTargets'] ?? []) !== [];
     }
 }
-

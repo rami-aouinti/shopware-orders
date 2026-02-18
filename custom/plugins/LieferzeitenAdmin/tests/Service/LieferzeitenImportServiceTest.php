@@ -1069,6 +1069,66 @@ class LieferzeitenImportServiceTest extends TestCase
         );
     }
 
+
+    /**
+     * @dataProvider provideSourceStatusesOneToEight
+     */
+    public function testResolveMappedStatusMapsIncomingSourceStatusesOneToEight(int $sourceStatus): void
+    {
+        $service = $this->createService();
+        $method = new \ReflectionMethod($service, 'resolveMappedStatus');
+        $method->setAccessible(true);
+
+        $mapped = $method->invoke($service, ['status' => (string) $sourceStatus], [], null);
+
+        static::assertSame($sourceStatus, $mapped);
+    }
+
+    /**
+     * @return iterable<string,array{0:int}>
+     */
+    public static function provideSourceStatusesOneToEight(): iterable
+    {
+        for ($status = 1; $status <= 8; $status++) {
+            yield sprintf('source status %d', $status) => [$status];
+        }
+    }
+
+    public function testResolveMappedStatusSetsStatusSevenFromSan6Signals(): void
+    {
+        $service = $this->createService();
+        $method = new \ReflectionMethod($service, 'resolveMappedStatus');
+        $method->setAccessible(true);
+
+        $mapped = $method->invoke($service, [], ['status' => 'bereit'], 3);
+
+        static::assertSame(7, $mapped);
+    }
+
+    public function testResolveMappedStatusSetsStatusEightForTrackingSpecialCases(): void
+    {
+        $service = $this->createService();
+        $method = new \ReflectionMethod($service, 'resolveMappedStatus');
+        $method->setAccessible(true);
+
+        $mappedBlocking = $method->invoke($service, [
+            'carrier' => 'DHL',
+            'parcels' => [
+                ['trackingStatus' => 'paketshop_non_retire'],
+            ],
+        ], [], 6);
+
+        $mappedFinal = $method->invoke($service, [
+            'carrier' => 'DHL',
+            'parcels' => [
+                ['trackingStatus' => 'paketshop_retire'],
+            ],
+        ], [], 6);
+
+        static::assertSame(6, $mappedBlocking);
+        static::assertSame(8, $mappedFinal);
+    }
+
     private function createService(
         ?EntityRepository $paketRepository = null,
         ?AuditLogService $auditLogService = null,

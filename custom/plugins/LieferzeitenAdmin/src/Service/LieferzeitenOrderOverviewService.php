@@ -12,14 +12,14 @@ class LieferzeitenOrderOverviewService
      * @var array<int, string>
      */
     private const BUSINESS_STATUS_MAPPING = [
-        1 => 'New',
-        2 => 'In clarification',
-        3 => 'Awaiting supplier',
-        4 => 'Partially available',
-        5 => 'Ready for shipping',
-        6 => 'Partially shipped',
-        7 => 'Shipped',
-        8 => 'Closed',
+        1 => 'Neu',
+        2 => 'In Klärung',
+        3 => 'Warten auf Lieferanten',
+        4 => 'Teilweise verfügbar',
+        5 => 'Versandbereit',
+        6 => 'Teilversendet',
+        7 => 'Versendet',
+        8 => 'Abgeschlossen',
     ];
 
 
