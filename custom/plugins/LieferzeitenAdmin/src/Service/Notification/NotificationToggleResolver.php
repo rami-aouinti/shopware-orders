@@ -15,9 +15,11 @@ class NotificationToggleResolver
 
     public function isEnabled(string $triggerKey, string $channel, Context $context, ?string $salesChannelId = null): bool
     {
+        $canonicalTriggerKey = NotificationTriggerCatalog::canonicalize($triggerKey);
+
         $criteria = new Criteria();
         $criteria->setLimit(1);
-        $criteria->addFilter(new EqualsFilter('triggerKey', $triggerKey));
+        $criteria->addFilter(new EqualsFilter('triggerKey', $canonicalTriggerKey));
         $criteria->addFilter(new EqualsFilter('channel', $channel));
 
         if ($salesChannelId !== null && $salesChannelId !== '') {

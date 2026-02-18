@@ -23,6 +23,7 @@ Component.register('lieferzeiten-task-assignment-rule-list', {
                 'versand.datum.ueberfaellig',
                 'liefertermin.anfrage.zusaetzlich',
                 'liefertermin.anfrage.geschlossen',
+                'liefertermin.anfrage.wiedereroeffnet',
             ],
             assigneeTypeOptions: ['user', 'team'],
         };

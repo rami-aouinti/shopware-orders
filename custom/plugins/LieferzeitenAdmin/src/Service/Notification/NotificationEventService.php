@@ -41,8 +41,9 @@ class NotificationEventService
         ?string $salesChannelId = null,
         bool $forceIfCritical = false,
     ): bool {
-        $triggerEnabled = $this->toggleResolver->isEnabled($triggerKey, $channel, $context, $salesChannelId);
-        $forced = $forceIfCritical && $this->isCriticalForceableTrigger($triggerKey);
+        $canonicalTriggerKey = NotificationTriggerCatalog::canonicalize($triggerKey);
+        $triggerEnabled = $this->toggleResolver->isEnabled($canonicalTriggerKey, $channel, $context, $salesChannelId);
+        $forced = $forceIfCritical && $this->isCriticalForceableTrigger($canonicalTriggerKey);
         if (!$triggerEnabled && !$forced) {
             return false;
         }
@@ -51,11 +52,11 @@ class NotificationEventService
             return false;
         }
 
-        $this->reliabilityService->executeWithRetry('mails', 'queue_notification_event', function () use ($eventKey, $triggerKey, $channel, $payload, $context, $externalOrderId, $sourceSystem): void {
+        $this->reliabilityService->executeWithRetry('mails', 'queue_notification_event', function () use ($eventKey, $canonicalTriggerKey, $channel, $payload, $context, $externalOrderId, $sourceSystem): void {
             $this->notificationEventRepository->create([[
                 'id' => Uuid::randomHex(),
                 'eventKey' => $eventKey,
-                'triggerKey' => $triggerKey,
+                'triggerKey' => $canonicalTriggerKey,
                 'channel' => $channel,
                 'externalOrderId' => $externalOrderId,
                 'sourceSystem' => $sourceSystem,
@@ -67,13 +68,14 @@ class NotificationEventService
 
         $this->logger->info('Notification event queued.', [
             'eventKey' => $eventKey,
-            'triggerKey' => $triggerKey,
+            'triggerKey' => $canonicalTriggerKey,
             'channel' => $channel,
             'forced' => $forced,
         ]);
 
         $this->auditLogService->log('notification_queued', 'notification_event', $eventKey, $context, [
             'triggerKey' => $triggerKey,
+            'canonicalTriggerKey' => $canonicalTriggerKey,
             'channel' => $channel,
             'forced' => $forced,
         ], 'mails');

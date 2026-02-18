@@ -23,6 +23,27 @@ class NotificationTriggerCatalog
     public const ADDITIONAL_DELIVERY_DATE_REQUEST_CLOSED = 'liefertermin.anfrage.geschlossen';
     public const ADDITIONAL_DELIVERY_DATE_REQUEST_REOPENED = 'liefertermin.anfrage.wiedereroeffnet';
 
+    /** @var array<string,string> */
+    private const LEGACY_TRIGGER_ALIASES = [
+        'date_livraison.attribuee' => self::DELIVERY_DATE_ASSIGNED,
+        'date_livraison.modifiee' => self::DELIVERY_DATE_UPDATED,
+        'livraison.date.retour' => self::RETURN_TO_SENDER,
+    ];
+
+    /** @var array<int,string> */
+    private const REQUIRED_NOTIFICATION_CONFIG_TRIGGERS = [
+        self::ORDER_CREATED,
+        self::ORDER_STATUS_CHANGED,
+        self::TRACKING_UPDATED,
+        self::SHIPPING_CONFIRMED,
+        self::DELIVERY_DATE_CHANGED,
+        self::CUSTOMS_REQUIRED,
+        self::ORDER_CANCELLED_STORNO,
+        self::DELIVERY_IMPOSSIBLE,
+        self::PAYMENT_RECEIVED_VORKASSE,
+        self::ORDER_COMPLETED_REVIEW_REMINDER,
+    ];
+
     /** @return array<int,string> */
     public static function all(): array
     {
@@ -52,5 +73,16 @@ class NotificationTriggerCatalog
     public static function channels(): array
     {
         return ['email'];
+    }
+
+    /** @return array<int,string> */
+    public static function requiredForNotificationConfig(): array
+    {
+        return self::REQUIRED_NOTIFICATION_CONFIG_TRIGGERS;
+    }
+
+    public static function canonicalize(string $triggerKey): string
+    {
+        return self::LEGACY_TRIGGER_ALIASES[$triggerKey] ?? $triggerKey;
     }
 }

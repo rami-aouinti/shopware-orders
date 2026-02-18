@@ -25,7 +25,7 @@ class NotificationEventServiceTest extends TestCase
 
         $toggleResolver->expects($this->once())
             ->method('isEnabled')
-            ->with('date_livraison.attribuee', 'email', $this->isInstanceOf(Context::class), 'sales-channel-1')
+            ->with(NotificationTriggerCatalog::DELIVERY_DATE_ASSIGNED, 'email', $this->isInstanceOf(Context::class), 'sales-channel-1')
             ->willReturn(true);
 
         $repository->expects($this->once())
@@ -37,7 +37,8 @@ class NotificationEventServiceTest extends TestCase
             ->with($this->callback(static function (array $payload): bool {
                 $event = $payload[0] ?? [];
 
-                return (($event['payload']['salesChannelId'] ?? null) === 'sales-channel-1');
+                return (($event['payload']['salesChannelId'] ?? null) === 'sales-channel-1')
+                    && (($event['triggerKey'] ?? null) === NotificationTriggerCatalog::DELIVERY_DATE_ASSIGNED);
             }));
 
         $reliability->expects($this->once())
