@@ -265,6 +265,12 @@ class LieferzeitenImportService
         $payload['calculatedShippingDate'] = $calculatedShippingDate?->format(DATE_ATOM);
         $payload['calculatedDeliveryDate'] = $calculatedDeliveryDate?->format(DATE_ATOM);
 
+        // latestShippingDate is the external "spätester Versandzeitpunkt" and is persisted as businessDateTo.
+        $payload['businessDateTo'] = $payload['latestShippingDate']
+            ?? $payload['shippingDateLatest']
+            ?? $payload['businessDateTo']
+            ?? null;
+
         $payload['shippingDate'] = $payload['calculatedShippingDate'] ?? $payload['shippingDate'] ?? null;
         $payload['deliveryDate'] = $payload['calculatedDeliveryDate'] ?? $payload['deliveryDate'] ?? null;
 

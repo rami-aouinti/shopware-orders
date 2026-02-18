@@ -17,12 +17,13 @@ class ShippingDateOverdueTaskService
         private readonly TaskAssignmentRuleResolver $taskAssignmentRuleResolver,
         private readonly EntityRepository $taskRepository,
         private readonly ChannelPdmsThresholdResolver $channelPdmsThresholdResolver,
+        private readonly ?\Closure $nowProvider = null,
     ) {
     }
 
     public function run(Context $context): void
     {
-        $now = new \DateTimeImmutable();
+        $now = $this->resolveNow();
 
         $criteria = new Criteria();
         $criteria->addAssociation('paket');
@@ -34,6 +35,10 @@ class ShippingDateOverdueTaskService
         foreach ($positions as $position) {
             $paket = $position->getPaket();
             if ($paket === null) {
+                continue;
+            }
+
+            if ($paket->getShippingDate() instanceof \DateTimeInterface) {
                 continue;
             }
 
@@ -89,6 +94,20 @@ class ShippingDateOverdueTaskService
                 ],
             ]], $context);
         }
+    }
+
+    private function resolveNow(): \DateTimeImmutable
+    {
+        if ($this->nowProvider === null) {
+            return new \DateTimeImmutable();
+        }
+
+        $now = ($this->nowProvider)();
+        if (!$now instanceof \DateTimeImmutable) {
+            throw new \RuntimeException('ShippingDateOverdueTaskService nowProvider must return DateTimeImmutable.');
+        }
+
+        return $now;
     }
 
     /**

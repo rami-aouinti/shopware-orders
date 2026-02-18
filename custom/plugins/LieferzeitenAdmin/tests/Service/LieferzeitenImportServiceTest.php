@@ -568,6 +568,40 @@ class LieferzeitenImportServiceTest extends TestCase
         static::assertSame($result['calculatedDeliveryDate'], $result['deliveryDate']);
     }
 
+
+    public function testResolveAndApplyBusinessDatesMapsLatestShippingDateToBusinessDateTo(): void
+    {
+        $settingsProvider = $this->createMock(ChannelDateSettingsProvider::class);
+        $settingsProvider->method('getForChannel')->with('shopware')->willReturn([
+            'shipping' => 1,
+            'delivery' => 3,
+        ]);
+
+        $calculator = new BusinessDayDeliveryDateCalculator();
+        $service = $this->createService(
+            baseDateResolver: new BaseDateResolver(),
+            settingsProvider: $settingsProvider,
+            deliveryDateCalculator: $calculator,
+        );
+
+        $method = new \ReflectionMethod($service, 'resolveAndApplyBusinessDates');
+        $method->setAccessible(true);
+
+        [$result] = $method->invoke($service, [
+            'orderDate' => '2026-02-02 09:00:00',
+            'latestShippingDate' => '2026-02-07T15:00:00+00:00',
+        ], 'shopware');
+
+        static::assertSame('2026-02-07T15:00:00+00:00', $result['businessDateTo']);
+
+        [$aliasResult] = $method->invoke($service, [
+            'orderDate' => '2026-02-02 09:00:00',
+            'shippingDateLatest' => '2026-02-08T16:00:00+00:00',
+        ], 'shopware');
+
+        static::assertSame('2026-02-08T16:00:00+00:00', $aliasResult['businessDateTo']);
+    }
+
     public function testResolveAndApplyBusinessDatesKeepsDatesUnsetForPrepaymentWithoutPaymentDate(): void
     {
         $settingsProvider = $this->createMock(ChannelDateSettingsProvider::class);
