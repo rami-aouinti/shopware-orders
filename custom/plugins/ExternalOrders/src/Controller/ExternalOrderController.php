@@ -105,6 +105,70 @@ class ExternalOrderController extends AbstractController
         );
     }
 
+
+
+    #[Route(
+        path: '/api/_action/external-orders/summary',
+        name: 'api.admin.external-orders.summary',
+        defaults: ['_acl' => ['admin']],
+        methods: [Request::METHOD_GET]
+    )]
+    public function summary(Request $request, Context $context): Response
+    {
+        $channel = $request->query->get('channel');
+        $search = $request->query->get('search');
+        $selectedArea = $request->query->get('selectedArea');
+        $selectedMainView = $request->query->get('selectedMainView');
+
+        $allowedFilters = [
+            'bestellnummer',
+            'san6',
+            'san6OrderNumber',
+            'latestShippingDateFrom',
+            'latestShippingDateTo',
+            'shippingDateFrom',
+            'shippingDateTo',
+            'latestDeliveryDateFrom',
+            'latestDeliveryDateTo',
+            'deliveryDateFrom',
+            'deliveryDateTo',
+            'lieferterminLieferantFrom',
+            'lieferterminLieferantTo',
+            'lieferterminAuftragsbearbeitungFrom',
+            'lieferterminAuftragsbearbeitungTo',
+            'changedByUser',
+            'sendenummer',
+            'status',
+            'statusCode',
+        ];
+
+        $filters = [];
+        foreach ($allowedFilters as $key) {
+            $value = $request->query->get($key);
+            if (!is_string($value)) {
+                continue;
+            }
+
+            $value = trim($value);
+            if ($value === '') {
+                continue;
+            }
+
+            $filters[$key] = $value;
+        }
+
+        return new JsonResponse(
+            $this->externalOrderService->fetchOrdersSummary(
+                $context,
+                $channel ? (string) $channel : null,
+                $search ? (string) $search : null,
+                $filters,
+                $selectedArea ? (string) $selectedArea : null,
+                $selectedMainView ? (string) $selectedMainView : null
+            )
+        );
+    }
+
     #[Route(
         path: '/api/_action/external-orders/detail/{internalOrderId}',
         name: 'api.admin.external-orders.detail',

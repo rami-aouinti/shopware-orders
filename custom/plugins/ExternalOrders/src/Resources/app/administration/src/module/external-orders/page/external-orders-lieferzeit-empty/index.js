@@ -560,10 +560,12 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                     selectedMainView: this.selectedMainView,
                 };
 
-                const result = this.externalOrderService
-                    ? await this.externalOrderService.list(params)
-                    : await this.fetchOrdersFallback(params);
-                const summary = result?.summary ?? {};
+                const summaryResult = this.externalOrderService?.summary
+                    ? await this.externalOrderService.summary(params)
+                    : (this.externalOrderService
+                        ? await this.externalOrderService.list(params)
+                        : await this.fetchOrdersFallback(params));
+                const summary = summaryResult?.summary ?? summaryResult ?? {};
 
                 this.statisticsMetrics = {
                     openOrders: Number(summary.openOrdersTotal ?? summary.openOrders ?? 0),

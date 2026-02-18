@@ -28,6 +28,26 @@ class ExternalOrderService extends ApiService {
         return data?.data ?? data;
     }
 
+    async summary(params = {}) {
+        const normalizedParams = Object.entries(params).reduce((accumulator, [key, value]) => {
+            if (value === null || value === undefined || value === '') {
+                return accumulator;
+            }
+
+            accumulator[key] = value;
+
+            return accumulator;
+        }, {});
+
+        const response = await this.httpClient.get(`_action/${this.getApiBasePath()}/summary`, {
+            headers: this.getBasicHeaders(),
+            params: normalizedParams,
+        });
+
+        const data = ApiService.handleResponse(response) ?? response?.data;
+        return data?.data ?? data;
+    }
+
     async detail(orderId) {
         const response = await this.httpClient.get(`_action/${this.getApiBasePath()}/detail/${orderId}`, {
             headers: this.getBasicHeaders(),
