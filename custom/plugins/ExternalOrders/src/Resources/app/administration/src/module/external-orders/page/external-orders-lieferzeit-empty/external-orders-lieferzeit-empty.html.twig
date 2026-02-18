@@ -271,28 +271,15 @@
                                     <div class="external-orders-lieferzeit-empty__task-row"><strong>Status:</strong> {{ getLieferzeitTaskStatusLabel(resolveLieferzeitTask(order)) }}</div>
                                     <div class="external-orders-lieferzeit-empty__task-actions">
                                         <button
+                                            v-for="action in getLieferzeitTaskActions(resolveLieferzeitTask(order))"
+                                            :key="`${resolveLieferzeitTask(order).id}-${action}`"
                                             class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small"
+                                            :class="{ 'external-orders-lieferzeit-empty__button--primary': action === 'close' }"
                                             type="button"
                                             :disabled="isTaskInProgress(resolveLieferzeitTask(order).id)"
-                                            @click="runTaskAction(resolveLieferzeitTask(order), 'assign')"
+                                            @click="runTaskAction(resolveLieferzeitTask(order), action)"
                                         >
-                                            Übernehmen
-                                        </button>
-                                        <button
-                                            class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--primary external-orders-lieferzeit-empty__button--small"
-                                            type="button"
-                                            :disabled="isTaskInProgress(resolveLieferzeitTask(order).id)"
-                                            @click="runTaskAction(resolveLieferzeitTask(order), 'close')"
-                                        >
-                                            Schließen
-                                        </button>
-                                        <button
-                                            class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small"
-                                            type="button"
-                                            :disabled="isTaskInProgress(resolveLieferzeitTask(order).id)"
-                                            @click="runTaskAction(resolveLieferzeitTask(order), 'reopen')"
-                                        >
-                                            Wieder öffnen
+                                            {{ getLieferzeitTaskActionLabel(action) }}
                                         </button>
                                     </div>
                                 </div>

@@ -556,10 +556,20 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
 
         await componentConfig.methods.loadLieferzeitTasks.call(context);
 
-        expect(listLieferzeitTasks).toHaveBeenCalledWith(expect.objectContaining({ status: 'open' }));
+        expect(listLieferzeitTasks).toHaveBeenCalledWith(expect.objectContaining({ limit: 500 }));
         expect(context.lieferzeitTasksByRowKey).toEqual({
             'order-1:10': expect.objectContaining({ id: 'task-1', triggerKey: 'versand.datum.ueberfaellig' }),
         });
+    });
+
+
+    it('derives task action set from task status', () => {
+        const actions = componentConfig.methods.getLieferzeitTaskActions;
+
+        expect(actions({ status: 'open' })).toEqual(['assign', 'close']);
+        expect(actions({ status: 'done' })).toEqual(['reopen']);
+        expect(actions({ status: 'reopened' })).toEqual(['assign', 'close']);
+        expect(actions({ status: 'unknown' })).toEqual(['assign', 'close', 'reopen']);
     });
 
     it('runs task status actions and refreshes tasks', async () => {

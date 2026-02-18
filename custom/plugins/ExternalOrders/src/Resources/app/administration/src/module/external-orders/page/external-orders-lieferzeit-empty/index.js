@@ -55,6 +55,19 @@ const LIEFERZEIT_TASK_STATUS_LABELS = Object.freeze({
     cancelled: 'Storniert',
 });
 
+const TASK_ACTION_BY_STATUS = Object.freeze({
+    open: ['assign', 'close'],
+    in_progress: ['assign', 'close'],
+    done: ['reopen'],
+    reopened: ['assign', 'close'],
+});
+
+const TASK_ACTION_LABELS = Object.freeze({
+    assign: 'Übernehmen',
+    close: 'Schließen',
+    reopen: 'Wieder öffnen',
+});
+
 export const tableColumnsMeta = Object.freeze([
     {
         key: 'bestellnummer',
@@ -969,11 +982,20 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 id,
                 positionId,
                 externalOrderId,
-                triggerKey: String(task?.triggerKey || payload?.trigger || '').trim(),
+                triggerKey: String(task?.triggerKey || payload?.triggerKey || payload?.trigger || '').trim(),
                 assignee: String(task?.assignee || '').trim(),
                 dueDate: task?.dueDate || payload?.dueDate || null,
                 status: String(task?.status || '').trim().toLowerCase(),
             };
+        },
+
+        getLieferzeitTaskActions(task) {
+            const status = String(task?.status || '').trim().toLowerCase();
+            return TASK_ACTION_BY_STATUS[status] || ['assign', 'close', 'reopen'];
+        },
+
+        getLieferzeitTaskActionLabel(action) {
+            return TASK_ACTION_LABELS[action] || this.displayOrDash(action);
         },
 
         getTaskRowKey(task) {
@@ -1028,7 +1050,6 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
             try {
                 const response = await this.externalOrderService.listLieferzeitTasks({
-                    status: 'open',
                     limit: 500,
                 });
 
@@ -1068,8 +1089,16 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             };
 
             try {
+                const updatedTask = {
+                    ...task,
+                    assignee: action === 'assign' ? (this.resolveInitiatorUserId() || 'system') : task.assignee,
+                    status: action === 'close'
+                        ? 'done'
+                        : (action === 'reopen' ? 'reopened' : (task.status || 'in_progress')),
+                };
+
                 if (action === 'assign') {
-                    await this.externalOrderService.assignLieferzeitTask(taskId, this.resolveInitiatorUserId() || 'system');
+                    await this.externalOrderService.assignLieferzeitTask(taskId, updatedTask.assignee);
                 }
 
                 if (action === 'close') {
@@ -1078,6 +1107,14 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
                 if (action === 'reopen') {
                     await this.externalOrderService.reopenLieferzeitTask(taskId);
+                }
+
+                const taskRowKey = this.getTaskRowKey(updatedTask);
+                if (taskRowKey) {
+                    this.lieferzeitTasksByRowKey = {
+                        ...this.lieferzeitTasksByRowKey,
+                        [taskRowKey]: updatedTask,
+                    };
                 }
 
                 await this.loadLieferzeitTasks();
