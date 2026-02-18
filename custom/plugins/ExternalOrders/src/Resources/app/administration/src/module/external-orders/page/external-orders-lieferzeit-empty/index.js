@@ -97,7 +97,7 @@ export const tableColumnsMeta = Object.freeze([
         label: 'Bestelldatum',
         group: 'Bestellung',
         type: 'date',
-        filterable: true,
+        filterable: false,
         filterType: 'dateRange',
         filterFromKey: 'orderDateFrom',
         filterToKey: 'orderDateTo',
@@ -106,7 +106,7 @@ export const tableColumnsMeta = Object.freeze([
         key: 'paymentMethod',
         label: 'Zahlungsart',
         group: 'Bestellung',
-        filterable: true,
+        filterable: false,
         filterType: 'text',
         filterKey: 'paymentMethod',
     },
@@ -115,7 +115,7 @@ export const tableColumnsMeta = Object.freeze([
         label: 'Datum Zahlungseingang',
         group: 'Bestellung',
         type: 'date',
-        filterable: true,
+        filterable: false,
         filterType: 'dateRange',
         filterFromKey: 'paymentReceivedDateFrom',
         filterToKey: 'paymentReceivedDateTo',
@@ -124,7 +124,7 @@ export const tableColumnsMeta = Object.freeze([
         key: 'customerFirstName',
         label: 'Vorname',
         group: 'Bestellung',
-        filterable: true,
+        filterable: false,
         filterType: 'text',
         filterKey: 'customerFirstName',
     },
@@ -132,7 +132,7 @@ export const tableColumnsMeta = Object.freeze([
         key: 'customerLastName',
         label: 'Nachname',
         group: 'Bestellung',
-        filterable: true,
+        filterable: false,
         filterType: 'text',
         filterKey: 'customerLastName',
     },
@@ -140,7 +140,7 @@ export const tableColumnsMeta = Object.freeze([
         key: 'customerAdditionalNames',
         label: 'Weitere Namen',
         group: 'Bestellung',
-        filterable: true,
+        filterable: false,
         filterType: 'text',
         filterKey: 'customerAdditionalNames',
     },
@@ -156,7 +156,7 @@ export const tableColumnsMeta = Object.freeze([
         key: 'orderedQuantity',
         label: 'Stückzahl Auftragsposition',
         group: 'Bestellung',
-        filterable: true,
+        filterable: false,
         filterType: 'text',
         filterKey: 'orderedQuantity',
     },
@@ -172,7 +172,7 @@ export const tableColumnsMeta = Object.freeze([
         key: 'packageId',
         label: 'Paket-ID',
         group: 'Lieferung',
-        filterable: true,
+        filterable: false,
         filterType: 'text',
         filterKey: 'packageId',
     },
@@ -180,7 +180,7 @@ export const tableColumnsMeta = Object.freeze([
         key: 'trackingNumberPerPackage',
         label: 'Trackingnummer pro Paket',
         group: 'Lieferung',
-        filterable: true,
+        filterable: false,
         filterType: 'text',
         filterKey: 'trackingNumberPerPackage',
     },
@@ -188,7 +188,7 @@ export const tableColumnsMeta = Object.freeze([
         key: 'shippedQuantity',
         label: 'Versandmenge je Paket (versendet/bestellt)',
         group: 'Lieferung',
-        filterable: true,
+        filterable: false,
         filterType: 'text',
         filterKey: 'shippedQuantity',
     },
@@ -216,7 +216,7 @@ export const tableColumnsMeta = Object.freeze([
         key: 'packageStatus',
         label: 'Paket-Status',
         group: 'Lieferung',
-        filterable: true,
+        filterable: false,
         filterType: 'text',
         filterKey: 'packageStatus',
     },
@@ -283,15 +283,19 @@ const DATE_COLUMN_KEYS = tableColumnsMeta
     .map((column) => column.key);
 
 const FILTERABLE_COLUMNS = tableColumnsMeta.filter((column) => column.filterable);
-const TOP_BAR_DATE_FILTER_KEYS = Object.freeze([
-    'orderDate',
-    'shippingDate',
-    'latestShippingDate',
-    'latestDeliveryDate',
-    'deliveryDate',
-    'lieferterminLieferant',
-    'neuerLiefertermin',
-]);
+const ALLOWED_FILTER_PARAM_KEYS = Object.freeze(
+    FILTERABLE_COLUMNS.flatMap((column) => {
+        if (column.filterType === 'dateRange') {
+            return [column.filterFromKey, column.filterToKey];
+        }
+
+        if (column.filterType === 'text' || column.filterType === 'select') {
+            return [column.filterKey];
+        }
+
+        return [];
+    }),
+);
 const SUPPLIER_TASK_POLL_INTERVAL_MS = 15000;
 
 const BUSINESS_STATUS_LABELS = Object.freeze({
@@ -433,10 +437,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         },
 
         dateRangeFilters() {
-            return FILTERABLE_COLUMNS.filter((column) => (
-                column.filterType === 'dateRange'
-                && TOP_BAR_DATE_FILTER_KEYS.includes(column.key)
-            ));
+            return FILTERABLE_COLUMNS.filter((column) => column.filterType === 'dateRange');
         },
 
         channels() {
@@ -686,6 +687,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 return match ? match[1] : rawValue;
             };
 
+            const allowedFilterParamKeys = new Set(ALLOWED_FILTER_PARAM_KEYS);
             const dateFilterKeys = new Set(
                 FILTERABLE_COLUMNS
                     .filter((column) => column.filterType === 'dateRange')
@@ -693,6 +695,10 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             );
 
             const params = Object.entries(this.filters).reduce((result, [key, value]) => {
+                if (!allowedFilterParamKeys.has(key)) {
+                    return result;
+                }
+
                 if (value === null || value === undefined) {
                     return result;
                 }
