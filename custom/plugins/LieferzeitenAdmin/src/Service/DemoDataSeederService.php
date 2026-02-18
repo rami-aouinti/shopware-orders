@@ -316,10 +316,14 @@ class DemoDataSeederService
 
                 $trackingHistory = $positionData['trackingHistory'] ?? [];
                 if ($trackingHistory === [] && ($positionData['trackingNumber'] ?? null) !== null) {
+                    $trackingTimestamp = $now->modify('+1 seconds');
                     $trackingHistory[] = [
+                        'number' => $positionData['trackingNumber'],
                         'sendenummer' => $positionData['trackingNumber'],
-                        'carrier' => $dataset['shippingAssignmentType'] === 'eigenversand' ? null : $dataset['shippingAssignmentType'],
+                        'carrier' => $this->resolveCarrierForTrackingNumber((string) $positionData['trackingNumber'], (string) $dataset['shippingAssignmentType']),
                         'isActive' => true,
+                        'createdAt' => $trackingTimestamp,
+                        'lastChangedAt' => $trackingTimestamp,
                     ];
                 }
 
@@ -327,14 +331,24 @@ class DemoDataSeederService
                     $trackingPayload = [
                         'id' => $this->uuidBytes(),
                         'position_id' => $positionId,
-                        'sendenummer' => $trackingData['sendenummer'],
+                        'sendenummer' => (string) ($trackingData['sendenummer'] ?? $trackingData['number'] ?? ''),
                         'last_changed_by' => 'demo.seeder',
-                        'last_changed_at' => $now->modify(sprintf('+%d seconds', $historyIndex + 1))->format('Y-m-d H:i:s'),
-                        'created_at' => $now->modify(sprintf('+%d seconds', $historyIndex + 1))->format('Y-m-d H:i:s'),
+                        'last_changed_at' => ($trackingData['lastChangedAt'] instanceof \DateTimeImmutable
+                            ? $trackingData['lastChangedAt']
+                            : $now->modify(sprintf('+%d seconds', $historyIndex + 1))
+                        )->format('Y-m-d H:i:s'),
+                        'created_at' => ($trackingData['createdAt'] instanceof \DateTimeImmutable
+                            ? $trackingData['createdAt']
+                            : $now->modify(sprintf('+%d seconds', $historyIndex + 1))
+                        )->format('Y-m-d H:i:s'),
                     ];
 
                     if ($this->tableHasColumn('lieferzeiten_sendenummer_history', 'carrier')) {
-                        $trackingPayload['carrier'] = $trackingData['carrier'] ?? null;
+                        $trackingPayload['carrier'] = $trackingData['carrier']
+                            ?? $this->resolveCarrierForTrackingNumber(
+                                (string) ($trackingData['sendenummer'] ?? $trackingData['number'] ?? ''),
+                                (string) $dataset['shippingAssignmentType'],
+                            );
                     }
 
                     if ($this->tableHasColumn('lieferzeiten_sendenummer_history', 'is_active')) {
@@ -696,6 +710,15 @@ class DemoDataSeederService
                         'status' => 'open',
                         'orderedQuantity' => 1,
                         'shippedQuantity' => 1,
+                        'splitReference' => 'TRACK-INTERNAL-SHIPMENT',
+                        'trackingHistory' => [
+                            ['number' => 'Versand durch First Medical', 'carrier' => null, 'isActive' => true],
+                        ],
+                    ],
+                    [
+                        'status' => 'open',
+                        'orderedQuantity' => 1,
+                        'shippedQuantity' => 1,
                         'splitReference' => 'TRACK-ZOLL',
                         'trackingHistory' => [
                             ['sendenummer' => 'DHL-{suffix}-ZOLL-ABGELEHNT', 'carrier' => 'dhl', 'isActive' => true],
@@ -742,11 +765,16 @@ class DemoDataSeederService
 
             $trackingHistory = [];
             foreach (($positionTemplate['trackingHistory'] ?? []) as $trackingTemplate) {
-                $trackingNumber = str_replace('{suffix}', $rowSuffix, (string) $trackingTemplate['sendenummer']);
+                $rawTrackingNumber = (string) ($trackingTemplate['number'] ?? $trackingTemplate['sendenummer'] ?? '');
+                $trackingNumber = str_replace('{suffix}', $rowSuffix, $rawTrackingNumber);
+                $trackingTimestamp = $orderDate->modify(sprintf('+%d days +%d seconds', $index + 1, count($trackingHistory) + 1));
                 $trackingHistory[] = [
+                    'number' => $trackingNumber,
                     'sendenummer' => $trackingNumber,
-                    'carrier' => $trackingTemplate['carrier'] ?? null,
+                    'carrier' => $trackingTemplate['carrier'] ?? $this->resolveCarrierForTrackingNumber($trackingNumber, (string) ($scenario['shippingType'] ?? '')),
                     'isActive' => (bool) ($trackingTemplate['isActive'] ?? true),
+                    'createdAt' => $trackingTemplate['createdAt'] ?? $trackingTimestamp,
+                    'lastChangedAt' => $trackingTemplate['lastChangedAt'] ?? $trackingTimestamp,
                 ];
             }
 
@@ -807,5 +835,32 @@ class DemoDataSeederService
     private function uuidBytes(): string
     {
         return hex2bin(Uuid::randomHex()) ?: random_bytes(16);
+    }
+
+    private function resolveCarrierForTrackingNumber(string $trackingNumber, string $fallbackCarrier): ?string
+    {
+        $normalizedTrackingNumber = trim($trackingNumber);
+        if ($normalizedTrackingNumber === '' || $normalizedTrackingNumber === 'Versand durch First Medical') {
+            return null;
+        }
+
+        $carrierByPrefix = [
+            'dhl' => 'dhl',
+            'gls' => 'gls',
+            'ups' => 'ups',
+            'dpd' => 'dpd',
+            'hermes' => 'hermes',
+        ];
+
+        $prefix = strtolower((string) strtok($normalizedTrackingNumber, '-'));
+        if (isset($carrierByPrefix[$prefix])) {
+            return $carrierByPrefix[$prefix];
+        }
+
+        $normalizedFallbackCarrier = strtolower(trim($fallbackCarrier));
+
+        return $normalizedFallbackCarrier === 'eigenversand' || $normalizedFallbackCarrier === ''
+            ? null
+            : $normalizedFallbackCarrier;
     }
 }
