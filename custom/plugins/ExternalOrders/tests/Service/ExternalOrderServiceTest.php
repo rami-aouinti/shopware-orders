@@ -299,6 +299,71 @@ class ExternalOrderServiceTest extends TestCase
         static::assertSame('70001', $result['orders'][0]['san6OrderNumber']);
     }
 
+
+
+    public function testFetchOrdersFiltersByLieferzeitAreaAndMainViewValuesFromUi(): void
+    {
+        $context = Context::createDefaultContext();
+        $orders = [
+            $this->createOrderEntity('99999999999999999999999999999991', 'SW-AREA-1', 11.0, []),
+            $this->createOrderEntity('99999999999999999999999999999992', 'SW-AREA-2', 22.0, []),
+            $this->createOrderEntity('99999999999999999999999999999993', 'SW-AREA-3', 33.0, []),
+        ];
+
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->exactly(2))->method('search')->willReturn(
+            new EntitySearchResult(OrderDefinition::ENTITY_NAME, 3, new OrderCollection($orders), null, new Criteria(), $context)
+        );
+
+        $payloadRows = [
+            [
+                'id' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1',
+                'order_id' => '99999999999999999999999999999991',
+                'external_id' => 'EXT-AREA-1',
+                'channel' => 'b2b',
+                'raw_payload' => json_encode([
+                    'status' => 'open',
+                    'detail' => ['items' => [['orderedQuantity' => 1]]],
+                ], JSON_THROW_ON_ERROR),
+            ],
+            [
+                'id' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2',
+                'order_id' => '99999999999999999999999999999992',
+                'external_id' => 'EXT-AREA-2',
+                'channel' => 'ebay_de',
+                'raw_payload' => json_encode([
+                    'status' => 'open',
+                    'detail' => ['items' => [['orderedQuantity' => 1]]],
+                ], JSON_THROW_ON_ERROR),
+            ],
+            [
+                'id' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa3',
+                'order_id' => '99999999999999999999999999999993',
+                'external_id' => 'EXT-AREA-3',
+                'channel' => 'kaufland',
+                'raw_payload' => json_encode([
+                    'status' => 'completed',
+                    'detail' => ['items' => [['orderedQuantity' => 1]]],
+                ], JSON_THROW_ON_ERROR),
+            ],
+        ];
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->exactly(2))
+            ->method('fetchAllAssociative')
+            ->willReturn($payloadRows);
+
+        $service = new ExternalOrderService($repository, $connection);
+
+        $areaFiltered = $service->fetchOrders($context, selectedArea: 'first-medical-ecommerce');
+        static::assertSame(1, $areaFiltered['total']);
+        static::assertSame('b2b', $areaFiltered['orders'][0]['channel']);
+
+        $mainViewFiltered = $service->fetchOrders($context, selectedArea: 'medical-solutions', selectedMainView: 'openOrders');
+        static::assertSame(1, $mainViewFiltered['total']);
+        static::assertSame('ebay_de', $mainViewFiltered['orders'][0]['channel']);
+    }
+
     /**
      * @param array<string, mixed>|null $customFields
      */

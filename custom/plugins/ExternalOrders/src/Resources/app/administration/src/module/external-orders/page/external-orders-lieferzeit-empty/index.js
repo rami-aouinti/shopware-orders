@@ -31,13 +31,13 @@ const CHANNEL_LABELS = Object.freeze({
 });
 
 const AREA_OPTIONS = Object.freeze([
-    { value: 'order-monitoring', label: 'Auftragsmonitoring' },
-    { value: 'delivery-monitoring', label: 'Liefermonitoring' },
+    { value: 'first-medical-ecommerce', label: 'First Medical E-Commerce' },
+    { value: 'medical-solutions', label: 'Medical Solutions' },
 ]);
 
 const MAIN_VIEW_OPTIONS = Object.freeze([
-    { value: 'overview', label: 'Übersicht' },
-    { value: 'details', label: 'Detailansicht' },
+    { value: 'allOrders', label: 'Alle Aufträge' },
+    { value: 'openOrders', label: 'Offene Aufträge' },
 ]);
 
 export const tableColumnsMeta = Object.freeze([

@@ -4,6 +4,7 @@ namespace ExternalOrders\Tests\Controller;
 
 use Doctrine\DBAL\Connection;
 use ExternalOrders\Controller\ExternalOrderController;
+use ExternalOrders\Service\DeliveryDateEditorService;
 use ExternalOrders\Service\ExternalOrderService;
 use ExternalOrders\Service\ExternalOrderSyncService;
 use ExternalOrders\Service\ExternalOrderTestDataService;
@@ -69,6 +70,7 @@ class ExternalOrderControllerTest extends TestCase
             $this->createMock(ExternalOrderSyncService::class),
             $this->createMock(TopmSan6OrderExportService::class),
             $this->createMock(SupplierRequestTaskService::class),
+            $this->createMock(DeliveryDateEditorService::class),
             $this->createMock(Connection::class),
         );
 
@@ -84,6 +86,59 @@ class ExternalOrderControllerTest extends TestCase
         static::assertSame(Response::HTTP_OK, $response->getStatusCode());
     }
 
+
+
+    public function testListForwardsLieferzeitRouteSelectionFilters(): void
+    {
+        $externalOrderService = $this->createMock(ExternalOrderService::class);
+        $externalOrderService
+            ->expects($this->exactly(2))
+            ->method('fetchOrders')
+            ->with(
+                $this->isInstanceOf(Context::class),
+                null,
+                null,
+                1,
+                50,
+                null,
+                null,
+                $this->equalTo([]),
+                $this->logicalOr($this->equalTo('first-medical-ecommerce'), $this->equalTo('medical-solutions')),
+                $this->logicalOr($this->equalTo('allOrders'), $this->equalTo('openOrders')),
+            )
+            ->willReturnOnConsecutiveCalls(
+                ['orders' => [['channel' => 'b2b']], 'total' => 1],
+                ['orders' => [['channel' => 'ebay_de']], 'total' => 1],
+            );
+
+        $controller = new ExternalOrderController(
+            $externalOrderService,
+            $this->createMock(ExternalOrderTestDataService::class),
+            $this->createMock(ExternalOrderSyncService::class),
+            $this->createMock(TopmSan6OrderExportService::class),
+            $this->createMock(SupplierRequestTaskService::class),
+            $this->createMock(DeliveryDateEditorService::class),
+            $this->createMock(Connection::class),
+        );
+
+        $firstMedicalRequest = new Request(query: [
+            'selectedArea' => 'first-medical-ecommerce',
+            'selectedMainView' => 'allOrders',
+        ]);
+
+        $medicalSolutionsRequest = new Request(query: [
+            'selectedArea' => 'medical-solutions',
+            'selectedMainView' => 'openOrders',
+        ]);
+
+        $firstMedicalResponse = $controller->list($firstMedicalRequest, Context::createDefaultContext());
+        $medicalSolutionsResponse = $controller->list($medicalSolutionsRequest, Context::createDefaultContext());
+
+        static::assertSame(Response::HTTP_OK, $firstMedicalResponse->getStatusCode());
+        static::assertStringContainsString('b2b', (string) $firstMedicalResponse->getContent());
+        static::assertSame(Response::HTTP_OK, $medicalSolutionsResponse->getStatusCode());
+        static::assertStringContainsString('ebay_de', (string) $medicalSolutionsResponse->getContent());
+    }
     public function testMarkTestPrefersInternalOrderIdsPayload(): void
     {
         $externalOrderService = $this->createMock(ExternalOrderService::class);
@@ -99,6 +154,7 @@ class ExternalOrderControllerTest extends TestCase
             $this->createMock(ExternalOrderSyncService::class),
             $this->createMock(TopmSan6OrderExportService::class),
             $this->createMock(SupplierRequestTaskService::class),
+            $this->createMock(DeliveryDateEditorService::class),
             $this->createMock(Connection::class),
         );
 

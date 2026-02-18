@@ -167,6 +167,33 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(shippedQuantityValue).toBe('7/10');
     });
 
+
+
+    it('sends selected area and main view query params from UI selections', async () => {
+        const state = componentConfig.data();
+        const list = jest.fn().mockResolvedValue({ orders: [] });
+
+        const context = {
+            ...state,
+            selectedArea: 'medical-solutions',
+            selectedMainView: 'openOrders',
+            externalOrderService: { list },
+            fetchOrdersFallback: jest.fn(),
+            extractOrders: componentConfig.methods.extractOrders,
+            normalizeOrder: (order) => order,
+            expandOrdersByPosition: (orders) => orders,
+            channels: [{ id: 'all' }],
+            activeChannel: 'all',
+            hasRequiredSelections: true,
+        };
+
+        await componentConfig.methods.loadOrders.call(context);
+
+        expect(list).toHaveBeenCalledWith(expect.objectContaining({
+            selectedArea: 'medical-solutions',
+            selectedMainView: 'openOrders',
+        }));
+    });
     it('maps normalized filter params to externalOrderService.list', async () => {
         const state = componentConfig.data();
         const list = jest.fn().mockResolvedValue({ orders: [] });
