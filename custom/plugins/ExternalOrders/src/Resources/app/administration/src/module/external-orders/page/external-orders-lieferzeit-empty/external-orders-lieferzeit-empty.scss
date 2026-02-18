@@ -154,9 +154,8 @@
     &__filters-row,
     &__filters-actions {
         display: flex;
-        gap: 8px;
+        gap: 10px;
         align-items: center;
-        flex-wrap: wrap;
     }
 
     &__filters-row {
@@ -164,15 +163,22 @@
 
         &--primary {
             display: grid;
-            grid-template-columns: repeat(5, minmax(180px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(5, minmax(220px, 1fr));
+            gap: 10px;
         }
 
         &--secondary {
             display: grid;
-            grid-template-columns: repeat(4, minmax(180px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(4, minmax(220px, 1fr));
+            gap: 10px;
             align-items: start;
+        }
+
+        &--tertiary {
+            display: grid;
+            grid-template-columns: minmax(280px, 1fr) auto;
+            gap: 10px;
+            align-items: end;
         }
     }
 
@@ -184,30 +190,80 @@
         }
 
         &--date {
-            min-width: 180px;
+            min-width: 0;
         }
 
         &--search {
-            min-width: 260px;
-            grid-column: span 2;
+            min-width: 0;
         }
     }
 
     &__search {
-        min-width: 240px;
+        min-width: 0;
     }
 
     &__filters-actions {
         margin-left: 0;
         justify-content: flex-end;
         width: 100%;
-        grid-column: 1 / -1;
+        align-self: end;
+        justify-self: end;
+        flex-wrap: nowrap;
     }
 
     .sw-datepicker,
     .sw-field,
-    .sw-field--text {
+    .sw-field--text,
+    .sw-single-select {
         width: 100%;
+        min-height: 38px;
+    }
+
+    @media (max-width: 1640px) {
+        &__filters-row {
+            &--primary {
+                grid-template-columns: repeat(3, minmax(220px, 1fr));
+            }
+
+            &--secondary {
+                grid-template-columns: repeat(3, minmax(220px, 1fr));
+            }
+        }
+    }
+
+    @media (max-width: 1240px) {
+        &__filters-row {
+            &--primary {
+                grid-template-columns: repeat(2, minmax(220px, 1fr));
+            }
+
+            &--secondary {
+                grid-template-columns: repeat(2, minmax(220px, 1fr));
+            }
+
+            &--tertiary {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        &__filters-actions {
+            justify-self: start;
+            justify-content: flex-start;
+        }
+    }
+
+    @media (max-width: 760px) {
+        &__filters-row {
+            &--primary,
+            &--secondary {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        &__filters-actions {
+            width: 100%;
+            flex-wrap: wrap;
+        }
     }
 
     &__button {
