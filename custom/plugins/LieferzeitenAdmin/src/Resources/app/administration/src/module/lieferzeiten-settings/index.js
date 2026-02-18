@@ -38,7 +38,7 @@ Module.register('lieferzeiten-settings', {
             component: 'lieferzeiten-task-assignment-rule-list',
             path: 'task-assignment-rules',
             meta: {
-                privilege: 'admin',
+                privilege: 'lieferzeiten.editor',
             },
         },
         notificationToggles: {

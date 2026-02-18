@@ -10,6 +10,14 @@
         <div class="external-orders-lieferzeit-empty__active-channel">
             <span>Aktiver Kanal</span>
             <strong>{{ activeChannelLabel }}</strong>
+            <button
+                v-if="hasTaskAssignmentSettingsAccess()"
+                class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small"
+                type="button"
+                @click="openTaskAssignmentRules"
+            >
+                Aufgabenvergabe konfigurieren
+            </button>
         </div>
     </header>
 
@@ -256,6 +264,9 @@
                                 <div class="external-orders-lieferzeit-empty__task-panel" v-if="resolveLieferzeitTask(order)">
                                     <div class="external-orders-lieferzeit-empty__task-row"><strong>Trigger:</strong> {{ displayOrDash(resolveLieferzeitTask(order).triggerKey) }}</div>
                                     <div class="external-orders-lieferzeit-empty__task-row"><strong>Assignee:</strong> {{ displayOrDash(resolveLieferzeitTask(order).assignee) }}</div>
+                                    <div class="external-orders-lieferzeit-empty__task-rule-hint">
+                                        Regel: <code>versand.datum.ueberfaellig</code> → {{ displayOrDash(resolveLieferzeitTask(order).assignee) }}
+                                    </div>
                                     <div class="external-orders-lieferzeit-empty__task-row"><strong>Due Date:</strong> {{ formatDate(resolveLieferzeitTask(order).dueDate) }}</div>
                                     <div class="external-orders-lieferzeit-empty__task-row"><strong>Status:</strong> {{ getLieferzeitTaskStatusLabel(resolveLieferzeitTask(order)) }}</div>
                                     <div class="external-orders-lieferzeit-empty__task-actions">

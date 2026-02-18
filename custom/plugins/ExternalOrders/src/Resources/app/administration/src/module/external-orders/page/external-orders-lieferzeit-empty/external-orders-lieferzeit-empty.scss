@@ -318,6 +318,19 @@
         flex-wrap: wrap;
     }
 
+    &__task-rule-hint {
+        font-size: 11px;
+        color: #6b7b8d;
+
+        code {
+            color: #1f2d3d;
+            background: #f3f7fb;
+            border: 1px solid #dce4eb;
+            border-radius: 4px;
+            padding: 1px 4px;
+        }
+    }
+
     &__column-header {
         position: relative;
         display: flex;
