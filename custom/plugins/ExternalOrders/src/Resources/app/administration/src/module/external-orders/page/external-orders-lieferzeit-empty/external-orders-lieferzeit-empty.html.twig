@@ -251,7 +251,7 @@
                                             :key="`${getRowKey(order)}-${column.key}-${entry.number}-${entryIndex}`"
                                             class="external-orders-lieferzeit-empty__tracking-link"
                                             type="button"
-                                            @click="openTrackingModal(entry, order)"
+                                            @click="openTrackingModal(entry, order, column.key)"
                                         >
                                             {{ entry.number }}
                                             <small v-if="!entry.isCurrent">(historisch)</small>

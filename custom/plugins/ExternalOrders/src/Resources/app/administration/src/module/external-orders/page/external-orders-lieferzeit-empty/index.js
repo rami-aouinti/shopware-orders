@@ -1358,7 +1358,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 return normalizedHistory.map((entry, index) => ({
                     number: String(entry?.number || '').trim(),
                     isCurrent: entry?.isCurrent !== false && index === 0 ? true : Boolean(entry?.isCurrent),
-                    carrier: String(entry?.carrier || order?.shippingCarrier || '').trim(),
+                    carrier: this.resolveTrackingCarrier(entry, order),
                     isInternal: entry?.isInternal === true || order?.isInternalShipment === true,
                     lastChangedAt: entry?.lastChangedAt || entry?.createdAt || null,
                     lastChangedBy: entry?.lastChangedBy || '',
@@ -1378,7 +1378,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 return parsedValues.map((number, index) => ({
                     number,
                     isCurrent: index === 0,
-                    carrier: String(order?.shippingCarrier || '').trim(),
+                    carrier: this.resolveTrackingCarrier({ number, isInternal: order?.isInternalShipment === true }, order),
                     isInternal: order?.isInternalShipment === true,
                 }));
             }
@@ -1390,18 +1390,63 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             return trackingNumbers.map((number, index) => ({
                 number,
                 isCurrent: index === 0,
-                carrier: String(order?.shippingCarrier || '').trim(),
+                carrier: this.resolveTrackingCarrier({ number, isInternal: order?.isInternalShipment === true }, order),
                 isInternal: order?.isInternalShipment === true,
             }));
         },
 
-        openTrackingModal(entry, order) {
-            this.selectedTrackingEntry = {
+        detectCarrierFromTrackingNumber(number) {
+            const normalized = String(number || '').trim().toUpperCase();
+
+            if (normalized.startsWith('DHL-')) {
+                return 'dhl';
+            }
+
+            if (normalized.startsWith('GLS-')) {
+                return 'gls';
+            }
+
+            return '';
+        },
+
+        resolveTrackingCarrier(entry, order) {
+            const explicitCarrier = String(entry?.carrier || order?.shippingCarrier || '').trim().toLowerCase();
+
+            if (explicitCarrier !== '') {
+                return explicitCarrier;
+            }
+
+            const inferredCarrier = this.detectCarrierFromTrackingNumber(entry?.number);
+
+            if (inferredCarrier !== '') {
+                return inferredCarrier;
+            }
+
+            if (entry?.isInternal === true || order?.isInternalShipment === true) {
+                return 'internal';
+            }
+
+            return 'unknown';
+        },
+
+        resolveTrackingHistoryWithCarrier(order, columnKey = 'sendenummer') {
+            const entries = this.resolveTrackingEntries(order, columnKey);
+
+            return entries.map((entry) => ({
                 ...entry,
-                carrier: String(entry?.carrier || order?.shippingCarrier || '').trim(),
+                carrier: this.resolveTrackingCarrier(entry, order),
+            }));
+        },
+
+        openTrackingModal(entry, order, columnKey = 'sendenummer') {
+            const resolvedEntry = {
+                ...entry,
+                carrier: this.resolveTrackingCarrier(entry, order),
                 isInternal: entry?.isInternal === true || order?.isInternalShipment === true,
             };
-            this.selectedTrackingHistory = this.resolveTrackingEntries(order);
+
+            this.selectedTrackingEntry = resolvedEntry;
+            this.selectedTrackingHistory = this.resolveTrackingHistoryWithCarrier(order, columnKey);
             this.showTrackingModal = true;
         },
 
