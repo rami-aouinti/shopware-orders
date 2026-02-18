@@ -543,7 +543,31 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 return this.statisticsMetrics;
             }
 
-            this.statisticsMetrics = { ...DEFAULT_STATISTICS_METRICS };
+            try {
+                const params = {
+                    ...this.buildFilterParams(),
+                    selectedArea: this.selectedArea,
+                    selectedMainView: this.selectedMainView,
+                };
+
+                const result = this.externalOrderService
+                    ? await this.externalOrderService.list(params)
+                    : await this.fetchOrdersFallback(params);
+                const summary = result?.summary ?? {};
+
+                this.statisticsMetrics = {
+                    openOrders: Number(summary.openOrdersTotal ?? summary.openOrders ?? 0),
+                    overdueShipping: Number(summary.overdueShippingTotal ?? summary.overdueShipping ?? 0),
+                    overdueDelivery: Number(
+                        summary.overdueDeliveriesCompletedTotal
+                        ?? summary.overdueDelivery
+                        ?? summary.overdueDeliveryTotal
+                        ?? 0,
+                    ),
+                };
+            } catch (error) {
+                this.statisticsMetrics = { ...DEFAULT_STATISTICS_METRICS };
+            }
 
             return this.statisticsMetrics;
         },
@@ -903,6 +927,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
         applyFilters() {
             this.loadOrders();
+            this.loadStatistics();
         },
 
         applyEntrySelection() {
@@ -920,6 +945,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             this.sortDirection = 'DESC';
             this.page = 1;
             this.loadOrders();
+            this.loadStatistics();
         },
 
         onSearch() {
