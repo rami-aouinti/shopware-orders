@@ -235,4 +235,113 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(list.mock.calls[0][0]).not.toHaveProperty('san6Auftragsposition');
         expect(list.mock.calls[0][0]).not.toHaveProperty('kommentar');
     });
+
+    it('maps summary statistics to KPI metrics', async () => {
+        const state = componentConfig.data();
+        const list = jest.fn().mockResolvedValue({
+            summary: {
+                openOrdersTotal: 12,
+                overdueShippingTotal: 4,
+                overdueDeliveriesCompletedTotal: 2,
+            },
+        });
+
+        const context = {
+            ...state,
+            selectedArea: 'medical-solutions',
+            selectedMainView: 'openOrders',
+            hasRequiredSelections: true,
+            externalOrderService: { list },
+            fetchOrdersFallback: jest.fn(),
+            buildFilterParams: componentConfig.methods.buildFilterParams,
+        };
+
+        const result = await componentConfig.methods.loadStatistics.call(context);
+
+        expect(list).toHaveBeenCalledWith(expect.objectContaining({
+            selectedArea: 'medical-solutions',
+            selectedMainView: 'openOrders',
+        }));
+        expect(result).toEqual({
+            openOrders: 12,
+            overdueShipping: 4,
+            overdueDelivery: 2,
+        });
+        expect(context.statisticsMetrics).toEqual(result);
+    });
+
+    it('falls back to default KPI metrics when statistics loading fails', async () => {
+        const state = componentConfig.data();
+        const list = jest.fn().mockRejectedValue(new Error('boom'));
+
+        const context = {
+            ...state,
+            hasRequiredSelections: true,
+            externalOrderService: { list },
+            fetchOrdersFallback: jest.fn(),
+            buildFilterParams: componentConfig.methods.buildFilterParams,
+            statisticsMetrics: {
+                openOrders: 99,
+                overdueShipping: 88,
+                overdueDelivery: 77,
+            },
+        };
+
+        const result = await componentConfig.methods.loadStatistics.call(context);
+
+        expect(result).toEqual({
+            openOrders: 0,
+            overdueShipping: 0,
+            overdueDelivery: 0,
+        });
+        expect(context.statisticsMetrics).toEqual(result);
+    });
+
+    it('updates KPI metrics based on active filters', async () => {
+        const state = componentConfig.data();
+        const list = jest
+            .fn()
+            .mockResolvedValueOnce({
+                summary: {
+                    openOrdersTotal: 10,
+                    overdueShippingTotal: 3,
+                    overdueDeliveriesCompletedTotal: 1,
+                },
+            })
+            .mockResolvedValueOnce({
+                summary: {
+                    openOrdersTotal: 2,
+                    overdueShippingTotal: 1,
+                    overdueDeliveriesCompletedTotal: 0,
+                },
+            });
+
+        const context = {
+            ...state,
+            hasRequiredSelections: true,
+            selectedArea: 'first-medical-ecommerce',
+            selectedMainView: 'allOrders',
+            externalOrderService: { list },
+            fetchOrdersFallback: jest.fn(),
+            buildFilterParams: componentConfig.methods.buildFilterParams,
+        };
+
+        const first = await componentConfig.methods.loadStatistics.call(context);
+        context.filters.bestellnummer = 'A-1000';
+        const second = await componentConfig.methods.loadStatistics.call(context);
+
+        expect(first).toEqual({
+            openOrders: 10,
+            overdueShipping: 3,
+            overdueDelivery: 1,
+        });
+        expect(second).toEqual({
+            openOrders: 2,
+            overdueShipping: 1,
+            overdueDelivery: 0,
+        });
+        expect(list).toHaveBeenNthCalledWith(2, expect.objectContaining({
+            bestellnummer: 'A-1000',
+        }));
+    });
 });
