@@ -239,7 +239,7 @@ class DemoDataSeederIntegrationTest extends TestCase
         static::assertGreaterThanOrEqual(2, $positionCount);
 
         $trackingRows = $this->connection->fetchAllAssociative(
-            'SELECT sh.sendenummer, sh.is_active
+            'SELECT sh.sendenummer, sh.carrier, sh.is_active, sh.created_at, sh.last_changed_at
              FROM lieferzeiten_sendenummer_history sh
              INNER JOIN lieferzeiten_position pos ON pos.id = sh.position_id
              INNER JOIN lieferzeiten_paket p ON p.id = pos.paket_id
@@ -249,8 +249,27 @@ class DemoDataSeederIntegrationTest extends TestCase
         );
 
         static::assertGreaterThanOrEqual(3, count($trackingRows));
+        static::assertNotEmpty($trackingRows[0]['sendenummer']);
+        static::assertSame('dhl', $trackingRows[0]['carrier']);
+        static::assertNotEmpty($trackingRows[0]['created_at']);
+        static::assertNotEmpty($trackingRows[0]['last_changed_at']);
         static::assertSame('0', (string) $trackingRows[0]['is_active']);
         static::assertSame('1', (string) $trackingRows[1]['is_active']);
+
+        $internalShipmentRow = $this->connection->fetchAssociative(
+            'SELECT sh.sendenummer, sh.carrier, sh.is_active
+             FROM lieferzeiten_sendenummer_history sh
+             INNER JOIN lieferzeiten_position pos ON pos.id = sh.position_id
+             INNER JOIN lieferzeiten_paket p ON p.id = pos.paket_id
+             WHERE p.external_order_id = ? AND sh.sendenummer = ?
+             LIMIT 1',
+            ['DEMO-B2B-002', 'Versand durch First Medical'],
+        );
+
+        static::assertIsArray($internalShipmentRow);
+        static::assertSame('Versand durch First Medical', $internalShipmentRow['sendenummer']);
+        static::assertNull($internalShipmentRow['carrier']);
+        static::assertSame('1', (string) $internalShipmentRow['is_active']);
 
         static::assertSame(
             'DHL-0006-ZUGESTELLT',

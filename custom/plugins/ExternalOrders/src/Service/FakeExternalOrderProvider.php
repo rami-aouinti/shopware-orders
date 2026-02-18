@@ -488,6 +488,7 @@ class FakeExternalOrderProvider
                 $lieferterminAuftragsbearbeitung = $this->randomOrderDateYmd($id, 13);
                 $changedByUser = sprintf('%s %s', $this->pickValue(self::FIRST_NAMES, $id, 14), $this->pickValue(self::LAST_NAMES, $id, 15));
                 $trackingNumber = sprintf('DHL-%s-%05d', strtoupper($channel), $index);
+                $carrier = 'dhl';
 
                 $orders[] = [
                     'id' => $id,
@@ -517,9 +518,23 @@ class FakeExternalOrderProvider
                     'lieferterminAuftragsbearbeitung' => $lieferterminAuftragsbearbeitung,
                     'neuerLiefertermin' => $lieferterminAuftragsbearbeitung,
                     'changedByUser' => $changedByUser,
+                    'carrier' => $carrier,
                     'sendenummer' => $trackingNumber,
                     'trackingNumber' => $trackingNumber,
                     'trackingNumbers' => [$trackingNumber],
+                    'packages' => [
+                        [
+                            'number' => $trackingNumber,
+                            'trackingNumber' => $trackingNumber,
+                            'carrier' => $carrier,
+                            'positions' => [
+                                [
+                                    'positionNumber' => sprintf('%s-POS-01', $orderNumber),
+                                    'carrier' => $carrier,
+                                ],
+                            ],
+                        ],
+                    ],
                     'totalItems' => $totalItems,
                     'totalRevenue' => $totalRevenue,
                 ];
@@ -557,6 +572,8 @@ class FakeExternalOrderProvider
         $deliveryDate = (string) ($order['deliveryDate'] ?? $this->randomOrderDateYmd($id, 11));
         $lieferterminLieferant = (string) ($order['lieferterminLieferant'] ?? $this->randomOrderDateYmd($id, 12));
         $lieferterminAuftragsbearbeitung = (string) ($order['lieferterminAuftragsbearbeitung'] ?? $this->randomOrderDateYmd($id, 13));
+        $trackingNumber = (string) ($order['trackingNumber'] ?? $order['sendenummer'] ?? sprintf('DHL-%s-00000', strtoupper((string) ($order['channel'] ?? 'demo'))));
+        $carrier = (string) ($order['carrier'] ?? 'dhl');
 
         $items = [];
         foreach (($detailTemplate['items'] ?? []) as $itemIndex => $item) {
@@ -602,6 +619,24 @@ class FakeExternalOrderProvider
             'customer' => array_merge($customer, ['emailAddress' => $email]),
             'billing' => $detailTemplate['billing'],
             'delivery' => $detailTemplate['delivery'],
+            'shipping' => [
+                'carrier' => $carrier,
+                'packages' => [
+                    [
+                        'number' => $trackingNumber,
+                        'trackingNumber' => $trackingNumber,
+                        'carrier' => $carrier,
+                        'positions' => array_map(
+                            static fn (array $item, int $index): array => [
+                                'positionNumber' => (string) ($item['positionNumber'] ?? sprintf('%s-POS-%02d', (string) ($order['orderNumber'] ?? 'EO-DEMO'), $index + 1)),
+                                'carrier' => $carrier,
+                            ],
+                            $items,
+                            array_keys($items),
+                        ),
+                    ],
+                ],
+            ],
         ];
     }
 
