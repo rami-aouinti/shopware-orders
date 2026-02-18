@@ -40,7 +40,7 @@ class DemoDataSeederIntegrationTest extends TestCase
         static::assertGreaterThan(0, $result['created']['notificationEvents']);
         static::assertGreaterThan(0, $result['created']['taskAssignmentRules']);
         static::assertSame([], $result['linking']['missingIds']);
-        static::assertSame(9, $result['linking']['linked']);
+        static::assertSame(8, $result['linking']['linked']);
         static::assertSame(0, $result['linking']['deletedCount']);
         static::assertFalse($result['linking']['destructiveCleanup']);
     }
@@ -78,7 +78,7 @@ class DemoDataSeederIntegrationTest extends TestCase
 
         static::assertTrue($result['reset']);
         static::assertGreaterThan(0, array_sum($result['deleted']));
-        static::assertSame(9, $result['created']['paket']);
+        static::assertSame(8, $result['created']['paket']);
     }
 
 
@@ -93,7 +93,6 @@ class DemoDataSeederIntegrationTest extends TestCase
             'DEMO-PEG-001',
             'DEMO-BEZB-001',
             'DEMO-B2B-002',
-            'DEMO-EBAY_DE-002',
         ];
 
         foreach ($externalIds as $index => $externalId) {
@@ -198,6 +197,24 @@ class DemoDataSeederIntegrationTest extends TestCase
 
         $statusCoverage = $this->connection->fetchFirstColumn('SELECT DISTINCT status FROM lieferzeiten_paket WHERE is_test_order = 0 ORDER BY status');
         static::assertSame(['1', '2', '3', '4', '5', '6', '7', '8'], $statusCoverage);
+
+        $statusToSourceRows = $this->connection->fetchAllAssociative(
+            'SELECT status, source_system AS sourceSystem
+             FROM lieferzeiten_paket
+             WHERE is_test_order = 0
+             ORDER BY CAST(status AS INTEGER) ASC'
+        );
+
+        static::assertSame([
+            ['status' => '1', 'sourceSystem' => 'shopware'],
+            ['status' => '2', 'sourceSystem' => 'gambio'],
+            ['status' => '3', 'sourceSystem' => 'san6'],
+            ['status' => '4', 'sourceSystem' => 'san6'],
+            ['status' => '5', 'sourceSystem' => 'san6'],
+            ['status' => '6', 'sourceSystem' => 'tracking'],
+            ['status' => '7', 'sourceSystem' => 'san6'],
+            ['status' => '8', 'sourceSystem' => 'tracking'],
+        ], $statusToSourceRows);
     }
 
 
@@ -212,7 +229,6 @@ class DemoDataSeederIntegrationTest extends TestCase
             'DEMO-PEG-001',
             'DEMO-BEZB-001',
             'DEMO-B2B-002',
-            'DEMO-EBAY_DE-002',
         ];
 
         $linkService = $this->createMock(LieferzeitenExternalOrderLinkService::class);

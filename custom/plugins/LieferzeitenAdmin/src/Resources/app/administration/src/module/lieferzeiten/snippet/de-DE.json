@@ -77,7 +77,7 @@
       "quantity": "Menge",
       "packageNumbers": "Pakete",
       "status": "Status",
-      "businessStatus": "Geschäftsstatus",
+      "businessStatus": "Ticketstatus",
       "tracking": "Tracking",
       "packageStatus": "Paket-Status (inkl. Menge bei Teil/Trennung)",
       "latestShippingDeadline": "Spätester Versandzeitpunkt",

@@ -247,7 +247,7 @@ class DemoDataSeederService
                 'id' => $paketId,
                 'paket_number' => $dataset['paketNumber'],
                 'external_order_id' => $dataset['externalOrderId'],
-                'source_system' => $dataset['domain'],
+                'source_system' => $dataset['statusSource'],
                 'status' => (string) $dataset['status'],
                 'shipping_assignment_type' => $dataset['shippingAssignmentType'],
                 'partial_shipment_quantity' => $dataset['partialShipmentQuantity'],
@@ -323,7 +323,7 @@ class DemoDataSeederService
                 'initiator' => 'demo.seeder',
                 'payload' => json_encode([
                     'externalOrderId' => $dataset['externalOrderId'],
-                    'sourceSystem' => $dataset['domain'],
+                    'sourceSystem' => $dataset['statusSource'],
                     'taskType' => $dataset['taskType'],
                 ], JSON_THROW_ON_ERROR),
                 'closed_at' => $dataset['taskStatus'] === 'closed' ? $now->format('Y-m-d H:i:s') : null,
@@ -337,7 +337,7 @@ class DemoDataSeederService
                 'trigger_key' => 'demo_shipping_delay',
                 'channel' => 'email',
                 'external_order_id' => $dataset['externalOrderId'],
-                'source_system' => $dataset['domain'],
+                'source_system' => $dataset['statusSource'],
                 'payload' => json_encode(['message' => 'Demo event', 'externalOrderId' => $dataset['externalOrderId']], JSON_THROW_ON_ERROR),
                 'status' => 'queued',
                 'created_at' => $now->format('Y-m-d H:i:s'),
@@ -349,7 +349,7 @@ class DemoDataSeederService
                 'action' => 'demo_data_seeded',
                 'target_type' => 'lieferzeiten_paket',
                 'target_id' => $dataset['externalOrderId'],
-                'source_system' => $dataset['domain'],
+                'source_system' => $dataset['statusSource'],
                 'user_id' => 'demo.seeder',
                 'correlation_id' => 'demo-seeder',
                 'payload' => json_encode(['externalOrderId' => $dataset['externalOrderId']], JSON_THROW_ON_ERROR),
@@ -428,28 +428,28 @@ class DemoDataSeederService
     private function buildOrderDataset(\DateTimeImmutable $base, array $externalOrderIds): array
     {
         $orderTemplates = [
-            [self::DOMAINS[0], 1, 'dhl', false, false, 'open', '-2 days', false],
-            [self::DOMAINS[1], 2, 'gls', false, true, 'open', '-3 days', false],
-            [self::DOMAINS[2], 3, 'eigenversand', false, false, 'open', '-4 days', false],
-            [self::DOMAINS[0], 4, 'dhl', true, false, 'closed', '-5 days', false],
-            [self::DOMAINS[1], 5, 'gls', false, true, 'open', '-6 days', false],
-            [self::DOMAINS[2], 6, 'eigenversand', true, false, 'closed', '-7 days', false],
-            [self::DOMAINS[0], 7, 'dhl', false, true, 'open', '-8 days', false],
-            [self::DOMAINS[1], 8, 'gls', true, true, 'closed', '-9 days', false],
-            [self::DOMAINS[2], 8, 'dhl', false, false, 'open', '-1 day', true],
+            [self::DOMAINS[0], 'shopware', 1, 'dhl', false, false, 'open', '-2 days', false],
+            [self::DOMAINS[1], 'gambio', 2, 'gls', false, true, 'open', '-3 days', false],
+            [self::DOMAINS[2], 'san6', 3, 'eigenversand', false, false, 'open', '-4 days', false],
+            [self::DOMAINS[0], 'san6', 4, 'dhl', true, false, 'closed', '-5 days', false],
+            [self::DOMAINS[1], 'san6', 5, 'gls', false, true, 'open', '-6 days', false],
+            [self::DOMAINS[2], 'tracking', 6, 'eigenversand', true, false, 'closed', '-7 days', false],
+            [self::DOMAINS[0], 'san6', 7, 'dhl', false, true, 'open', '-8 days', false],
+            [self::DOMAINS[1], 'tracking', 8, 'gls', true, true, 'closed', '-9 days', false],
         ];
 
         $datasets = [];
         $max = min(count($orderTemplates), count($externalOrderIds));
 
         for ($index = 0; $index < $max; $index += 1) {
-            [$domain, $status, $shippingType, $closed, $overdue, $taskStatus, $orderDateModifier, $isTestOrder] = $orderTemplates[$index];
+            [$domain, $statusSource, $status, $shippingType, $closed, $overdue, $taskStatus, $orderDateModifier, $isTestOrder] = $orderTemplates[$index];
 
             $datasets[] = $this->buildOrder(
                 $externalOrderIds[$index],
                 sprintf('%04d', $index + 1),
                 $domain,
                 $status,
+                $statusSource,
                 $shippingType,
                 $closed,
                 $overdue,
@@ -470,6 +470,7 @@ class DemoDataSeederService
         string $rowSuffix,
         string $domain,
         int $status,
+        string $statusSource,
         string $shippingType,
         bool $closed,
         bool $overdue,
@@ -487,6 +488,7 @@ class DemoDataSeederService
             'paketNumber' => 'SAN6-' . $rowSuffix,
             'domain' => $domain,
             'status' => (string) $status,
+            'statusSource' => $statusSource,
             'shippingAssignmentType' => $shippingType,
             'partialShipmentQuantity' => $shippingType === 'eigenversand' ? '1/1' : '2/3',
             'orderDate' => $orderDate,
@@ -507,7 +509,7 @@ class DemoDataSeederService
                     'supplierTo' => $supplierTo,
                     'newFrom' => $supplierFrom->modify('+1 day'),
                     'newTo' => $supplierFrom->modify('+2 days'),
-                    'trackingNumber' => $shippingType === 'eigenversand' ? null : strtoupper($shippingType) . '-' . $rowSuffix,
+                    'trackingNumber' => $shippingType === 'eigenversand' ? null : strtoupper($statusSource . '-' . $shippingType) . '-' . $rowSuffix,
                 ],
             ],
         ];

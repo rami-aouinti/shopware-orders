@@ -11,7 +11,7 @@ class LieferzeitenOrderOverviewService
     /**
      * @var array<int, string>
      */
-    private const BUSINESS_STATUS_MAPPING = [
+    private const BUSINESS_STATUS_MAPPING_FALLBACK = [
         1 => 'Neu',
         2 => 'In Klärung',
         3 => 'Warten auf Lieferanten',
@@ -601,6 +601,20 @@ class LieferzeitenOrderOverviewService
         return strtoupper((string) $order) === 'ASC' ? 'ASC' : 'DESC';
     }
 
+    /** @return array<int, string> */
+    private static function businessStatusMapping(): array
+    {
+        $mapping = [];
+        foreach (TicketStatusRuleMatrixPolicy::definitions() as $code => $definition) {
+            $label = is_string($definition['label'] ?? null) ? trim((string) $definition['label']) : '';
+            if ($label !== '') {
+                $mapping[(int) $code] = $label;
+            }
+        }
+
+        return $mapping !== [] ? $mapping : self::BUSINESS_STATUS_MAPPING_FALLBACK;
+    }
+
     /**
      * @return array{code: int|null, labelKey: string|null}
      */
@@ -629,7 +643,7 @@ class LieferzeitenOrderOverviewService
     {
         $statusCode = is_numeric($row['status'] ?? null) ? (int) $row['status'] : null;
         $statusCodeString = $statusCode !== null ? (string) $statusCode : null;
-        $statusLabel = $statusCode !== null ? (self::BUSINESS_STATUS_MAPPING[$statusCode] ?? 'Unknown') : 'Unknown';
+        $statusLabel = $statusCode !== null ? ((self::businessStatusMapping()[$statusCode] ?? 'Unknown')) : 'Unknown';
 
         $row['businessStatus'] = [
             'code' => $statusCodeString,
