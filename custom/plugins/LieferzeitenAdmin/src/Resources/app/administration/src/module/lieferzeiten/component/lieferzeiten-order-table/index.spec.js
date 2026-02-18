@@ -79,6 +79,20 @@ describe('lieferzeiten/component/lieferzeiten-order-table', () => {
 
 
 
+
+    it('prefixes audit display with scenarioKey to ease QA validation', () => {
+        const context = {
+            formatDateTime: methods.formatDateTime,
+        };
+
+        const value = methods.resolveAuditDisplay.call(context, {
+            scenarioKey: 'SCN-QA-001',
+            audit: 'Import • 10.10.2024, 11:00',
+        });
+
+        expect(value).toBe('[SCN-QA-001] Import • 10.10.2024, 11:00');
+    });
+
     it('marks latest tracking number as current and keeps old numbers for re-shipment history', () => {
         const context = {};
         const order = { trackingCarrier: 'dhl' };

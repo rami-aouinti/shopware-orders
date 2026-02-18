@@ -681,22 +681,31 @@ Shopware.Component.register('lieferzeiten-order-table', {
                 return '-';
             }
 
+            const scenarioKey = String(order.scenarioKey || '').trim();
+            const withScenario = (value) => {
+                if (!value) {
+                    return scenarioKey ? `[${scenarioKey}]` : '-';
+                }
+
+                return scenarioKey ? `[${scenarioKey}] ${value}` : value;
+            };
+
             const actor = String(order.lastChangedBy || order.user || '').trim();
             const changedAt = this.formatDateTime(order.lastChangedAt || order.updatedAt || order.currentUpdatedAt || null);
 
             if (actor && changedAt) {
-                return `${actor} · ${changedAt}`;
+                return withScenario(`${actor} · ${changedAt}`);
             }
 
             if (actor) {
-                return actor;
+                return withScenario(actor);
             }
 
             if (changedAt) {
-                return changedAt;
+                return withScenario(changedAt);
             }
 
-            return order.audit || '-';
+            return withScenario(order.audit || '-');
         },
 
         resolveTrackingEntries(order, position) {
