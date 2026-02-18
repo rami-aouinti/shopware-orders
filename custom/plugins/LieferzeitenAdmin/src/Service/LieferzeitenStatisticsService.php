@@ -572,7 +572,7 @@ readonly class LieferzeitenStatisticsService
                     p.external_order_id AS order_number,
                     p.source_system AS domain,
                     "delivery_date_history" AS event_type,
-                    DATE_FORMAT(COALESCE(nlh.liefertermin_to, nlh.liefertermin), "%Y-%m-%d") AS event_status,
+                    DATE_FORMAT(COALESCE(nlh.liefertermin_to, nlh.liefertermin), "%%Y-%%m-%%d") AS event_status,
                     "delivery_date_range_updated" AS message,
                     COALESCE(nlh.last_changed_at, nlh.created_at) AS event_at,
                     p.source_system AS source_system
