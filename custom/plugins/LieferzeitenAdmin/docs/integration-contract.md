@@ -1,7 +1,7 @@
 # Integrationsvertrag — LieferzeitenAdmin
 
-Version: `1.4.0`  
-Letzte Aktualisierung: `2026-02-16`
+Version: `1.4.1`  
+Letzte Aktualisierung: `2026-02-18`
 
 ## 1) Ein-/Ausgabe-Verträge der APIs
 
@@ -152,6 +152,7 @@ Standardregel:
 Aktuelle Anwendung:
 - Persistentes `sourceSystem`: San6 gewinnt, wenn vorhanden.
 - `shippingDate` / `deliveryDate`: San6 hat Vorrang vor Shop-Werten.
+- Führendes Feld für „spätester Versandzeitpunkt" ist `latestShippingDate` (Alias: `shippingDateLatest`); dieses wird im Import konsistent nach `paket.businessDateTo` (`lieferzeiten_paket.business_date_to`) gemappt. Die Overdue-Task-Regel basiert auf `businessDateTo`, nicht auf `shippingDate` (Ist-Versandzeitpunkt).
 - Tracking-Daten (Paketstatus): Tracking gewinnt gegenüber Shop-Events.
 
 ## 3) Fallback-Regeln (Quelle nicht verfügbar)
