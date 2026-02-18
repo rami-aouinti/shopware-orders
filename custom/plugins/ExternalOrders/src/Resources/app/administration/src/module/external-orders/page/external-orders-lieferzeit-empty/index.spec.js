@@ -686,8 +686,31 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
 
         expect(listLieferzeitTasks).toHaveBeenCalledWith(expect.objectContaining({ limit: 500 }));
         expect(context.lieferzeitTasksByRowKey).toEqual({
-            'order-1:10': expect.objectContaining({ id: 'task-1', triggerKey: 'versand.datum.ueberfaellig' }),
+            'order-1:10': [expect.objectContaining({ id: 'task-1', triggerKey: 'versand.datum.ueberfaellig' })],
         });
+    });
+
+    it('returns all mapped lieferzeit tasks for an order row', () => {
+        const state = componentConfig.data();
+        const context = {
+            ...state,
+            getOrderTaskRowKey: componentConfig.methods.getOrderTaskRowKey,
+            lieferzeitTasksByRowKey: {
+                'order-1:10': [
+                    { id: 'task-1', triggerKey: 'versand.datum.ueberfaellig' },
+                    { id: 'task-2', triggerKey: 'versand.datum.ueberfaellig' },
+                ],
+            },
+        };
+
+        const tasks = componentConfig.methods.resolveLieferzeitTasks.call(context, {
+            id: 'order-1',
+            positionId: '10',
+        });
+
+        expect(tasks).toHaveLength(2);
+        expect(tasks[0]).toEqual(expect.objectContaining({ id: 'task-1' }));
+        expect(tasks[1]).toEqual(expect.objectContaining({ id: 'task-2' }));
     });
 
 

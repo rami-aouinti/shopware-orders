@@ -1051,13 +1051,18 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         },
 
         resolveLieferzeitTask(order) {
+            return this.resolveLieferzeitTasks(order)[0] || null;
+        },
+
+        resolveLieferzeitTasks(order) {
             const rowKey = this.getOrderTaskRowKey(order);
 
             if (!rowKey) {
-                return null;
+                return [];
             }
 
-            return this.lieferzeitTasksByRowKey[rowKey] || null;
+            const tasks = this.lieferzeitTasksByRowKey[rowKey];
+            return Array.isArray(tasks) ? tasks : [];
         },
 
         getLieferzeitTaskStatusLabel(task) {
@@ -1097,7 +1102,11 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                             return acc;
                         }
 
-                        acc[key] = task;
+                        if (!Array.isArray(acc[key])) {
+                            acc[key] = [];
+                        }
+
+                        acc[key].push(task);
                         return acc;
                     }, {});
 
@@ -1141,9 +1150,16 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
                 const taskRowKey = this.getTaskRowKey(updatedTask);
                 if (taskRowKey) {
+                    const currentTasks = Array.isArray(this.lieferzeitTasksByRowKey[taskRowKey])
+                        ? this.lieferzeitTasksByRowKey[taskRowKey]
+                        : [];
+                    const nextTasks = currentTasks.some((existingTask) => String(existingTask?.id) === taskId)
+                        ? currentTasks.map((existingTask) => (String(existingTask?.id) === taskId ? updatedTask : existingTask))
+                        : [...currentTasks, updatedTask];
+
                     this.lieferzeitTasksByRowKey = {
                         ...this.lieferzeitTasksByRowKey,
-                        [taskRowKey]: updatedTask,
+                        [taskRowKey]: nextTasks,
                     };
                 }
 
