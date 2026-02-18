@@ -40,6 +40,11 @@ const MAIN_VIEW_OPTIONS = Object.freeze([
     { value: 'openOrders', label: 'Offene Aufträge' },
 ]);
 
+const ROW_MODE_OPTIONS = Object.freeze([
+    { value: 'position', label: 'Pro Position / Paket' },
+    { value: 'aggregated', label: 'Aggregiert pro Auftrag' },
+]);
+
 export const tableColumnsMeta = Object.freeze([
     {
         key: 'bestellnummer',
@@ -344,8 +349,10 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             pageTitle: 'Lieferzeiten',
             selectedArea: null,
             selectedMainView: null,
+            selectedRowMode: 'position',
             areaOptions: AREA_OPTIONS,
             mainViewOptions: MAIN_VIEW_OPTIONS,
+            rowModeOptions: ROW_MODE_OPTIONS,
             filters: createDefaultFilters(),
             orders: [],
             isLoading: false,
@@ -494,7 +501,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         },
 
         hasRequiredSelections() {
-            return Boolean(this.selectedArea && this.selectedMainView);
+            return Boolean(this.selectedArea && this.selectedMainView && this.selectedRowMode);
         },
     },
 
@@ -643,6 +650,10 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
             if (this.selectedMainView) {
                 params.selectedMainView = this.selectedMainView;
+            }
+
+            if (this.selectedRowMode) {
+                params.selectedRowMode = this.selectedRowMode;
             }
 
             return params;
@@ -887,6 +898,18 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             return response?.data ?? {};
         },
 
+        applyRowMode(orders) {
+            if (this.selectedRowMode === 'aggregated') {
+                return orders.map((order, index) => ({
+                    ...order,
+                    rowId: order?.id || order?.orderId || order?.orderNumber || `order-${index + 1}`,
+                    rowType: 'order-aggregated',
+                }));
+            }
+
+            return this.expandOrdersByPosition(orders);
+        },
+
         async loadOrders() {
             if (!this.hasRequiredSelections) {
                 this.orders = [];
@@ -910,7 +933,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                     : await this.fetchOrdersFallback(params);
 
                 const normalizedOrders = this.extractOrders(result).map((order) => this.normalizeOrder(order));
-                this.orders = this.expandOrdersByPosition(normalizedOrders);
+                this.orders = this.applyRowMode(normalizedOrders);
 
                 if (!this.channels.some((channel) => channel.id === this.activeChannel)) {
                     this.activeChannel = 'all';

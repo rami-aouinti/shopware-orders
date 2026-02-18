@@ -33,6 +33,15 @@
                     value-property="value"
                     label-property="label"></sw-single-select>
             </div>
+            <div class="external-orders-lieferzeit-empty__entry-step">
+                <h3>Schritt 3: Granularität</h3>
+                <sw-single-select
+                    v-model:value="selectedRowMode"
+                    placeholder="Granularität auswählen"
+                    :options="rowModeOptions"
+                    value-property="value"
+                    label-property="label"></sw-single-select>
+            </div>
             <div class="external-orders-lieferzeit-empty__entry-actions">
                 <button
                     class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--primary"
@@ -40,7 +49,7 @@
                     :disabled="!hasRequiredSelections"
                     @click="applyEntrySelection"
                 >
-                    Schritt 3 anzeigen
+                    Schritt 4 anzeigen
                 </button>
             </div>
         </sw-card>

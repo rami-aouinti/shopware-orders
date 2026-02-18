@@ -106,6 +106,36 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(derive('', 1, 5, 10, 5, false)).toBe('Unklar');
     });
 
+
+
+    it('uses position mode as default and exposes row mode options', () => {
+        const state = componentConfig.data();
+
+        expect(state.selectedRowMode).toBe('position');
+        expect(state.rowModeOptions).toEqual([
+            { value: 'position', label: 'Pro Position / Paket' },
+            { value: 'aggregated', label: 'Aggregiert pro Auftrag' },
+        ]);
+    });
+
+    it('applies row mode: aggregated keeps one row per order', () => {
+        const state = componentConfig.data();
+        const context = {
+            ...state,
+            selectedRowMode: 'aggregated',
+            expandOrdersByPosition: componentConfig.methods.expandOrdersByPosition,
+        };
+
+        const rows = componentConfig.methods.applyRowMode.call(context, [
+            { id: 'order-1', bestellnummer: '10001' },
+            { id: 'order-2', bestellnummer: '10002' },
+        ]);
+
+        expect(rows).toHaveLength(2);
+        expect(rows[0]).toEqual(expect.objectContaining({ id: 'order-1', rowType: 'order-aggregated', rowId: 'order-1' }));
+        expect(rows[1]).toEqual(expect.objectContaining({ id: 'order-2', rowType: 'order-aggregated', rowId: 'order-2' }));
+    });
+
     it('builds table rows on position+package granularity and keeps per-package date values', () => {
         const state = componentConfig.data();
         const context = {
@@ -177,11 +207,13 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             ...state,
             selectedArea: 'medical-solutions',
             selectedMainView: 'openOrders',
+            selectedRowMode: 'position',
             externalOrderService: { list },
             fetchOrdersFallback: jest.fn(),
             extractOrders: componentConfig.methods.extractOrders,
             normalizeOrder: (order) => order,
             expandOrdersByPosition: (orders) => orders,
+            applyRowMode: componentConfig.methods.applyRowMode,
             channels: [{ id: 'all' }],
             activeChannel: 'all',
             hasRequiredSelections: true,
@@ -192,6 +224,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(list).toHaveBeenCalledWith(expect.objectContaining({
             selectedArea: 'medical-solutions',
             selectedMainView: 'openOrders',
+            selectedRowMode: 'position',
         }));
     });
     it('maps normalized filter params to externalOrderService.list', async () => {
@@ -216,9 +249,11 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             extractOrders: componentConfig.methods.extractOrders,
             normalizeOrder: (order) => order,
             expandOrdersByPosition: (orders) => orders,
+            applyRowMode: componentConfig.methods.applyRowMode,
             channels: [{ id: 'all' }],
             activeChannel: 'all',
             page: 2,
+            selectedRowMode: 'aggregated',
         };
 
         await componentConfig.methods.loadOrders.call(context);
@@ -231,6 +266,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             shippingDateFrom: '2026-02-01',
             shippingDateTo: '2026-02-10',
             status: 'processing',
+            selectedRowMode: 'aggregated',
         }));
         expect(list.mock.calls[0][0]).not.toHaveProperty('san6Auftragsposition');
         expect(list.mock.calls[0][0]).not.toHaveProperty('kommentar');
@@ -261,6 +297,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(list).toHaveBeenCalledWith(expect.objectContaining({
             selectedArea: 'medical-solutions',
             selectedMainView: 'openOrders',
+            selectedRowMode: 'position',
         }));
         expect(result).toEqual({
             openOrders: 12,
