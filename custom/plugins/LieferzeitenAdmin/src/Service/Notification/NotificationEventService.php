@@ -42,9 +42,24 @@ class NotificationEventService
         bool $forceIfCritical = false,
     ): bool {
         $canonicalTriggerKey = NotificationTriggerCatalog::canonicalize($triggerKey);
+        $payload['salesChannelId'] = $salesChannelId;
         $triggerEnabled = $this->toggleResolver->isEnabled($canonicalTriggerKey, $channel, $context, $salesChannelId);
         $forced = $forceIfCritical && $this->isCriticalForceableTrigger($canonicalTriggerKey);
         if (!$triggerEnabled && !$forced) {
+            $this->logger->info('Notification event skipped by toggle.', [
+                'eventKey' => $eventKey,
+                'triggerKey' => $canonicalTriggerKey,
+                'channel' => $channel,
+                'salesChannelId' => $salesChannelId,
+            ]);
+
+            $this->auditLogService->log('skipped_by_toggle', 'notification_event', $eventKey, $context, [
+                'triggerKey' => $triggerKey,
+                'canonicalTriggerKey' => $canonicalTriggerKey,
+                'channel' => $channel,
+                'salesChannelId' => $salesChannelId,
+            ], 'mails');
+
             return false;
         }
 
