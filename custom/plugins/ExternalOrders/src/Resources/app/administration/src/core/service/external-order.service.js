@@ -176,6 +176,45 @@ class ExternalOrderService extends ApiService {
         const data = ApiService.handleResponse(response) ?? response?.data;
         return data?.data ?? data;
     }
+
+    async listLieferzeitTasks(params = {}) {
+        const response = await this.httpClient.get('_action/lieferzeiten/tasks', {
+            headers: this.getBasicHeaders(),
+            params,
+        });
+
+        const data = ApiService.handleResponse(response) ?? response?.data;
+        return data?.data ?? data;
+    }
+
+    async assignLieferzeitTask(taskId, assignee) {
+        const response = await this.httpClient.post(`_action/lieferzeiten/tasks/${taskId}/assign`, {
+            assignee,
+        }, {
+            headers: this.getBasicHeaders(),
+        });
+
+        const data = ApiService.handleResponse(response) ?? response?.data;
+        return data?.data ?? data;
+    }
+
+    async closeLieferzeitTask(taskId) {
+        const response = await this.httpClient.post(`_action/lieferzeiten/tasks/${taskId}/close`, {}, {
+            headers: this.getBasicHeaders(),
+        });
+
+        const data = ApiService.handleResponse(response) ?? response?.data;
+        return data?.data ?? data;
+    }
+
+    async reopenLieferzeitTask(taskId) {
+        const response = await this.httpClient.post(`_action/lieferzeiten/tasks/${taskId}/reopen`, {}, {
+            headers: this.getBasicHeaders(),
+        });
+
+        const data = ApiService.handleResponse(response) ?? response?.data;
+        return data?.data ?? data;
+    }
 }
 
 Shopware.Application.addServiceProvider('externalOrderService', (container) => {

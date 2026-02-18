@@ -45,6 +45,16 @@ const ROW_MODE_OPTIONS = Object.freeze([
     { value: 'aggregated', label: 'Aggregiert pro Auftrag' },
 ]);
 
+
+const LIEFERZEIT_TASK_TRIGGER = 'versand.datum.ueberfaellig';
+const LIEFERZEIT_TASK_STATUS_LABELS = Object.freeze({
+    open: 'Offen',
+    in_progress: 'In Bearbeitung',
+    done: 'Geschlossen',
+    reopened: 'Wieder geöffnet',
+    cancelled: 'Storniert',
+});
+
 export const tableColumnsMeta = Object.freeze([
     {
         key: 'bestellnummer',
@@ -391,6 +401,8 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             supplierTaskPollingTimer: null,
             supplierTaskLastCompletedAt: null,
             notifiedSupplierTaskIds: {},
+            lieferzeitTasksByRowKey: {},
+            taskActionInProgressById: {},
         };
     },
 
@@ -910,6 +922,142 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             return response?.data ?? {};
         },
 
+
+        normalizeLieferzeitTask(task) {
+            const payload = task?.payload && typeof task.payload === 'object' ? task.payload : {};
+            const positionId = String(task?.positionId || payload?.positionId || '').trim();
+            const externalOrderId = String(payload?.externalOrderId || task?.externalOrderId || '').trim();
+            const id = String(task?.id || task?.taskId || '').trim();
+
+            return {
+                ...task,
+                id,
+                positionId,
+                externalOrderId,
+                triggerKey: String(task?.triggerKey || payload?.trigger || '').trim(),
+                assignee: String(task?.assignee || '').trim(),
+                dueDate: task?.dueDate || payload?.dueDate || null,
+                status: String(task?.status || '').trim().toLowerCase(),
+            };
+        },
+
+        getTaskRowKey(task) {
+            const orderId = String(task?.externalOrderId || '').trim();
+            const positionId = String(task?.positionId || '').trim();
+
+            if (!orderId || !positionId) {
+                return '';
+            }
+
+            return `${orderId}:${positionId}`;
+        },
+
+        getOrderTaskRowKey(order) {
+            const orderId = String(order?.id || order?.orderId || '').trim();
+            const positionId = String(order?.positionId || '').trim();
+
+            if (!orderId || !positionId) {
+                return '';
+            }
+
+            return `${orderId}:${positionId}`;
+        },
+
+        resolveLieferzeitTask(order) {
+            const rowKey = this.getOrderTaskRowKey(order);
+
+            if (!rowKey) {
+                return null;
+            }
+
+            return this.lieferzeitTasksByRowKey[rowKey] || null;
+        },
+
+        getLieferzeitTaskStatusLabel(task) {
+            if (!task) {
+                return '-';
+            }
+
+            return LIEFERZEIT_TASK_STATUS_LABELS[task.status] || this.displayOrDash(task.status);
+        },
+
+        isTaskInProgress(taskId) {
+            return Boolean(this.taskActionInProgressById[String(taskId || '')]);
+        },
+
+        async loadLieferzeitTasks() {
+            if (!this.hasRequiredSelections || !this.externalOrderService?.listLieferzeitTasks) {
+                this.lieferzeitTasksByRowKey = {};
+                return;
+            }
+
+            try {
+                const response = await this.externalOrderService.listLieferzeitTasks({
+                    status: 'open',
+                    limit: 500,
+                });
+
+                const tasks = Array.isArray(response?.data)
+                    ? response.data
+                    : (Array.isArray(response) ? response : []);
+
+                const mapped = tasks
+                    .map((task) => this.normalizeLieferzeitTask(task))
+                    .filter((task) => task.id && task.triggerKey === LIEFERZEIT_TASK_TRIGGER)
+                    .reduce((acc, task) => {
+                        const key = this.getTaskRowKey(task);
+
+                        if (!key) {
+                            return acc;
+                        }
+
+                        acc[key] = task;
+                        return acc;
+                    }, {});
+
+                this.lieferzeitTasksByRowKey = mapped;
+            } catch (error) {
+                this.lieferzeitTasksByRowKey = {};
+            }
+        },
+
+        async runTaskAction(task, action) {
+            if (!task?.id || !this.externalOrderService) {
+                return;
+            }
+
+            const taskId = String(task.id);
+            this.taskActionInProgressById = {
+                ...this.taskActionInProgressById,
+                [taskId]: true,
+            };
+
+            try {
+                if (action === 'assign') {
+                    await this.externalOrderService.assignLieferzeitTask(taskId, this.resolveInitiatorUserId() || 'system');
+                }
+
+                if (action === 'close') {
+                    await this.externalOrderService.closeLieferzeitTask(taskId);
+                }
+
+                if (action === 'reopen') {
+                    await this.externalOrderService.reopenLieferzeitTask(taskId);
+                }
+
+                await this.loadLieferzeitTasks();
+            } catch (error) {
+                this.createNotificationError({
+                    title: 'Aufgaben-Aktion fehlgeschlagen',
+                    message: error?.response?.data?.message || error?.message || 'Aktion konnte nicht ausgeführt werden.',
+                });
+            } finally {
+                const pending = { ...this.taskActionInProgressById };
+                delete pending[taskId];
+                this.taskActionInProgressById = pending;
+            }
+        },
+
         applyRowMode(orders) {
             if (this.selectedRowMode === 'aggregated') {
                 return orders.map((order, index) => ({
@@ -946,6 +1094,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
                 const normalizedOrders = this.extractOrders(result).map((order) => this.normalizeOrder(order));
                 this.orders = this.applyRowMode(normalizedOrders);
+                await this.loadLieferzeitTasks();
 
                 if (!this.channels.some((channel) => channel.id === this.activeChannel)) {
                     this.activeChannel = 'all';
@@ -954,6 +1103,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 this.page = 1;
             } catch (error) {
                 this.orders = [];
+                this.lieferzeitTasksByRowKey = {};
                 this.loadError = error;
             } finally {
                 this.isLoading = false;
