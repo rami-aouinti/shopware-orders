@@ -6,7 +6,7 @@ import './page/lieferzeiten-index';
 import './page/lieferzeiten-all';
 import './page/lieferzeiten-open';
 import './page/lieferzeiten-statistics';
-import './page/lieferzeit-empty';
+import './page/lieferzeiten-external-orders';
 
 const { Module } = Shopware;
 
@@ -62,7 +62,7 @@ Module.register('lieferzeiten', {
                     },
                 },
                 lieferzeit: {
-                    component: 'lieferzeit-empty',
+                    component: 'lieferzeiten-external-orders',
                     path: 'lieferzeit',
                     meta: {
                         parentPath: 'lieferzeiten.index',

@@ -351,4 +351,59 @@ describe('lieferzeiten/component/lieferzeiten-order-table', () => {
         });
     });
 
+
+    it('runs the delivery editing flow on one page (supplier date, new date, comment and package status)', async () => {
+        const service = {
+            updateLieferterminLieferant: jest.fn(async () => ({})),
+            updateNeuerLieferterminByPaket: jest.fn(async () => ({})),
+            updateComment: jest.fn(async () => ({})),
+            updatePaketStatus: jest.fn(async () => ({})),
+        };
+        const context = {
+            hasEditAccess: () => true,
+            canSaveLiefertermin: () => true,
+            canSaveNeuerLiefertermin: () => true,
+            canSaveComment: () => true,
+            canUpdateOrderStatus: () => true,
+            ensureCommentTargetPositionId: () => 'position-1',
+            resolveConcurrencyToken: () => 'token-1',
+            reloadOrder: jest.fn(async () => ({})),
+            handleConflictError: () => false,
+            createNotificationSuccess: jest.fn(),
+            createNotificationWarning: jest.fn(),
+            createNotificationError: jest.fn(),
+            lieferzeitenOrdersService: service,
+            statusUpdateLoadingByOrder: {},
+            $set: (obj, key, value) => {
+                obj[key] = value;
+            },
+            $t: (key) => key,
+        };
+
+        const order = {
+            id: 'order-1',
+            selectedManualStatus: 8,
+            comment: 'Bitte priorisieren',
+        };
+        const position = {
+            id: 'position-1',
+            lieferterminLieferantRange: { from: '2026-03-01', to: '2026-03-07' },
+        };
+        const parcel = {
+            id: 'parcel-1',
+            neuerLieferterminRange: { from: '2026-03-08', to: '2026-03-12' },
+        };
+
+        await methods.saveLiefertermin.call(context, order, position);
+        await methods.saveNeuerLiefertermin.call(context, order, parcel);
+        await methods.saveComment.call(context, order);
+        await methods.saveOrderStatus.call(context, order);
+
+        expect(service.updateLieferterminLieferant).toHaveBeenCalledWith('position-1', expect.objectContaining({ from: '2026-03-01', to: '2026-03-07', updatedAt: 'token-1' }));
+        expect(service.updateNeuerLieferterminByPaket).toHaveBeenCalledWith('parcel-1', expect.objectContaining({ from: '2026-03-08', to: '2026-03-12', updatedAt: 'token-1' }));
+        expect(service.updateComment).toHaveBeenCalledWith('position-1', expect.objectContaining({ comment: 'Bitte priorisieren', updatedAt: 'token-1' }));
+        expect(service.updatePaketStatus).toHaveBeenCalledWith('order-1', expect.objectContaining({ status: 8, updatedAt: 'token-1' }));
+        expect(context.reloadOrder).toHaveBeenCalledTimes(4);
+    });
+
 });
