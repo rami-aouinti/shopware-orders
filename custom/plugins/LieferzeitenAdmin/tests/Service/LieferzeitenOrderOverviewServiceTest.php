@@ -195,7 +195,7 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
 
         static::assertSame([
             'code' => '2',
-            'label' => 'In clarification',
+            'label' => 'In Klärung',
         ], $result['data'][0]['businessStatus']);
         static::assertSame('5', $result['data'][0]['orderedQuantityTotal']);
         static::assertSame('3', $result['data'][0]['shippedQuantityTotal']);

@@ -22,7 +22,10 @@ class OrderStatusModelTest extends TestCase
 
     public function testCanWriteBackOnlyForStatusesSevenAndEight(): void
     {
-        static::assertFalse(OrderStatusModel::canWriteBack(6));
+        for ($status = 1; $status <= 6; $status++) {
+            static::assertFalse(OrderStatusModel::canWriteBack($status));
+        }
+
         static::assertTrue(OrderStatusModel::canWriteBack(7));
         static::assertTrue(OrderStatusModel::canWriteBack(8));
     }
