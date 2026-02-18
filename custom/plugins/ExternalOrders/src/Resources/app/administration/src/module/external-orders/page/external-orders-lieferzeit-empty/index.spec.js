@@ -26,7 +26,7 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         componentConfig = global.Shopware.Component.register.mock.calls[0][1];
     });
 
-    it('declares required filter metadata and keeps NICHTS fields non-filterable', () => {
+    it('declares required filter metadata and keeps non-required fields non-filterable', () => {
         const metaByKey = tableColumnsMeta.reduce((acc, column) => {
             acc[column.key] = column;
             return acc;
@@ -35,11 +35,11 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(metaByKey.bestellnummer).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
         expect(metaByKey.status).toEqual(expect.objectContaining({ filterable: true, filterType: 'select' }));
         expect(metaByKey.shippingDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
-        expect(metaByKey.orderDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
-        expect(metaByKey.paymentMethod).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
-        expect(metaByKey.paymentReceivedDate).toEqual(expect.objectContaining({ filterable: true, filterType: 'dateRange' }));
-        expect(metaByKey.orderedQuantity).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
-        expect(metaByKey.packageStatus).toEqual(expect.objectContaining({ filterable: true, filterType: 'text' }));
+        expect(metaByKey.orderDate).toEqual(expect.objectContaining({ filterable: false, filterType: 'dateRange' }));
+        expect(metaByKey.paymentMethod).toEqual(expect.objectContaining({ filterable: false, filterType: 'text' }));
+        expect(metaByKey.paymentReceivedDate).toEqual(expect.objectContaining({ filterable: false, filterType: 'dateRange' }));
+        expect(metaByKey.orderedQuantity).toEqual(expect.objectContaining({ filterable: false, filterType: 'text' }));
+        expect(metaByKey.packageStatus).toEqual(expect.objectContaining({ filterable: false, filterType: 'text' }));
         expect(metaByKey.shippedQuantity).toEqual(expect.objectContaining({ label: 'Versandmenge je Paket (versendet/bestellt)' }));
 
         expect(metaByKey.san6Auftragsposition).toEqual(expect.objectContaining({ filterable: false, filterType: 'none' }));
@@ -61,21 +61,12 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         expect(primaryKeys).toEqual(expect.arrayContaining([
             'bestellnummer',
             'san6',
-            'paymentMethod',
-            'orderedQuantity',
-            'customerFirstName',
-            'customerLastName',
-            'customerAdditionalNames',
             'user',
             'sendenummer',
-            'packageId',
-            'trackingNumberPerPackage',
-            'shippedQuantity',
-            'packageStatus',
             'status',
         ]));
+        expect(primaryKeys).toHaveLength(5);
         expect(dateRangeKeys).toEqual(expect.arrayContaining([
-            'orderDate',
             'shippingDate',
             'latestShippingDate',
             'latestDeliveryDate',
@@ -83,17 +74,44 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             'lieferterminLieferant',
             'neuerLiefertermin',
         ]));
-        expect(dateRangeKeys).not.toEqual(expect.arrayContaining([
-            'paymentReceivedDate',
-        ]));
+        expect(dateRangeKeys).toHaveLength(6);
 
         expect(primaryKeys).not.toContain('san6Auftragsposition');
         expect(primaryKeys).not.toContain('kommentar');
+        expect(primaryKeys).not.toContain('paymentMethod');
+        expect(primaryKeys).not.toContain('orderedQuantity');
+        expect(primaryKeys).not.toContain('customerFirstName');
+        expect(primaryKeys).not.toContain('customerLastName');
+        expect(primaryKeys).not.toContain('customerAdditionalNames');
+        expect(primaryKeys).not.toContain('packageId');
+        expect(primaryKeys).not.toContain('trackingNumberPerPackage');
+        expect(primaryKeys).not.toContain('shippedQuantity');
+        expect(primaryKeys).not.toContain('packageStatus');
         expect(dateRangeKeys).not.toContain('san6Auftragsposition');
         expect(dateRangeKeys).not.toContain('kommentar');
+        expect(dateRangeKeys).not.toContain('orderDate');
+        expect(dateRangeKeys).not.toContain('paymentReceivedDate');
 
-        expect(state.filters).not.toHaveProperty('san6Auftragsposition');
-        expect(state.filters).not.toHaveProperty('kommentar');
+        expect(state.filters).toEqual(expect.objectContaining({
+            bestellnummer: '',
+            san6OrderNumber: '',
+            changedByUser: '',
+            sendenummer: '',
+            status: '',
+            shippingDateFrom: null,
+            shippingDateTo: null,
+            latestShippingDateFrom: null,
+            latestShippingDateTo: null,
+            latestDeliveryDateFrom: null,
+            latestDeliveryDateTo: null,
+            deliveryDateFrom: null,
+            deliveryDateTo: null,
+            lieferterminLieferantFrom: null,
+            lieferterminLieferantTo: null,
+            lieferterminAuftragsbearbeitungFrom: null,
+            lieferterminAuftragsbearbeitungTo: null,
+        }));
+        expect(Object.keys(state.filters)).toHaveLength(17);
     });
 
     it('derives package status from quantities, package assignment and split logic', () => {
@@ -281,14 +299,14 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             filters: {
                 ...state.filters,
                 bestellnummer: ' 10001 ',
-                orderedQuantity: ' 5 ',
-                orderDateFrom: '2026-01-20T10:20:00+01:00',
-                orderDateTo: '2026-01-22',
                 shippingDateFrom: '2026-02-01T10:20:00+01:00',
                 shippingDateTo: new Date('2026-02-10T00:00:00.000Z'),
                 latestShippingDateFrom: '2026-02-03T10:20:00+01:00',
                 latestShippingDateTo: '2026-02-12',
                 status: 'processing',
+                paymentMethod: 'paypal',
+                orderedQuantity: '5',
+                orderDateFrom: '2026-01-20T10:20:00+01:00',
             },
             externalOrderService: { list },
             buildFilterParams: componentConfig.methods.buildFilterParams,
@@ -307,9 +325,6 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
 
         expect(list).toHaveBeenCalledWith(expect.objectContaining({
             bestellnummer: '10001',
-            orderedQuantity: '5',
-            orderDateFrom: '2026-01-20',
-            orderDateTo: '2026-01-22',
             shippingDateFrom: '2026-02-01',
             shippingDateTo: '2026-02-10',
             latestShippingDateFrom: '2026-02-03',
@@ -319,6 +334,9 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
         }));
         expect(list.mock.calls[0][0]).not.toHaveProperty('san6Auftragsposition');
         expect(list.mock.calls[0][0]).not.toHaveProperty('kommentar');
+        expect(list.mock.calls[0][0]).not.toHaveProperty('paymentMethod');
+        expect(list.mock.calls[0][0]).not.toHaveProperty('orderedQuantity');
+        expect(list.mock.calls[0][0]).not.toHaveProperty('orderDateFrom');
     });
 
     it('maps summary statistics to KPI metrics', async () => {
