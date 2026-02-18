@@ -200,6 +200,70 @@ class DemoDataSeederIntegrationTest extends TestCase
         static::assertSame(['1', '2', '3', '4', '5', '6', '7', '8'], $statusCoverage);
     }
 
+    public function testSeededDatasetContainsExplicitScenariosAndTrackingHistoryStates(): void
+    {
+        $seeder = $this->createSeeder();
+        $seeder->seed(Context::createDefaultContext(), false);
+
+        $taskPayloads = $this->connection->fetchFirstColumn('SELECT payload FROM lieferzeiten_task');
+        $scenarioKeys = [];
+        foreach ($taskPayloads as $payload) {
+            $decoded = json_decode((string) $payload, true, 512, JSON_THROW_ON_ERROR);
+            $scenarioKeys[] = $decoded['scenarioKey'] ?? null;
+        }
+
+        static::assertContains('multi_position_gesamtversand_reexpedition', $scenarioKeys);
+        static::assertContains('split_position_partial_7_10', $scenarioKeys);
+        static::assertContains('split_position_partial_3_10_terminal_pending', $scenarioKeys);
+        static::assertContains('vorkasse_without_payment_date', $scenarioKeys);
+        static::assertContains('vorkasse_with_payment_date', $scenarioKeys);
+
+        $auditPayload = (string) $this->connection->fetchOne('SELECT payload FROM lieferzeiten_audit_log WHERE target_id = ?', ['DEMO-B2B-001']);
+        $auditDecoded = json_decode($auditPayload, true, 512, JSON_THROW_ON_ERROR);
+        static::assertSame('multi_position_gesamtversand_reexpedition', $auditDecoded['scenarioKey'] ?? null);
+
+        $eventPayload = (string) $this->connection->fetchOne('SELECT payload FROM lieferzeiten_notification_event WHERE external_order_id = ?', ['DEMO-B2B-001']);
+        $eventDecoded = json_decode($eventPayload, true, 512, JSON_THROW_ON_ERROR);
+        static::assertSame('multi_position_gesamtversand_reexpedition', $eventDecoded['scenarioKey'] ?? null);
+
+        static::assertSame('7/10', $this->connection->fetchOne('SELECT partial_shipment_quantity FROM lieferzeiten_paket WHERE external_order_id = ?', ['DEMO-EBAY_DE-001']));
+        static::assertSame('3/10', $this->connection->fetchOne('SELECT partial_shipment_quantity FROM lieferzeiten_paket WHERE external_order_id = ?', ['DEMO-KAUFLAND-001']));
+
+        static::assertNull($this->connection->fetchOne('SELECT payment_date FROM lieferzeiten_paket WHERE external_order_id = ?', ['DEMO-BEZB-001']));
+        static::assertNotNull($this->connection->fetchOne('SELECT payment_date FROM lieferzeiten_paket WHERE external_order_id = ?', ['DEMO-B2B-002']));
+
+        $positionCount = (int) $this->connection->fetchOne('SELECT COUNT(*) FROM lieferzeiten_position pos INNER JOIN lieferzeiten_paket p ON pos.paket_id = p.id WHERE p.external_order_id = ?', ['DEMO-B2B-001']);
+        static::assertGreaterThanOrEqual(2, $positionCount);
+
+        $trackingRows = $this->connection->fetchAllAssociative(
+            'SELECT sh.sendenummer, sh.is_active
+             FROM lieferzeiten_sendenummer_history sh
+             INNER JOIN lieferzeiten_position pos ON pos.id = sh.position_id
+             INNER JOIN lieferzeiten_paket p ON p.id = pos.paket_id
+             WHERE p.external_order_id = ?
+             ORDER BY sh.created_at ASC',
+            ['DEMO-B2B-001'],
+        );
+
+        static::assertGreaterThanOrEqual(3, count($trackingRows));
+        static::assertSame('0', (string) $trackingRows[0]['is_active']);
+        static::assertSame('1', (string) $trackingRows[1]['is_active']);
+
+        $eigenversandTrackingCount = (int) $this->connection->fetchOne(
+            'SELECT COUNT(*)
+             FROM lieferzeiten_sendenummer_history sh
+             INNER JOIN lieferzeiten_position pos ON pos.id = sh.position_id
+             INNER JOIN lieferzeiten_paket p ON p.id = pos.paket_id
+             WHERE p.external_order_id = ?',
+            ['DEMO-PEG-001'],
+        );
+        static::assertSame(0, $eigenversandTrackingCount);
+
+        static::assertSame('open', $this->connection->fetchOne('SELECT status FROM lieferzeiten_task WHERE payload LIKE ?', ['%"scenarioKey":"teillieferung_multicolis_terminal_mix"%']));
+        static::assertSame('closed', $this->connection->fetchOne('SELECT status FROM lieferzeiten_task WHERE payload LIKE ?', ['%"scenarioKey":"gesamtversand_all_terminal_closed"%']));
+    }
+
+
 
     private function createSeeder(): DemoDataSeederService
     {
@@ -321,6 +385,8 @@ class DemoDataSeederIntegrationTest extends TestCase
             id BLOB PRIMARY KEY,
             position_id BLOB,
             sendenummer TEXT,
+            carrier TEXT,
+            is_active INTEGER DEFAULT 1,
             created_at TEXT,
             last_changed_by TEXT,
             last_changed_at TEXT
