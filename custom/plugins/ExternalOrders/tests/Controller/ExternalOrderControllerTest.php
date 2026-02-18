@@ -56,6 +56,8 @@ class ExternalOrderControllerTest extends TestCase
                 $this->equalTo([
                     'san6' => 'SAN6-123',
                     'san6OrderNumber' => 'SAN6-123',
+                    'latestShippingDateFrom' => '2026-04-11',
+                    'latestShippingDateTo' => '2026-04-12',
                     'statusCode' => 'shipped',
                     'status' => 'Versendet',
                 ]),
@@ -77,6 +79,8 @@ class ExternalOrderControllerTest extends TestCase
         $request = new Request(query: [
             'san6' => ' SAN6-123 ',
             'san6OrderNumber' => ' SAN6-123 ',
+            'latestShippingDateFrom' => ' 2026-04-11 ',
+            'latestShippingDateTo' => ' 2026-04-12 ',
             'statusCode' => ' shipped ',
             'status' => ' Versendet ',
         ]);
