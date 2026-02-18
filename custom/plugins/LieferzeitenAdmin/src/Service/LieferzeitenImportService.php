@@ -265,7 +265,8 @@ class LieferzeitenImportService
         $payload['calculatedShippingDate'] = $calculatedShippingDate?->format(DATE_ATOM);
         $payload['calculatedDeliveryDate'] = $calculatedDeliveryDate?->format(DATE_ATOM);
 
-        // latestShippingDate is the external "spätester Versandzeitpunkt" and is persisted as businessDateTo.
+        // latestShippingDate is the leading external field for "spätester Versandzeitpunkt".
+        // shippingDateLatest is a backwards-compatible alias and businessDateTo is the persisted DAL field.
         $payload['businessDateTo'] = $payload['latestShippingDate']
             ?? $payload['shippingDateLatest']
             ?? $payload['businessDateTo']
