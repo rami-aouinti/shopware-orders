@@ -1,0 +1,43 @@
+<div
+    v-if="visible"
+    class="external-orders-tracking-modal__overlay"
+    role="dialog"
+    aria-modal="true"
+>
+    <div class="external-orders-tracking-modal__dialog">
+        <header class="external-orders-tracking-modal__header">
+            <h3>{{ headerTitle }}</h3>
+            <button type="button" class="external-orders-tracking-modal__close" @click="close">×</button>
+        </header>
+
+        <div class="external-orders-tracking-modal__body">
+            <sw-label v-if="isHistoricalTrackingNumber" variant="warning" class="external-orders-tracking-modal__historical-badge">
+                Historische Trackingnummer
+            </sw-label>
+
+            <div v-if="sortedTrackingHistory.length > 1" class="external-orders-tracking-modal__history-list-wrapper">
+                <strong>Tracking-Historie</strong>
+                <ul class="external-orders-tracking-modal__history-list">
+                    <li
+                        v-for="(historyEntry, index) in sortedTrackingHistory"
+                        :key="`${historyEntry.number}-${index}`"
+                    >
+                        {{ historyEntry.number }}
+                        <span v-if="historyEntry.isCurrent">(aktiv)</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div v-if="isLoading">Tracking-Verlauf wird geladen …</div>
+            <div v-else-if="error" class="external-orders-tracking-modal__error">{{ error }}</div>
+            <div v-else-if="!events.length">Kein Tracking-Verlauf vorhanden.</div>
+            <ul v-else class="external-orders-tracking-modal__list">
+                <li v-for="(event, index) in events" :key="`${event.timestamp}-${index}`">
+                    <strong>{{ event.status }}</strong>
+                    <div>{{ event.label }}</div>
+                    <small>{{ event.timestamp }}<span v-if="event.location"> · {{ event.location }}</span></small>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

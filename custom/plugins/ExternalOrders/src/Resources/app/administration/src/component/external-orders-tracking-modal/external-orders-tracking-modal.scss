@@ -1,0 +1,54 @@
+.external-orders-tracking-modal__overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 1200;
+}
+
+.external-orders-tracking-modal__dialog {
+    width: min(620px, calc(100vw - 32px));
+    max-height: calc(100vh - 64px);
+    overflow: hidden;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 22px 40px rgba(15, 23, 42, 0.35);
+}
+
+.external-orders-tracking-modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.external-orders-tracking-modal__close {
+    border: 0;
+    background: transparent;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.external-orders-tracking-modal__body {
+    padding: 16px 20px 20px;
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+}
+
+.external-orders-tracking-modal__history-list {
+    margin: 8px 0 16px;
+    padding-left: 18px;
+}
+
+.external-orders-tracking-modal__list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.external-orders-tracking-modal__error {
+    color: #b91c1c;
+}

@@ -381,4 +381,61 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
             bestellnummer: 'A-1000',
         }));
     });
+
+
+    it('opens tracking modal with active tracking number and full history', () => {
+        const state = componentConfig.data();
+        const context = {
+            ...state,
+            resolveTrackingEntries: componentConfig.methods.resolveTrackingEntries,
+        };
+        const order = {
+            shippingCarrier: 'dhl',
+            trackingHistory: [
+                { number: 'TRK-ACTIVE', isCurrent: true },
+                { number: 'TRK-OLD', isCurrent: false },
+            ],
+        };
+
+        const entries = componentConfig.methods.resolveTrackingEntries.call(context, order, 'sendenummer');
+        componentConfig.methods.openTrackingModal.call(context, entries[0], order);
+
+        expect(context.showTrackingModal).toBe(true);
+        expect(context.selectedTrackingEntry).toEqual(expect.objectContaining({
+            number: 'TRK-ACTIVE',
+            isCurrent: true,
+            carrier: 'dhl',
+        }));
+        expect(context.selectedTrackingHistory).toEqual([
+            expect.objectContaining({ number: 'TRK-ACTIVE', isCurrent: true }),
+            expect.objectContaining({ number: 'TRK-OLD', isCurrent: false }),
+        ]);
+    });
+
+    it('opens tracking modal with historical tracking number from tracking column', () => {
+        const state = componentConfig.data();
+        const context = {
+            ...state,
+            resolveTrackingEntries: componentConfig.methods.resolveTrackingEntries,
+        };
+        const order = {
+            shippingCarrier: 'gls',
+            trackingHistory: [
+                { number: 'TRK-ACTIVE', isCurrent: true },
+                { number: 'TRK-HIST', isCurrent: false },
+            ],
+        };
+
+        const entries = componentConfig.methods.resolveTrackingEntries.call(context, order, 'trackingNumberPerPackage');
+        componentConfig.methods.openTrackingModal.call(context, entries[1], order);
+
+        expect(context.showTrackingModal).toBe(true);
+        expect(context.selectedTrackingEntry).toEqual(expect.objectContaining({
+            number: 'TRK-HIST',
+            isCurrent: false,
+            carrier: 'gls',
+        }));
+        expect(context.selectedTrackingHistory).toHaveLength(2);
+    });
+
 });
