@@ -262,6 +262,10 @@ class LieferzeitenPositionWriteService
         $resolvedContextUserId = $this->resolveActorUserId($context);
         $providedInitiatorUserId = (is_string($initiatorUserId) && Uuid::isValid($initiatorUserId)) ? $initiatorUserId : null;
 
+        if ($notificationContext['isTestOrder'] === true) {
+            return $initiator ?? 'system';
+        }
+
         $resolvedInitiatorDisplay = is_string($initiatorDisplay) && trim($initiatorDisplay) !== ''
             ? trim($initiatorDisplay)
             : null;
@@ -551,11 +555,11 @@ class LieferzeitenPositionWriteService
         return $username !== '' ? $username : 'system';
     }
 
-    /** @return array{externalOrderId:?string,sourceSystem:?string,salesChannelId:?string,customerEmail:?string,positionNumber:?string} */
+    /** @return array{externalOrderId:?string,sourceSystem:?string,salesChannelId:?string,customerEmail:?string,positionNumber:?string,isTestOrder:bool} */
     private function fetchNotificationContext(string $positionId): array
     {
         $row = $this->connection->fetchAssociative(
-            'SELECT p.position_number, paket.external_order_id, paket.source_system, paket.sales_channel_id, paket.customer_email
+            'SELECT p.position_number, paket.external_order_id, paket.source_system, paket.sales_channel_id, paket.customer_email, paket.is_test_order
              FROM lieferzeiten_position p
              LEFT JOIN lieferzeiten_paket paket ON paket.id = p.paket_id
              WHERE p.id = :positionId
@@ -570,6 +574,7 @@ class LieferzeitenPositionWriteService
                 'salesChannelId' => null,
                 'customerEmail' => null,
                 'positionNumber' => null,
+                'isTestOrder' => false,
             ];
         }
 
@@ -588,6 +593,7 @@ class LieferzeitenPositionWriteService
             'salesChannelId' => $salesChannelId,
             'customerEmail' => isset($row['customer_email']) ? (string) $row['customer_email'] : null,
             'positionNumber' => isset($row['position_number']) ? (string) $row['position_number'] : null,
+            'isTestOrder' => TestOrderExclusion::toBool($row['is_test_order'] ?? null),
         ];
     }
 }

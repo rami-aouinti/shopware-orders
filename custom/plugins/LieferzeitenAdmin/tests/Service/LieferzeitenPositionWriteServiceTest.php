@@ -32,6 +32,7 @@ class LieferzeitenPositionWriteServiceTest extends TestCase
             source_system TEXT NULL,
             sales_channel_id TEXT NULL,
             customer_email TEXT NULL,
+            is_test_order INTEGER NOT NULL DEFAULT 0,
             updated_at TEXT NOT NULL
         )');
         $this->connection->executeStatement('CREATE TABLE lieferzeiten_position (
@@ -144,6 +145,48 @@ class LieferzeitenPositionWriteServiceTest extends TestCase
         );
 
         $service->createAdditionalDeliveryRequest($positionId, 'manual', Context::createDefaultContext());
+    }
+
+
+    public function testCreateAdditionalDeliveryRequestSkipsFollowUpProcessesForTestOrders(): void
+    {
+        $positionId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+        $paketId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+
+        $this->connection->insert('lieferzeiten_paket', [
+            'id' => hex2bin($paketId),
+            'external_order_id' => 'EXT-TEST-1',
+            'source_system' => 'shopware',
+            'is_test_order' => 1,
+            'updated_at' => '2026-02-10 09:00:00.000',
+        ]);
+
+        $this->connection->insert('lieferzeiten_position', [
+            'id' => hex2bin($positionId),
+            'paket_id' => hex2bin($paketId),
+            'updated_at' => '2026-02-10 09:00:00.000',
+        ]);
+
+        $taskService = $this->createMock(LieferzeitenTaskService::class);
+        $taskService->expects(static::never())->method('createTask');
+
+        $notificationService = $this->createMock(NotificationEventService::class);
+        $notificationService->expects(static::never())->method('dispatch');
+
+        $ruleResolver = $this->createMock(TaskAssignmentRuleResolver::class);
+        $ruleResolver->expects(static::never())->method('resolve');
+
+        $service = $this->createService(
+            positionRepository: $this->createNoOpPositionRepository(),
+            taskService: $taskService,
+            notificationService: $notificationService,
+            ruleResolver: $ruleResolver,
+            systemConfigService: $this->createMock(SystemConfigService::class),
+        );
+
+        $initiator = $service->createAdditionalDeliveryRequest($positionId, 'manual', Context::createDefaultContext());
+
+        static::assertSame('manual', $initiator);
     }
 
 

@@ -37,6 +37,32 @@ class LieferzeitenOrderOverviewServiceTest extends TestCase
         static::assertSame(0, $result['total']);
     }
 
+
+    public function testListOrdersKeepsNormalOrderVisible(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('fetchOne')
+            ->willReturn('1');
+
+        $connection->expects($this->once())
+            ->method('fetchAllAssociative')
+            ->willReturn([[
+                'id' => 'order-1',
+                'status' => '1',
+                'orderedQuantityTotal' => '1',
+                'shippedQuantityTotal' => '0',
+                'bestellnummer' => 'SO-1001',
+            ]]);
+
+        $service = $this->createService($connection);
+        $result = $service->listOrders();
+
+        static::assertSame(1, $result['total']);
+        static::assertCount(1, $result['data']);
+        static::assertSame('SO-1001', $result['data'][0]['bestellnummer']);
+    }
+
     public function testListOrdersKeepsTestOrderExclusionWithoutFilters(): void
     {
         $capturedSql = [];

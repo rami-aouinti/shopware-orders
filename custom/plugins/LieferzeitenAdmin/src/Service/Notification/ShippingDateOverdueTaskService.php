@@ -38,6 +38,10 @@ class ShippingDateOverdueTaskService
                 continue;
             }
 
+            if ($paket->getIsTestOrder() === true) {
+                continue;
+            }
+
             if ($paket->getShippingDate() instanceof \DateTimeInterface) {
                 continue;
             }

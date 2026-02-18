@@ -130,6 +130,41 @@ class ShippingDateOverdueTaskServiceIntegrationTest extends TestCase
         $service->run($context);
     }
 
+
+    public function testRunDoesNotCreateTaskForTestOrders(): void
+    {
+        $context = Context::createDefaultContext();
+        $position = $this->buildPosition(
+            shippingDate: null,
+            businessDateTo: new \DateTimeImmutable('today 09:00:00')
+        );
+        $position->getPaket()?->setIsTestOrder(true);
+
+        $positionRepository = $this->createMock(EntityRepository::class);
+        $positionRepository->expects($this->once())
+            ->method('search')
+            ->willReturn($this->createSearchResult('lieferzeiten_position', [$position], $context));
+
+        $taskRepository = $this->createMock(EntityRepository::class);
+        $taskRepository->expects($this->never())->method('search');
+        $taskRepository->expects($this->never())->method('create');
+
+        $assignmentResolver = $this->createMock(TaskAssignmentRuleResolver::class);
+        $assignmentResolver->expects($this->never())->method('resolve');
+
+        $thresholdResolver = $this->createMock(ChannelPdmsThresholdResolver::class);
+
+        $service = new ShippingDateOverdueTaskService(
+            $positionRepository,
+            $assignmentResolver,
+            $taskRepository,
+            $thresholdResolver,
+            static fn (): \DateTimeImmutable => new \DateTimeImmutable('today 12:30:00'),
+        );
+
+        $service->run($context);
+    }
+
     private function buildPosition(?\DateTimeImmutable $shippingDate, ?\DateTimeImmutable $businessDateTo): PositionEntity
     {
         $paket = new PaketEntity();

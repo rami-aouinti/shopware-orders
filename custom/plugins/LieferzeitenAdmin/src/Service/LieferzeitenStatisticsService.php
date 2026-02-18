@@ -90,10 +90,11 @@ readonly class LieferzeitenStatisticsService
                 FROM `lieferzeiten_position`
                 GROUP BY paket_id
             ) pos_stats ON pos_stats.paket_id = p.id
-            WHERE COALESCE(p.is_test_order, 0) = 0
+            WHERE %s
               AND p.created_at >= :periodStart
               AND p.created_at <= :periodEnd
               %s',
+            TestOrderExclusion::sqlCondition('p'),
             $scopeSql,
         );
 
@@ -109,12 +110,13 @@ readonly class LieferzeitenStatisticsService
                 COALESCE(NULLIF(p.source_system, ""), "Unknown") AS channel,
                 COUNT(*) AS value
             FROM `lieferzeiten_paket` p
-            WHERE COALESCE(p.is_test_order, 0) = 0
+            WHERE %s
               AND p.created_at >= :periodStart
               AND p.created_at <= :periodEnd
               %s
             GROUP BY COALESCE(NULLIF(p.source_system, ""), "Unknown")
             ORDER BY value DESC, channel ASC',
+            TestOrderExclusion::sqlCondition('p'),
             $scopeSql,
         );
 
@@ -342,10 +344,11 @@ readonly class LieferzeitenStatisticsService
                 FROM `lieferzeiten_position`
                 GROUP BY paket_id
             ) pos_stats ON pos_stats.paket_id = p.id
-            WHERE COALESCE(p.is_test_order, 0) = 0
+            WHERE %s
               AND p.created_at >= :periodStart
               AND p.created_at <= :periodEnd
               %s',
+            TestOrderExclusion::sqlCondition('p'),
             $scopeSql,
         ), $params);
 
@@ -472,7 +475,7 @@ readonly class LieferzeitenStatisticsService
 
     private function buildUnifiedEventSourcesSql(): string
     {
-        return 'SELECT
+        return sprintf('SELECT
                     a.id AS id,
                     COALESCE(JSON_UNQUOTE(JSON_EXTRACT(a.payload, "$.externalOrderId")), p.external_order_id) AS order_number,
                     COALESCE(NULLIF(a.source_system, ""), p.source_system) AS domain,
@@ -560,7 +563,7 @@ readonly class LieferzeitenStatisticsService
                 INNER JOIN `lieferzeiten_position` pos ON pos.id = sh.position_id
                 INNER JOIN `lieferzeiten_paket` p ON p.id = pos.paket_id
                 WHERE COALESCE(sh.last_changed_at, sh.created_at) >= :periodStart
-                  AND COALESCE(p.is_test_order, 0) = 0
+                  AND %s
 
                 UNION ALL
 
@@ -577,7 +580,7 @@ readonly class LieferzeitenStatisticsService
                 INNER JOIN `lieferzeiten_position` pos ON pos.id = nlh.position_id
                 INNER JOIN `lieferzeiten_paket` p ON p.id = pos.paket_id
                 WHERE COALESCE(nlh.last_changed_at, nlh.created_at) >= :periodStart
-                  AND COALESCE(p.is_test_order, 0) = 0
+                  AND %s
 
                 UNION ALL
 
@@ -594,7 +597,7 @@ readonly class LieferzeitenStatisticsService
                 INNER JOIN `lieferzeiten_paket` p ON p.id = pos.paket_id
                 WHERE pos.last_changed_at IS NOT NULL
                   AND pos.last_changed_at >= :periodStart
-                  AND COALESCE(p.is_test_order, 0) = 0
+                  AND %s
 
                 UNION ALL
 
@@ -610,7 +613,12 @@ readonly class LieferzeitenStatisticsService
                 FROM `lieferzeiten_paket` p
                 WHERE p.last_changed_at IS NOT NULL
                   AND p.last_changed_at >= :periodStart
-                  AND COALESCE(p.is_test_order, 0) = 0';
+                  AND %s',
+            TestOrderExclusion::sqlCondition('p'),
+            TestOrderExclusion::sqlCondition('p'),
+            TestOrderExclusion::sqlCondition('p'),
+            TestOrderExclusion::sqlCondition('p'),
+        );
     }
 
     private function sanitizePeriod(int $periodDays): int
