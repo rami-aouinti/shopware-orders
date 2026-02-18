@@ -16,7 +16,7 @@
                 type="button"
                 @click="openTaskAssignmentRules"
             >
-                Aufgabenvergabe konfigurieren
+                Zu lieferzeiten.settings.taskAssignmentRules
             </button>
             <small class="external-orders-lieferzeit-empty__task-assignment-hint">
                 Die Versand-Überfälligkeitsaufgabe wird über den Trigger
@@ -276,26 +276,32 @@
                                 </template>
                             </td>
                             <td>
-                                <div class="external-orders-lieferzeit-empty__task-panel" v-if="resolveLieferzeitTask(order)">
-                                    <div class="external-orders-lieferzeit-empty__task-row"><strong>Trigger:</strong> {{ displayOrDash(resolveLieferzeitTask(order).triggerKey) }}</div>
-                                    <div class="external-orders-lieferzeit-empty__task-row"><strong>Assignee:</strong> {{ displayOrDash(resolveLieferzeitTask(order).assignee) }}</div>
-                                    <div class="external-orders-lieferzeit-empty__task-rule-hint">
-                                        Regel: <code>versand.datum.ueberfaellig</code> → {{ displayOrDash(resolveLieferzeitTask(order).assignee) }}
-                                    </div>
-                                    <div class="external-orders-lieferzeit-empty__task-row"><strong>Due Date:</strong> {{ formatDate(resolveLieferzeitTask(order).dueDate) }}</div>
-                                    <div class="external-orders-lieferzeit-empty__task-row"><strong>Status:</strong> {{ getLieferzeitTaskStatusLabel(resolveLieferzeitTask(order)) }}</div>
-                                    <div class="external-orders-lieferzeit-empty__task-actions">
-                                        <button
-                                            v-for="action in getLieferzeitTaskActions(resolveLieferzeitTask(order))"
-                                            :key="`${resolveLieferzeitTask(order).id}-${action}`"
-                                            class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small"
-                                            :class="{ 'external-orders-lieferzeit-empty__button--primary': action === 'close' }"
-                                            type="button"
-                                            :disabled="isTaskInProgress(resolveLieferzeitTask(order).id)"
-                                            @click="runTaskAction(resolveLieferzeitTask(order), action)"
-                                        >
-                                            {{ getLieferzeitTaskActionLabel(action) }}
-                                        </button>
+                                <div class="external-orders-lieferzeit-empty__task-panel" v-if="resolveLieferzeitTasks(order).length">
+                                    <div
+                                        v-for="task in resolveLieferzeitTasks(order)"
+                                        :key="task.id"
+                                        class="external-orders-lieferzeit-empty__task-item"
+                                    >
+                                        <div class="external-orders-lieferzeit-empty__task-row"><strong>Trigger:</strong> {{ displayOrDash(task.triggerKey) }}</div>
+                                        <div class="external-orders-lieferzeit-empty__task-row"><strong>Assignee:</strong> {{ displayOrDash(task.assignee) }}</div>
+                                        <div class="external-orders-lieferzeit-empty__task-row"><strong>Due Date:</strong> {{ formatDate(task.dueDate) }}</div>
+                                        <div class="external-orders-lieferzeit-empty__task-row"><strong>Status:</strong> {{ getLieferzeitTaskStatusLabel(task) }}</div>
+                                        <div class="external-orders-lieferzeit-empty__task-rule-hint">
+                                            Trigger sichtbar: <code>versand.datum.ueberfaellig</code>
+                                        </div>
+                                        <div class="external-orders-lieferzeit-empty__task-actions">
+                                            <button
+                                                v-for="action in getLieferzeitTaskActions(task)"
+                                                :key="`${task.id}-${action}`"
+                                                class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small"
+                                                :class="{ 'external-orders-lieferzeit-empty__button--primary': action === 'close' }"
+                                                type="button"
+                                                :disabled="isTaskInProgress(task.id)"
+                                                @click="runTaskAction(task, action)"
+                                            >
+                                                {{ getLieferzeitTaskActionLabel(action) }}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 <span v-else>-</span>
