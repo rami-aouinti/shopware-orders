@@ -7,6 +7,8 @@ use Doctrine\DBAL\Connection;
 use LieferzeitenAdmin\Service\DemoDataSeederService;
 use LieferzeitenAdmin\Service\ChannelDateSettingsProvider;
 use LieferzeitenAdmin\Service\ChannelPdmsThresholdResolver;
+use LieferzeitenAdmin\Service\BaseDateResolver;
+use LieferzeitenAdmin\Service\BusinessDayDeliveryDateCalculator;
 use LieferzeitenAdmin\Service\LieferzeitenOrderOverviewService;
 use LieferzeitenAdmin\Service\LieferzeitenStatisticsService;
 use LieferzeitenAdmin\Service\LieferzeitenExternalOrderLinkService;
@@ -78,7 +80,7 @@ class DemoDataSeederIntegrationTest extends TestCase
 
         static::assertTrue($result['reset']);
         static::assertGreaterThan(0, array_sum($result['deleted']));
-        static::assertSame(9, $result['created']['paket']);
+        static::assertSame(8, $result['created']['paket']);
     }
 
 
@@ -179,7 +181,7 @@ class DemoDataSeederIntegrationTest extends TestCase
         $seeder = $this->createSeeder();
         $seeder->seed(Context::createDefaultContext(), false);
 
-        $orderOverviewService = new LieferzeitenOrderOverviewService($this->connection);
+        $orderOverviewService = $this->createOrderOverviewService();
         $orders = $orderOverviewService->listOrders(1, 100, null, null, []);
 
         static::assertSame(8, $orders['total'], 'Test order must be excluded from listing.');
@@ -215,8 +217,9 @@ class DemoDataSeederIntegrationTest extends TestCase
         static::assertContains('multi_position_gesamtversand_reexpedition', $scenarioKeys);
         static::assertContains('split_position_partial_7_10', $scenarioKeys);
         static::assertContains('split_position_partial_3_10_terminal_pending', $scenarioKeys);
-        static::assertContains('vorkasse_without_payment_date', $scenarioKeys);
-        static::assertContains('vorkasse_with_payment_date', $scenarioKeys);
+        static::assertContains('tracking_zugestellt_closable', $scenarioKeys);
+        static::assertContains('tracking_paketshop_zugestellt_not_collected_non_closable', $scenarioKeys);
+        static::assertContains('tracking_verweigert_retoure_zoll_abgelehnt_non_closable', $scenarioKeys);
 
         $auditPayload = (string) $this->connection->fetchOne('SELECT payload FROM lieferzeiten_audit_log WHERE target_id = ?', ['DEMO-B2B-001']);
         $auditDecoded = json_decode($auditPayload, true, 512, JSON_THROW_ON_ERROR);
@@ -229,7 +232,7 @@ class DemoDataSeederIntegrationTest extends TestCase
         static::assertSame('7/10', $this->connection->fetchOne('SELECT partial_shipment_quantity FROM lieferzeiten_paket WHERE external_order_id = ?', ['DEMO-EBAY_DE-001']));
         static::assertSame('3/10', $this->connection->fetchOne('SELECT partial_shipment_quantity FROM lieferzeiten_paket WHERE external_order_id = ?', ['DEMO-KAUFLAND-001']));
 
-        static::assertNull($this->connection->fetchOne('SELECT payment_date FROM lieferzeiten_paket WHERE external_order_id = ?', ['DEMO-BEZB-001']));
+        static::assertNotNull($this->connection->fetchOne('SELECT payment_date FROM lieferzeiten_paket WHERE external_order_id = ?', ['DEMO-BEZB-001']));
         static::assertNotNull($this->connection->fetchOne('SELECT payment_date FROM lieferzeiten_paket WHERE external_order_id = ?', ['DEMO-B2B-002']));
 
         $positionCount = (int) $this->connection->fetchOne('SELECT COUNT(*) FROM lieferzeiten_position pos INNER JOIN lieferzeiten_paket p ON pos.paket_id = p.id WHERE p.external_order_id = ?', ['DEMO-B2B-001']);
@@ -249,21 +252,59 @@ class DemoDataSeederIntegrationTest extends TestCase
         static::assertSame('0', (string) $trackingRows[0]['is_active']);
         static::assertSame('1', (string) $trackingRows[1]['is_active']);
 
-        $eigenversandTrackingCount = (int) $this->connection->fetchOne(
-            'SELECT COUNT(*)
-             FROM lieferzeiten_sendenummer_history sh
-             INNER JOIN lieferzeiten_position pos ON pos.id = sh.position_id
-             INNER JOIN lieferzeiten_paket p ON p.id = pos.paket_id
-             WHERE p.external_order_id = ?',
-            ['DEMO-PEG-001'],
+        static::assertSame(
+            'DHL-0006-ZUGESTELLT',
+            $this->connection->fetchOne('SELECT sh.sendenummer FROM lieferzeiten_sendenummer_history sh INNER JOIN lieferzeiten_position pos ON pos.id = sh.position_id INNER JOIN lieferzeiten_paket p ON p.id = pos.paket_id WHERE p.external_order_id = ? AND sh.is_active = 1', ['DEMO-PEG-001']),
         );
-        static::assertSame(0, $eigenversandTrackingCount);
+        static::assertSame(
+            'DHL-0007-PAKETSHOP-ZUGESTELLT',
+            $this->connection->fetchOne('SELECT sh.sendenummer FROM lieferzeiten_sendenummer_history sh INNER JOIN lieferzeiten_position pos ON pos.id = sh.position_id INNER JOIN lieferzeiten_paket p ON p.id = pos.paket_id WHERE p.external_order_id = ? AND sh.is_active = 1', ['DEMO-BEZB-001']),
+        );
+
+        static::assertSame('8', (string) $this->connection->fetchOne('SELECT status FROM lieferzeiten_paket WHERE external_order_id = ?', ['DEMO-PEG-001']));
+        static::assertSame('7', (string) $this->connection->fetchOne('SELECT status FROM lieferzeiten_paket WHERE external_order_id = ?', ['DEMO-BEZB-001']));
+        static::assertSame('6', (string) $this->connection->fetchOne('SELECT status FROM lieferzeiten_paket WHERE external_order_id = ?', ['DEMO-B2B-002']));
 
         static::assertSame('open', $this->connection->fetchOne('SELECT status FROM lieferzeiten_task WHERE payload LIKE ?', ['%"scenarioKey":"teillieferung_multicolis_terminal_mix"%']));
         static::assertSame('closed', $this->connection->fetchOne('SELECT status FROM lieferzeiten_task WHERE payload LIKE ?', ['%"scenarioKey":"gesamtversand_all_terminal_closed"%']));
     }
 
 
+
+
+    public function testTrackingCompletionRuleForStatus8ScenariosMatchesAllowedFinalStates(): void
+    {
+        $seeder = $this->createSeeder();
+        $seeder->seed(Context::createDefaultContext(), false);
+
+        $orderOverviewService = $this->createOrderOverviewService();
+        $orders = $orderOverviewService->listOrders(1, 100, null, null, []);
+        $ordersByExternalId = [];
+        foreach ($orders['data'] as $row) {
+            $ordersByExternalId[$row['orderNumber']] = $row;
+        }
+
+        static::assertSame(8, (int) ($ordersByExternalId['DEMO-PEG-001']['businessStatus']['code'] ?? 0));
+        static::assertNotSame(8, (int) ($ordersByExternalId['DEMO-BEZB-001']['businessStatus']['code'] ?? 0));
+        static::assertNotSame(8, (int) ($ordersByExternalId['DEMO-B2B-002']['businessStatus']['code'] ?? 0));
+
+        static::assertStringContainsString('ZUGESTELLT', (string) ($ordersByExternalId['DEMO-PEG-001']['trackingSummary'] ?? ''));
+        static::assertStringContainsString('PAKETSHOP-ZUGESTELLT', (string) ($ordersByExternalId['DEMO-BEZB-001']['trackingSummary'] ?? ''));
+        static::assertStringContainsString('VERWEIGERT', (string) ($ordersByExternalId['DEMO-B2B-002']['trackingSummary'] ?? ''));
+    }
+
+
+    private function createOrderOverviewService(): LieferzeitenOrderOverviewService
+    {
+        $settingsProvider = new ChannelDateSettingsProvider($this->createMock(SystemConfigService::class), $this->connection);
+
+        return new LieferzeitenOrderOverviewService(
+            $this->connection,
+            new BaseDateResolver(),
+            $settingsProvider,
+            new BusinessDayDeliveryDateCalculator(),
+        );
+    }
 
     private function createSeeder(): DemoDataSeederService
     {
