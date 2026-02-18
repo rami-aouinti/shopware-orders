@@ -537,6 +537,41 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
     },
 
     methods: {
+
+        getAclService() {
+            const injectedAcl = this.acl;
+
+            if (typeof injectedAcl?.can === 'function') {
+                return injectedAcl;
+            }
+
+            const serviceAcl = Shopware.Application.getContainer('service')?.acl;
+
+            if (typeof serviceAcl?.can === 'function') {
+                return serviceAcl;
+            }
+
+            return null;
+        },
+
+        hasTaskAssignmentSettingsAccess() {
+            const aclService = this.getAclService();
+
+            if (!aclService) {
+                return false;
+            }
+
+            return aclService.can('lieferzeiten.editor') || aclService.can('admin');
+        },
+
+        openTaskAssignmentRules() {
+            if (!this.hasTaskAssignmentSettingsAccess()) {
+                return;
+            }
+
+            this.$router?.push({ name: 'lieferzeiten.settings.taskAssignmentRules' });
+        },
+
         normalizeChannelId(value) {
             return String(value || '').trim().toLowerCase();
         },

@@ -486,6 +486,43 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
     });
 
 
+
+    it('navigates to task assignment rules for users with lieferzeiten.editor acl', () => {
+        const state = componentConfig.data();
+        const push = jest.fn();
+        const context = {
+            ...state,
+            acl: {
+                can: jest.fn((privilege) => privilege === 'lieferzeiten.editor'),
+            },
+            $router: { push },
+            getAclService: componentConfig.methods.getAclService,
+            hasTaskAssignmentSettingsAccess: componentConfig.methods.hasTaskAssignmentSettingsAccess,
+        };
+
+        componentConfig.methods.openTaskAssignmentRules.call(context);
+
+        expect(push).toHaveBeenCalledWith({ name: 'lieferzeiten.settings.taskAssignmentRules' });
+    });
+
+    it('does not navigate to task assignment rules without editor acl', () => {
+        const state = componentConfig.data();
+        const push = jest.fn();
+        const context = {
+            ...state,
+            acl: {
+                can: jest.fn(() => false),
+            },
+            $router: { push },
+            getAclService: componentConfig.methods.getAclService,
+            hasTaskAssignmentSettingsAccess: componentConfig.methods.hasTaskAssignmentSettingsAccess,
+        };
+
+        componentConfig.methods.openTaskAssignmentRules.call(context);
+
+        expect(push).not.toHaveBeenCalled();
+    });
+
     it('maps lieferzeit tasks by order/position and filters by trigger', async () => {
         const state = componentConfig.data();
         const listLieferzeitTasks = jest.fn().mockResolvedValue({
