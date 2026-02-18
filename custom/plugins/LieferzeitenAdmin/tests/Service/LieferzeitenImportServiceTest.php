@@ -71,12 +71,16 @@ class LieferzeitenImportServiceTest extends TestCase
         yield 'top level testOrder' => [['testOrder' => 1]];
         yield 'top level test_order' => [['test_order' => 'yes']];
         yield 'top level isTest' => [['isTest' => 'true']];
+        yield 'top level is_test_order' => [['is_test_order' => '1']];
+        yield 'top level external_order_is_test_order' => [['external_order_is_test_order' => 1]];
         yield 'additional Testbestellung' => [['additional' => ['Testbestellung' => '1']]];
         yield 'additional testbestellung' => [['additional' => ['testbestellung' => 'y']]];
         yield 'additional isTestOrder' => [['additional' => ['isTestOrder' => 'ja']]];
+        yield 'additional is_test_order' => [['additional' => ['is_test_order' => 'true']]];
         yield 'detail additional Testbestellung' => [['detail' => ['additional' => ['Testbestellung' => '1']]]];
         yield 'detail additional testbestellung' => [['detail' => ['additional' => ['testbestellung' => 'true']]]];
         yield 'detail additional isTestOrder' => [['detail' => ['additional' => ['isTestOrder' => 1]]]];
+        yield 'detail additional external_order_is_test_order' => [['detail' => ['additional' => ['external_order_is_test_order' => '1']]]];
     }
 
     /** @dataProvider provideFalsyIsTestOrderVariants */

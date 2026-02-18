@@ -60,6 +60,33 @@ class LieferzeitenStatisticsServiceTest extends TestCase
         }
     }
 
+
+    public function testGetStatisticsExcludesTestOrdersAcrossKpiQueries(): void
+    {
+        $capturedSql = [];
+
+        $connection = $this->createMock(Connection::class);
+        $connection->method('fetchAssociative')
+            ->willReturnCallback(static function (string $sql) use (&$capturedSql): array {
+                $capturedSql[] = $sql;
+
+                return ['open_orders' => 0, 'overdue_shipping' => 0, 'overdue_delivery' => 0];
+            });
+        $connection->method('fetchAllAssociative')
+            ->willReturnCallback(static function (string $sql) use (&$capturedSql): array {
+                $capturedSql[] = $sql;
+
+                return [];
+            });
+        $connection->method('fetchOne')->willReturn(0);
+
+        $service = new LieferzeitenStatisticsService($connection, $this->createThresholdResolver());
+        $service->getStatistics(30, null, null);
+
+        static::assertNotEmpty($capturedSql);
+        static::assertTrue((bool) array_filter($capturedSql, static fn (string $sql): bool => str_contains($sql, 'COALESCE(p.is_test_order, 0) = 0')));
+    }
+
     public function testGetStatisticsUsesDomainWhenChannelIsAll(): void
     {
         $capturedParams = [];

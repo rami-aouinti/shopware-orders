@@ -23,6 +23,7 @@ class VorkassePaymentReminderService
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('paymentDate', null));
         $criteria->addFilter(new EqualsAnyFilter('paymentMethod', ['vorkasse', 'prepayment']));
+        $criteria->addFilter(new EqualsFilter('isTestOrder', false));
 
         /** @var iterable<PaketEntity> $orders */
         $orders = $this->paketRepository->search($criteria, $context)->getEntities();

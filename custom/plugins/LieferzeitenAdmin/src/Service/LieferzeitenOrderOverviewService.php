@@ -341,7 +341,7 @@ class LieferzeitenOrderOverviewService
      */
     private function buildWhereSql(array $filters, array &$params, array &$joins): string
     {
-        $conditions = ['COALESCE(p.is_test_order, 0) = 0'];
+        $conditions = [TestOrderExclusion::sqlCondition('p')];
 
         if (($value = trim((string) ($filters['bestellnummer'] ?? ''))) !== '') {
             $conditions[] = 'p.external_order_id LIKE :bestellnummer';
