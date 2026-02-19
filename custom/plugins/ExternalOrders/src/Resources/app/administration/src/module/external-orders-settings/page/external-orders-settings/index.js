@@ -5,7 +5,7 @@ const { Component, Mixin } = Shopware;
 Component.register('external-orders-settings', {
     template,
 
-    inject: ['systemConfigApiService'],
+    inject: ['systemConfigApiService', 'externalOrderService'],
 
     mixins: [
         Mixin.getByName('notification'),
@@ -15,6 +15,8 @@ Component.register('external-orders-settings', {
         return {
             isLoading: false,
             isSaving: false,
+            isTestingSan6: false,
+            san6TestResult: null,
             config: {
                 externalOrdersTimeout: 2.5,
                 externalOrdersSan6BaseUrl: '',
@@ -26,6 +28,9 @@ Component.register('external-orders-settings', {
                 externalOrdersSan6Product: '',
                 externalOrdersSan6Mandant: '',
                 externalOrdersSan6Sys: '',
+                externalOrdersSan6ReadKopf: '',
+                externalOrdersSan6ReadKundennummer: '',
+                externalOrdersSan6ReadFromDate: '',
             },
             san6SendStrategyOptions: [
                 { value: 'filetransferurl', label: 'filetransferurl' },
@@ -62,6 +67,63 @@ Component.register('external-orders-settings', {
                 });
             } finally {
                 this.isLoading = false;
+            }
+        },
+
+
+        async onTestSan6Api() {
+            this.isTestingSan6 = true;
+
+            try {
+                const san6Probe = await this.externalOrderService.testSan6Read();
+                const syncResponse = await this.externalOrderService.runSyncNow();
+                const previewResponse = await this.externalOrderService.getSan6RawPreview(5);
+                const rows = Array.isArray(previewResponse?.rows) ? previewResponse.rows : [];
+
+                this.san6TestResult = {
+                    executedAt: syncResponse?.executedAt || new Date().toISOString(),
+                    success: Boolean(syncResponse?.success) && !san6Probe?.error,
+                    rowCount: rows.length,
+                    rows,
+                    ordersCountFromSan6: Number(san6Probe?.ordersCount || 0),
+                    san6Function: san6Probe?.function || '',
+                    san6Url: san6Probe?.url || '',
+                    sampleExternalIds: Array.isArray(san6Probe?.sampleExternalIds) ? san6Probe.sampleExternalIds : [],
+                    rawPreview: san6Probe?.rawPreview || '',
+                    message: san6Probe?.error || null,
+                };
+
+                if (san6Probe?.error) {
+                    this.createNotificationError({
+                        title: 'SAN6 Test fehlgeschlagen',
+                        message: san6Probe.error,
+                    });
+                } else {
+                    this.createNotificationSuccess({
+                        title: 'SAN6 Test erfolgreich',
+                        message: `SAN6 geliefert: ${Number(san6Probe?.ordersCount || 0)} | In Shopware sichtbar: ${rows.length}`,
+                    });
+                }
+            } catch (error) {
+                this.san6TestResult = {
+                    executedAt: new Date().toISOString(),
+                    success: false,
+                    rowCount: 0,
+                    rows: [],
+                    ordersCountFromSan6: 0,
+                    san6Function: '',
+                    san6Url: '',
+                    sampleExternalIds: [],
+                    rawPreview: '',
+                    message: error?.message || 'Der SAN6 Testaufruf ist fehlgeschlagen.',
+                };
+
+                this.createNotificationError({
+                    title: 'SAN6 Test fehlgeschlagen',
+                    message: error?.message || 'Der SAN6 Testaufruf konnte nicht ausgeführt werden.',
+                });
+            } finally {
+                this.isTestingSan6 = false;
             }
         },
 

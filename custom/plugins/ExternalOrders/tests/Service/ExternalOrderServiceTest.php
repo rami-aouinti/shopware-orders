@@ -471,6 +471,38 @@ class ExternalOrderServiceTest extends TestCase
     /**
      * @param array<string, mixed>|null $customFields
      */
+
+    public function testFetchSan6RawPayloadPreviewReturnsDecodedPayloadRows(): void
+    {
+        $repository = $this->createMock(EntityRepository::class);
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('fetchAllAssociative')
+            ->with(
+                $this->stringContains('FROM external_order_data'),
+                ['channel' => 'san6']
+            )
+            ->willReturn([[ 
+                'id' => 'abababababababababababababababab',
+                'order_id' => 'cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd',
+                'external_id' => 'EXT-70001',
+                'channel' => 'san6',
+                'created_at' => '2026-05-01 10:00:00.000',
+                'updated_at' => '2026-05-01 11:00:00.000',
+                'raw_payload' => json_encode(['Auftragsnummer' => '70001'], JSON_THROW_ON_ERROR),
+            ]]);
+
+        $service = new ExternalOrderService($repository, $connection);
+
+        $rows = $service->fetchSan6RawPayloadPreview(5);
+
+        static::assertCount(1, $rows);
+        static::assertSame('EXT-70001', $rows[0]['externalId']);
+        static::assertSame('70001', $rows[0]['rawPayload']['Auftragsnummer']);
+    }
+
+
     private function createOrderEntity(string $id, string $orderNumber, float $amountTotal, ?array $customFields): OrderEntity
     {
         $order = $this->createMock(OrderEntity::class);

@@ -4,6 +4,9 @@
     </template>
 
     <template #smart-bar-actions>
+        <sw-button-process variant="secondary" :isLoading="isTestingSan6" @click="onTestSan6Api">
+            SAN6 API testen
+        </sw-button-process>
         <sw-button-process variant="primary" :isLoading="isSaving" @click="onSave">
             {{ $tc('global.default.save') }}
         </sw-button-process>
@@ -58,6 +61,46 @@
                     label="SAN6 Sys"
                     class="sw-mt-16"
                 />
+                <sw-text-field
+                    v-model:value="config.externalOrdersSan6ReadKopf"
+                    label="SAN6 Read Kopf"
+                    class="sw-mt-16"
+                    placeholder="2"
+                />
+                <sw-text-field
+                    v-model:value="config.externalOrdersSan6ReadKundennummer"
+                    label="SAN6 Read Kundennummer"
+                    class="sw-mt-16"
+                    placeholder="3801182"
+                />
+                <sw-text-field
+                    v-model:value="config.externalOrdersSan6ReadFromDate"
+                    label="SAN6 Read Von"
+                    class="sw-mt-16"
+                    placeholder="16.06.2025"
+                />
+
+                <sw-alert
+                    v-if="san6TestResult"
+                    :variant="san6TestResult.success ? 'success' : 'error'"
+                    class="sw-mt-16"
+                    :title="san6TestResult.success ? 'Letzter SAN6 Test erfolgreich' : 'Letzter SAN6 Test fehlgeschlagen'"
+                >
+                    <p><strong>Zeitpunkt:</strong> {{ san6TestResult.executedAt }}</p>
+                    <p><strong>SAN6 Funktion:</strong> {{ san6TestResult.san6Function || 'n/a' }}</p>
+                    <p><strong>SAN6 URL:</strong> {{ san6TestResult.san6Url || 'n/a' }}</p>
+                    <p><strong>Datensätze direkt von SAN6:</strong> {{ san6TestResult.ordersCountFromSan6 }}</p>
+                    <p><strong>Datensätze im raw-preview:</strong> {{ san6TestResult.rowCount }}</p>
+                    <p v-if="san6TestResult.sampleExternalIds?.length"><strong>Beispiel IDs:</strong> {{ san6TestResult.sampleExternalIds.join(', ') }}</p>
+                    <p v-if="san6TestResult.message"><strong>Fehler:</strong> {{ san6TestResult.message }}</p>
+                    <sw-textarea-field
+                        v-if="san6TestResult.rawPreview"
+                        :value="san6TestResult.rawPreview"
+                        label="SAN6 Raw XML Preview"
+                        class="sw-mt-16"
+                        :disabled="true"
+                    />
+                </sw-alert>
             </sw-card>
         </sw-card-view>
     </template>

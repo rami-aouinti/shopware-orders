@@ -25,6 +25,50 @@ class ExternalOrderSyncService
     ) {
     }
 
+
+    /**
+     * @return array{url: string, function: string, ordersCount: int, sampleExternalIds: array<int, string>, rawPreview: string, error: ?string}
+     */
+    public function probeSan6Read(): array
+    {
+        $timeout = (float) $this->systemConfigService->get('ExternalOrders.config.externalOrdersTimeout');
+        $san6ReadFunction = trim((string) ($this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6ReadFunction') ?? ''));
+        if ($san6ReadFunction === '') {
+            $san6ReadFunction = TopmSan6Client::DEFAULT_READ_FUNCTION;
+        }
+
+        $apiUrl = (string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6BaseUrl');
+        if ($apiUrl !== '') {
+            $apiUrl = $this->buildSan6ApiUrl($apiUrl);
+        }
+
+        $apiToken = (string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6Authentifizierung');
+
+        $probe = $this->topmSan6Client->fetchReadProbe($apiUrl, $apiToken, $timeout, $san6ReadFunction);
+        $orders = $probe['orders'];
+        $sampleExternalIds = [];
+
+        foreach (array_slice($orders, 0, 5) as $order) {
+            if (!is_array($order)) {
+                continue;
+            }
+
+            $externalId = $this->resolveExternalId($order);
+            if ($externalId !== null) {
+                $sampleExternalIds[] = $externalId;
+            }
+        }
+
+        return [
+            'url' => $probe['url'],
+            'function' => $san6ReadFunction,
+            'ordersCount' => count($orders),
+            'sampleExternalIds' => $sampleExternalIds,
+            'rawPreview' => mb_substr($probe['rawXml'], 0, 4000),
+            'error' => $probe['error'],
+        ];
+    }
+
     public function syncNewOrders(Context $context): void
     {
         $configs = $this->getChannelConfigs();
@@ -154,6 +198,9 @@ class ExternalOrderSyncService
             'mandant' => (string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6Mandant'),
             'sys' => (string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6Sys'),
             'authentifizierung' => (string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6Authentifizierung'),
+            'Kopf' => trim((string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6ReadKopf')),
+            'Kundennummer' => trim((string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6ReadKundennummer')),
+            'Von' => trim((string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6ReadFromDate')),
         ], static fn (string $value): bool => $value !== '');
 
         if ($query === []) {

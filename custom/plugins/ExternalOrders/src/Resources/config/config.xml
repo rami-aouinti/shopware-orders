@@ -33,5 +33,30 @@
             <helpText lang="de-DE">Wenn leer, wird der Initiator als Empfänger verwendet.</helpText>
         </input-field>
 
+
+
+        <input-field type="text">
+            <name>externalOrdersSan6ReadKopf</name>
+            <label lang="en-GB">SAN6 read parameter Kopf</label>
+            <label lang="de-DE">SAN6 Lese-Parameter Kopf</label>
+            <helpText lang="en-GB">Optional SAN6 read query parameter, e.g. 2.</helpText>
+            <helpText lang="de-DE">Optionaler SAN6 Lese-Query-Parameter, z. B. 2.</helpText>
+        </input-field>
+
+        <input-field type="text">
+            <name>externalOrdersSan6ReadKundennummer</name>
+            <label lang="en-GB">SAN6 read parameter Kundennummer</label>
+            <label lang="de-DE">SAN6 Lese-Parameter Kundennummer</label>
+            <helpText lang="en-GB">Optional SAN6 customer number filter for API-AUFTRAEGE.</helpText>
+            <helpText lang="de-DE">Optionaler SAN6 Kundennummer-Filter für API-AUFTRAEGE.</helpText>
+        </input-field>
+
+        <input-field type="text">
+            <name>externalOrdersSan6ReadFromDate</name>
+            <label lang="en-GB">SAN6 read parameter Von</label>
+            <label lang="de-DE">SAN6 Lese-Parameter Von</label>
+            <helpText lang="en-GB">Optional SAN6 start date (e.g. 16.06.2025) for API-AUFTRAEGE.</helpText>
+            <helpText lang="de-DE">Optionales SAN6 Startdatum (z. B. 16.06.2025) für API-AUFTRAEGE.</helpText>
+        </input-field>
     </card>
 </config>
