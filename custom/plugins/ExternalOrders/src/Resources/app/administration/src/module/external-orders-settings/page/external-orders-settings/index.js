@@ -26,6 +26,9 @@ Component.register('external-orders-settings', {
                 externalOrdersSan6Product: '',
                 externalOrdersSan6Mandant: '',
                 externalOrdersSan6Sys: '',
+                externalOrdersSan6ReadKopf: '',
+                externalOrdersSan6ReadKundennummer: '',
+                externalOrdersSan6ReadFromDate: '',
             },
             san6SendStrategyOptions: [
                 { value: 'filetransferurl', label: 'filetransferurl' },
