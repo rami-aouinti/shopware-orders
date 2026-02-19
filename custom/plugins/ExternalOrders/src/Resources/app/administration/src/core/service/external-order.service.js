@@ -99,6 +99,17 @@ class ExternalOrderService extends ApiService {
         return data?.data ?? data;
     }
 
+
+    async getSan6RawPreview(limit = 20) {
+        const response = await this.httpClient.get(`_action/${this.getApiBasePath()}/san6/raw-preview`, {
+            headers: this.getBasicHeaders(),
+            params: { limit },
+        });
+
+        const data = ApiService.handleResponse(response) ?? response?.data;
+        return data?.data ?? data;
+    }
+
     async getSyncStatus() {
         const response = await this.httpClient.get(`_action/${this.getApiBasePath()}/sync-status`, {
             headers: this.getBasicHeaders(),

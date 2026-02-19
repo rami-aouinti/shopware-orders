@@ -107,6 +107,23 @@ class ExternalOrderController extends AbstractController
 
 
 
+
+    #[Route(
+        path: '/api/_action/external-orders/san6/raw-preview',
+        name: 'api.admin.external-orders.san6-raw-preview',
+        defaults: ['_acl' => ['admin']],
+        methods: [Request::METHOD_GET]
+    )]
+    public function san6RawPreview(Request $request): Response
+    {
+        $limit = max(1, (int) $request->query->get('limit', 20));
+
+        return new JsonResponse([
+            'limit' => min($limit, 100),
+            'rows' => $this->externalOrderService->fetchSan6RawPayloadPreview($limit),
+        ]);
+    }
+
     #[Route(
         path: '/api/_action/external-orders/summary',
         name: 'api.admin.external-orders.summary',
