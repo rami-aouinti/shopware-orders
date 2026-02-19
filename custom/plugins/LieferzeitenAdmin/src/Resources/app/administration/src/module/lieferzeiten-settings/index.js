@@ -1,3 +1,4 @@
+import './lieferzeiten-settings-global.scss';
 import './page/lieferzeiten-channel-settings-list';
 import './page/lieferzeiten-task-assignment-rule-list';
 import './page/lieferzeiten-notification-toggle-list';

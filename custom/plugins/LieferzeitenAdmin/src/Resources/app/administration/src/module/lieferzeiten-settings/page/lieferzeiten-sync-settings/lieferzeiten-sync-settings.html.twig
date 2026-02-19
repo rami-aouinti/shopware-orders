@@ -4,70 +4,36 @@
     </template>
 
     <template #smart-bar-actions>
-        <sw-button-process variant="primary" :isLoading="isSaving" @click="onSave">
-            {{ $tc('global.default.save') }}
-        </sw-button-process>
+        <button class="lza-btn lza-btn--primary" :disabled="isSaving" @click="onSave">
+            {{ isSaving ? 'Saving…' : $tc('global.default.save') }}
+        </button>
     </template>
 
     <template #content>
-        <sw-tabs class="sw-mb-16">
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.channelSettings' }" title="Lieferzeiten-Management-System">
-                Lieferzeiten-Management-System
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.syncConfiguration' }" title="Sync settings">
-                Sync settings
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.taskAssignmentRules' }" :title="$tc('lieferzeiten.lms.navigation.taskAssignmentRules')">
-                {{ $tc('lieferzeiten.lms.navigation.taskAssignmentRules') }}
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.notificationToggles' }" :title="$tc('lieferzeiten.lms.navigation.notificationToggles')">
-                {{ $tc('lieferzeiten.lms.navigation.notificationToggles') }}
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.statistics' }" title="Statistiken">
-                Statistiken
-            </sw-tabs-item>
-        </sw-tabs>
-        <sw-card-view>
-            <sw-card :isLoading="isLoading" title="Demo Daten" class="sw-mb-16">
+        <div class="lza-settings-nav">
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.channelSettings' }" :to="{ name: 'lieferzeiten.settings.channelSettings' }">Lieferzeiten-Management-System</router-link>
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.syncConfiguration' }" :to="{ name: 'lieferzeiten.settings.syncConfiguration' }">Sync settings</router-link>
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.taskAssignmentRules' }" :to="{ name: 'lieferzeiten.settings.taskAssignmentRules' }">{{ $tc('lieferzeiten.lms.navigation.taskAssignmentRules') }}</router-link>
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.notificationToggles' }" :to="{ name: 'lieferzeiten.settings.notificationToggles' }">{{ $tc('lieferzeiten.lms.navigation.notificationToggles') }}</router-link>
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.statistics' }" :to="{ name: 'lieferzeiten.settings.statistics' }">Statistiken</router-link>
+        </div>
+
+        <div class="lza-sync-layout" :class="{ 'is-loading': isLoading }">
+            <section class="lza-sync-card lza-sync-card--demo">
+                <h3>Demo Daten</h3>
                 <lieferzeiten-demo-data-button />
-            </sw-card>
+            </section>
 
-            <sw-card
-                v-for="group in groups"
-                :key="group.title"
-                :title="group.title"
-                :isLoading="isLoading"
-                class="sw-mb-16"
-            >
-                <template v-for="field in group.fields">
-                    <sw-textarea-field
-                        v-if="field.type === 'textarea'"
-                        :key="field.key"
-                        v-model:value="configValues[field.key]"
-                        :label="field.label"
-                        :helpText="field.helpText"
-                        class="sw-mb-16"
-                    />
+            <section v-for="group in groups" :key="group.title" class="lza-sync-card">
+                <h3>{{ group.title }}</h3>
 
-                    <sw-password-field
-                        v-else-if="field.type === 'password'"
-                        :key="field.key"
-                        v-model:value="configValues[field.key]"
-                        :label="field.label"
-                        :helpText="field.helpText"
-                        class="sw-mb-16"
-                    />
-
-                    <sw-text-field
-                        v-else
-                        :key="field.key"
-                        v-model:value="configValues[field.key]"
-                        :label="field.label"
-                        :helpText="field.helpText"
-                        class="sw-mb-16"
-                    />
-                </template>
-            </sw-card>
-        </sw-card-view>
+                <label v-for="field in group.fields" :key="field.key" class="lza-sync-field">
+                    <span>{{ field.label }}</span>
+                    <small v-if="field.helpText">{{ field.helpText }}</small>
+                    <textarea v-if="field.type === 'textarea'" v-model="configValues[field.key]" rows="4"></textarea>
+                    <input v-else :type="field.type === 'password' ? 'password' : 'text'" v-model="configValues[field.key]">
+                </label>
+            </section>
+        </div>
     </template>
 </sw-page>

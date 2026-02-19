@@ -157,11 +157,16 @@ Component.register('lieferzeiten-channel-settings-list', {
     },
 
     created() {
+        document.body.classList.add('lza-settings-no-search');
         this.thresholdRepository = this.repositoryFactory.create('lieferzeiten_channel_pdms_threshold');
         this.salesChannelRepository = this.repositoryFactory.create('sales_channel');
         this.loadData();
         this.loadDemoDataStatus();
         this.loadApiConfig();
+    },
+
+    beforeDestroy() {
+        document.body.classList.remove('lza-settings-no-search');
     },
 
     methods: {

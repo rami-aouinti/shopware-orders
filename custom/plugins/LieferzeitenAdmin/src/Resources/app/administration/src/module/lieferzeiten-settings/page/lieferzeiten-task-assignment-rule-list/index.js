@@ -55,8 +55,13 @@ Component.register('lieferzeiten-task-assignment-rule-list', {
     },
 
     created() {
+        document.body.classList.add('lza-settings-no-search');
         this.repository = this.repositoryFactory.create('lieferzeiten_task_assignment_rule');
         this.getList();
+    },
+
+    beforeDestroy() {
+        document.body.classList.remove('lza-settings-no-search');
     },
 
     methods: {
