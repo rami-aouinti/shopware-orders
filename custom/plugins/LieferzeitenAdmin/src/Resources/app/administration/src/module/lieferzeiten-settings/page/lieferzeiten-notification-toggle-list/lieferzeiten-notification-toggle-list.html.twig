@@ -4,13 +4,13 @@
     </template>
 
     <template #content>
-        <sw-tabs class="sw-mb-16">
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.channelSettings' }" title="Lieferzeiten-Management-System">Lieferzeiten-Management-System</sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.syncConfiguration' }" title="Sync settings">Sync settings</sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.taskAssignmentRules' }" :title="$t('lieferzeiten.lms.navigation.taskAssignmentRules')">{{ $t('lieferzeiten.lms.navigation.taskAssignmentRules') }}</sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.notificationToggles' }" :title="$t('lieferzeiten.lms.navigation.notificationToggles')">{{ $t('lieferzeiten.lms.navigation.notificationToggles') }}</sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.statistics' }" title="Statistiken">Statistiken</sw-tabs-item>
-        </sw-tabs>
+        <div class="lza-settings-nav">
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.channelSettings' }" :to="{ name: 'lieferzeiten.settings.channelSettings' }">Lieferzeiten-Management-System</router-link>
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.syncConfiguration' }" :to="{ name: 'lieferzeiten.settings.syncConfiguration' }">Sync settings</router-link>
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.taskAssignmentRules' }" :to="{ name: 'lieferzeiten.settings.taskAssignmentRules' }">{{ $tc('lieferzeiten.lms.navigation.taskAssignmentRules') }}</router-link>
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.notificationToggles' }" :to="{ name: 'lieferzeiten.settings.notificationToggles' }">{{ $tc('lieferzeiten.lms.navigation.notificationToggles') }}</router-link>
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.statistics' }" :to="{ name: 'lieferzeiten.settings.statistics' }">Statistiken</router-link>
+        </div>
 
         <section class="lza-notify-panel" :class="{ 'is-loading': isLoading }">
             <h3>{{ $t('lieferzeiten.lms.notificationMatrix.title') }}</h3>

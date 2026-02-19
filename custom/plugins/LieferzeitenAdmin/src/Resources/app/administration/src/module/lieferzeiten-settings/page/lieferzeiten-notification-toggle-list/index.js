@@ -83,9 +83,14 @@ Component.register('lieferzeiten-notification-toggle-list', {
     },
 
     created() {
+        document.body.classList.add('lza-settings-no-search');
         this.repository = this.repositoryFactory.create('lieferzeiten_notification_toggle');
         this.salesChannelRepository = this.repositoryFactory.create('sales_channel');
         this.loadData();
+    },
+
+    beforeDestroy() {
+        document.body.classList.remove('lza-settings-no-search');
     },
 
     methods: {

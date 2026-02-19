@@ -63,7 +63,12 @@ Component.register('lieferzeiten-sync-settings', {
     },
 
     created() {
+        document.body.classList.add('lza-settings-no-search');
         this.loadConfig();
+    },
+
+    beforeDestroy() {
+        document.body.classList.remove('lza-settings-no-search');
     },
 
     methods: {
