@@ -75,7 +75,12 @@ Component.register('external-orders-settings', {
             this.isTestingSan6 = true;
 
             try {
-                const san6Probe = await this.externalOrderService.testSan6Read();
+                const san6Probe = await this.externalOrderService.testSan6Read({
+                    funktion: this.config.externalOrdersSan6ReadFunction || 'API-AUFTRAEGE',
+                    Kopf: this.config.externalOrdersSan6ReadKopf || '',
+                    Kundennummer: this.config.externalOrdersSan6ReadKundennummer || '',
+                    Von: this.config.externalOrdersSan6ReadFromDate || '',
+                });
                 const syncResponse = await this.externalOrderService.runSyncNow();
                 const previewResponse = await this.externalOrderService.getSan6RawPreview(5);
                 const rows = Array.isArray(previewResponse?.rows) ? previewResponse.rows : [];
@@ -93,6 +98,7 @@ Component.register('external-orders-settings', {
                     resultCode: san6Probe?.resultCode || null,
                     resultText: san6Probe?.resultText || null,
                     message: san6Probe?.error || null,
+                    hint: san6Probe?.hint || null,
                 };
 
                 if (san6Probe?.error || String(san6Probe?.resultCode || '00') !== '00') {
@@ -120,6 +126,7 @@ Component.register('external-orders-settings', {
                     resultCode: null,
                     resultText: null,
                     message: error?.message || 'Der SAN6 Testaufruf ist fehlgeschlagen.',
+                    hint: null,
                 };
 
                 this.createNotificationError({

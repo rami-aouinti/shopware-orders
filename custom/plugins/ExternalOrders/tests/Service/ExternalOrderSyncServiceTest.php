@@ -326,6 +326,57 @@ class ExternalOrderSyncServiceTest extends TestCase
         static::assertSame('OK', $result['resultText']);
     }
 
+
+    public function testProbeSan6ReadAppliesFallbackKopfWhenSelectionParamsMissing(): void
+    {
+        $repository = $this->createMock(EntityRepository::class);
+        $httpClient = $this->createMock(HttpClientInterface::class);
+
+        $configService = $this->createMock(SystemConfigService::class);
+        $configService->method('get')->willReturnCallback(static function (string $key) {
+            $map = [
+                'ExternalOrders.config.externalOrdersSan6BaseUrl' => 'https://example.test/san6/api?ssid=abc&company=fms&product=sw&mandant=Schule&sys=017',
+                'ExternalOrders.config.externalOrdersSan6Authentifizierung' => 'secret',
+                'ExternalOrders.config.externalOrdersSan6ReadFunction' => 'API-AUFTRAEGE',
+                'ExternalOrders.config.externalOrdersSan6ReadKopf' => '',
+                'ExternalOrders.config.externalOrdersSan6ReadKundennummer' => '',
+                'ExternalOrders.config.externalOrdersSan6ReadFromDate' => '',
+                'ExternalOrders.config.externalOrdersTimeout' => 2.5,
+            ];
+
+            return $map[$key] ?? null;
+        });
+
+        $logger = new InMemoryLogger();
+
+        $topmClient = $this->createMock(TopmSan6Client::class);
+        $topmClient->expects($this->once())
+            ->method('fetchReadProbe')
+            ->with(
+                'https://example.test/san6/api?ssid=abc&company=fms&product=sw&mandant=Schule&sys=017&authentifizierung=secret&Kopf=2',
+                'secret',
+                2.5,
+                'API-AUFTRAEGE'
+            )
+            ->willReturn([
+                'url' => 'https://example.test/san6/api?ssid=abc&company=fms&product=sw&mandant=Schule&sys=017&authentifizierung=%2A%2A%2A&Kopf=2&funktion=API-AUFTRAEGE',
+                'rawXml' => '<Daten><Result><Code>00</Code><Text>OK</Text></Result></Daten>',
+                'orders' => [],
+                'error' => null,
+                'resultCode' => '00',
+                'resultText' => 'OK',
+            ]);
+
+        $service = new ExternalOrderSyncService($repository, $httpClient, $configService, $logger, $topmClient);
+
+        $result = $service->probeSan6Read();
+
+        static::assertSame(
+            'Keine SAN6-Auswahlparameter konfiguriert: Für den Test wurde Kopf=2 automatisch ergänzt.',
+            $result['hint']
+        );
+    }
+
     public function testSyncNewOrdersLogsAndSkipsWhenSan6ConfigIsInvalid(): void
     {
         $context = Context::createDefaultContext();

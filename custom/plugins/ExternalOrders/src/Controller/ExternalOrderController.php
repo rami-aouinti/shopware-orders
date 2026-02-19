@@ -115,10 +115,15 @@ class ExternalOrderController extends AbstractController
         defaults: ['_acl' => ['admin']],
         methods: [Request::METHOD_GET]
     )]
-    public function san6TestRead(): Response
+    public function san6TestRead(Request $request): Response
     {
         try {
-            return new JsonResponse($this->syncService->probeSan6Read());
+            return new JsonResponse($this->syncService->probeSan6Read(array_filter([
+                'funktion' => (string) $request->query->get('funktion', ''),
+                'Kopf' => (string) $request->query->get('Kopf', ''),
+                'Kundennummer' => (string) $request->query->get('Kundennummer', ''),
+                'Von' => (string) $request->query->get('Von', ''),
+            ], static fn (string $value): bool => trim($value) !== '')));
         } catch (\Throwable $exception) {
             return new JsonResponse([
                 'url' => null,
@@ -129,6 +134,7 @@ class ExternalOrderController extends AbstractController
                 'error' => $exception->getMessage(),
                 'resultCode' => null,
                 'resultText' => null,
+                'hint' => null,
             ], Response::HTTP_BAD_REQUEST);
         }
     }
