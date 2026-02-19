@@ -68,6 +68,13 @@ const TASK_ACTION_LABELS = Object.freeze({
     reopen: 'Wieder öffnen',
 });
 
+const DEFAULT_VISIBLE_COLUMN_KEYS = Object.freeze([
+    'bestellnummer',
+    'san6',
+    'user',
+    'status',
+]);
+
 export const tableColumnsMeta = Object.freeze([
     {
         key: 'bestellnummer',
@@ -315,6 +322,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             notifiedSupplierTaskIds: {},
             lieferzeitTasksByRowKey: {},
             taskActionInProgressById: {},
+            showCollapsedColumns: false,
         };
     },
 
@@ -324,6 +332,18 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 ...column,
                 label: `${column.group} · ${column.label}`,
             }));
+        },
+
+        visibleTableColumns() {
+            return this.tableColumns.filter((column) => DEFAULT_VISIBLE_COLUMN_KEYS.includes(column.key));
+        },
+
+        collapsedTableColumns() {
+            return this.tableColumns.filter((column) => !DEFAULT_VISIBLE_COLUMN_KEYS.includes(column.key));
+        },
+
+        totalVisibleTableColumnCount() {
+            return this.visibleTableColumns.length + 3;
         },
 
         primaryFilters() {
@@ -1212,6 +1232,10 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
             this.activeColumnFilter = null;
             this.page = 1;
+        },
+
+        toggleCollapsedColumns() {
+            this.showCollapsedColumns = !this.showCollapsedColumns;
         },
 
         isColumnFilterActive(columnKey) {
