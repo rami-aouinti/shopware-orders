@@ -216,6 +216,44 @@ XML;
         static::assertSame(3, $result['orders'][2]['detail']['items'][1]['shippedQuantity']);
     }
 
+
+    public function testFetchReadProbeTreatsNonZeroSan6CodeAsError(): void
+    {
+        $xml = <<<'XML'
+<Daten>
+  <Result>
+    <Code>12</Code>
+    <Text>Auswahlparameter fehlt im Funktionsaufruf</Text>
+  </Result>
+</Daten>
+XML;
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->expects($this->once())
+            ->method('getContent')
+            ->with(false)
+            ->willReturn($xml);
+
+        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient->expects($this->once())
+            ->method('request')
+            ->willReturn($response);
+
+        $client = new TopmSan6Client($httpClient, new TopmInMemoryLogger(), new TopmSan6OrderMapper());
+
+        $result = $client->fetchReadProbe(
+            'https://example.test/api?ssid=abc&company=fms&product=sw&mandant=1&sys=live',
+            'secret',
+            0,
+            'API-AUFTRAEGE'
+        );
+
+        static::assertSame('12', $result['resultCode']);
+        static::assertSame('Auswahlparameter fehlt im Funktionsaufruf', $result['resultText']);
+        static::assertSame([], $result['orders']);
+        static::assertStringContainsString('SAN6 returned code 12', (string) $result['error']);
+    }
+
     public function testSendByFileTransferUrlUsesLowercaseTopmQueryParam(): void
     {
         $response = $this->createMock(ResponseInterface::class);
