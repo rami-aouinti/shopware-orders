@@ -193,14 +193,44 @@ describe('external-orders/page/external-orders-lieferzeit-empty', () => {
 
 
 
-    it('uses position mode as default and exposes row mode options', () => {
+    it('uses default entry selections and exposes row mode options', () => {
         const state = componentConfig.data();
 
+        expect(state.selectedMainView).toBe('allOrders');
         expect(state.selectedRowMode).toBe('position');
         expect(state.rowModeOptions).toEqual([
             { value: 'position', label: 'Pro Position / Paket' },
             { value: 'aggregated', label: 'Aggregiert pro Auftrag' },
         ]);
+    });
+
+
+    it('applies entry selection only when all required fields are selected', () => {
+        const state = componentConfig.data();
+        const context = {
+            ...state,
+            selectedArea: null,
+            selectedMainView: 'allOrders',
+            selectedRowMode: 'position',
+            hasRequiredSelections: false,
+            loadOrders: jest.fn(),
+            loadStatistics: jest.fn(),
+            page: 2,
+        };
+
+        componentConfig.methods.applyEntrySelection.call(context);
+
+        expect(context.page).toBe(2);
+        expect(context.loadOrders).not.toHaveBeenCalled();
+        expect(context.loadStatistics).not.toHaveBeenCalled();
+
+        context.hasRequiredSelections = true;
+
+        componentConfig.methods.applyEntrySelection.call(context);
+
+        expect(context.page).toBe(1);
+        expect(context.loadOrders).toHaveBeenCalledTimes(1);
+        expect(context.loadStatistics).toHaveBeenCalledTimes(1);
     });
 
     it('applies row mode: aggregated keeps one row per order', () => {

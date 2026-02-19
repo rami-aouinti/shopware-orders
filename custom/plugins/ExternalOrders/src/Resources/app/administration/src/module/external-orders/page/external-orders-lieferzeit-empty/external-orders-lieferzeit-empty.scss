@@ -82,6 +82,21 @@
         max-width: none;
     }
 
+    &__entry-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(220px, 1fr));
+        gap: 16px;
+        align-items: end;
+    }
+
+    &__entry-step {
+        min-width: 0;
+
+        h3 {
+            margin: 0 0 8px;
+        }
+    }
+
     &__summary {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -269,6 +284,10 @@
     }
 
     @media (max-width: 1240px) {
+        &__entry-grid {
+            grid-template-columns: 1fr;
+        }
+
         &__filters-row {
             &--primary {
                 grid-template-columns: repeat(2, minmax(180px, 1fr));
