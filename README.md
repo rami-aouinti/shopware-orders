@@ -1,110 +1,116 @@
-# Shopware Orders – Guide projet
+# Shopware Orders – Projekt-README
 
-Ce dépôt contient une instance Shopware 6 orientée gestion de commandes avec plusieurs plugins métiers (notamment pour les commandes externes et la gestion des délais de livraison).
+Dieses Repository enthält eine Shopware-6-Instanz mit Fokus auf Bestellprozesse, externe Bestellungen (Marktplätze) und Lieferzeit-Management über eigene Plugins.
 
-## Prérequis
+## Voraussetzungen
 
 - Docker + Docker Compose
 - `make`
-- (optionnel) `composer` si vous voulez exécuter des commandes localement hors conteneur
+- optional: `composer` (wenn Befehle außerhalb des Containers ausgeführt werden sollen)
 
-## Démarrage rapide
+## Schnellstart
 
-Depuis la racine du projet :
+Aus dem Projektverzeichnis:
 
 ```bash
 make up
 make setup
 ```
 
-Puis ouvrir le shell du conteneur web :
+Danach in den Web-Container wechseln:
 
 ```bash
 make shell
 ```
 
-## Commandes `make` disponibles
+## Verfügbare `make`-Kommandos
 
-Le `Makefile` fournit les commandes suivantes :
+Folgende Kommandos sind im `Makefile` hinterlegt:
 
-- `make up` : démarre les conteneurs Docker en arrière-plan.
-- `make stop` : stoppe les conteneurs sans les supprimer.
-- `make down` : stoppe et supprime les conteneurs.
-- `make shell` : ouvre un shell bash dans le conteneur `web`.
-- `make watch-storefront` : lance le mode watch pour le storefront.
-- `make watch-admin` : lance le mode watch pour l’administration Shopware.
-- `make build-storefront` : build des assets storefront.
-- `make build-administration` : build des assets administration.
-- `make setup` : installe les dépendances Composer puis installe Shopware (création + reset DB).
+- `make up` – startet die Container im Hintergrund.
+- `make stop` – stoppt die Container, ohne sie zu entfernen.
+- `make down` – stoppt und entfernt die Container.
+- `make shell` – öffnet eine Bash im `web`-Container.
+- `make watch-storefront` – startet den Storefront-Watch-Modus.
+- `make watch-admin` – startet den Watch-Modus für die Administration.
+- `make build-storefront` – baut die Storefront-Assets.
+- `make build-administration` – baut die Admin-Assets.
+- `make setup` – installiert Composer-Abhängigkeiten und führt `system:install` mit Datenbank-Neuaufbau aus.
 
-Astuce : `make` (sans argument) exécute la cible par défaut `help`.
+Hinweis: Ein Aufruf von `make` ohne Ziel nutzt die Standard-`help`-Target.
 
-## Plugins présents dans `custom/plugins`
+## Enthaltene Plugins (`custom/plugins`)
 
 ### 1) ExternalOrders
-- **Nom technique** : `ExternalOrders`
-- **Objectif** : fournir une vue centrale des commandes externes (marketplaces) dans l’administration.
-- **Fonctionnel** : filtres par canal, recherche, détails de commande, indicateurs agrégés, historique de statut.
+- **Technischer Name**: `ExternalOrders`
+- **Kurzbeschreibung**: Zentrale Administrationsübersicht für externe Bestellungen aus Marktplätzen.
+- **Funktionen**: Kanalfilter, Suche, Detailansicht, Statushistorie und aggregierte Kennzahlen.
 
 ### 2) LieferzeitenAdmin
-- **Nom technique** : `LieferzeitenAdmin`
-- **Objectif** : module d’administration pour piloter les délais de livraison.
-- **Fonctionnel** : suivi des commandes et tâches, synchronisation, endpoints d’édition, statistiques, notifications, données de démonstration.
+- **Technischer Name**: `LieferzeitenAdmin`
+- **Kurzbeschreibung**: Administrationsmodul zur Steuerung von Lieferzeiten-Prozessen.
+- **Funktionen**: Order-/Task-Übersichten, Sync-Endpoints, Bearbeitungs-Endpunkte, Statistiken, Notifications und Demo-Daten.
 
 ### 3) Lieferzeit
-- **Nom technique** : `Lieferzeit`
-- **Objectif** : plugin complémentaire orienté administration des délais de livraison.
-- **Fonctionnel** : base de module Lieferzeit (structure plugin Shopware, label multi-langue).
+- **Technischer Name**: `Lieferzeit`
+- **Kurzbeschreibung**: Zusätzliches Lieferzeit-Plugin mit administrativem Schwerpunkt.
+- **Funktionen**: Plugin-Grundstruktur und mehrsprachige Admin-Einbindung.
 
 ### 4) SwagExtensionStore
-- **Nom technique** : `SwagExtensionStore`
-- **Objectif** : accès au Store Shopware depuis l’administration.
-- **Fonctionnel** : découverte et intégration d’extensions/thèmes.
+- **Technischer Name**: `SwagExtensionStore`
+- **Kurzbeschreibung**: Shopware-Store-Anbindung direkt in der Administration.
+- **Funktionen**: Erweiterungen/Themes entdecken und verwalten.
 
 ### 5) SwagPlatformDemoData
-- **Nom technique** : `SwagPlatformDemoData`
-- **Objectif** : injection de données de démonstration Shopware.
-- **Attention** : à ne pas utiliser en production (écrasement possible de données existantes).
+- **Technischer Name**: `SwagPlatformDemoData`
+- **Kurzbeschreibung**: Import von Shopware-Demodaten.
+- **Wichtig**: Nicht für produktive Systeme empfohlen, da bestehende Daten beeinflusst/überschrieben werden können.
 
 ### 6) SwagPayPal
-- **Nom technique** : `SwagPayPal`
-- **Objectif** : intégration des moyens de paiement PayPal dans Shopware 6.
-- **Fonctionnel** : prise en charge des options PayPal (checkout, express, etc.).
+- **Technischer Name**: `SwagPayPal`
+- **Kurzbeschreibung**: PayPal-Integration für Shopware 6.
+- **Funktionen**: PayPal Checkout inkl. zusätzlicher Zahlungs-/Express-Optionen.
 
-## Commandes utiles pour les plugins
+## Screenshots im `docs`-Bereich
 
-Lister les plugins installés/connus :
+Im `docs`-Bereich sind Screenshots zur Orientierung für die Fach- und Admin-Nutzung vorgesehen. Typischerweise zeigen diese Bilder:
+
+- die **Übersichtsseite externer Bestellungen** mit Filtern und Kennzahlen,
+- die **Detailansicht einer Bestellung** (Kunde, Zahlung, Versand, Positionen),
+- sowie **Lieferzeiten-Ansichten** mit Aufgaben, Status und Statistikbezug.
+
+Damit ist für neue Teammitglieder schnell erkennbar, welche Maske zu welchem Prozess gehört und wo zentrale Funktionen im Admin erreichbar sind.
+
+## Nützliche Plugin-Kommandos
+
+Plugins anzeigen:
 
 ```bash
 bin/console plugin:list
 ```
 
-Rafraîchir, installer et activer un plugin :
+Plugin-Liste aktualisieren + Plugin installieren/aktivieren:
 
 ```bash
 bin/console plugin:refresh
-bin/console plugin:install --activate <NomTechniquePlugin>
+bin/console plugin:install --activate <TechnischerPluginName>
 ```
 
-Mettre à jour un plugin :
+Plugin aktualisieren:
 
 ```bash
-bin/console plugin:update <NomTechniquePlugin>
+bin/console plugin:update <TechnischerPluginName>
 ```
 
-Exécuter les migrations :
+Migrationen ausführen:
 
 ```bash
 bin/console database:migrate --all
 ```
 
-## Structure principale
+## Relevante Verzeichnisse
 
-- `custom/plugins/` : plugins Shopware du projet.
-- `bin/` : scripts utilitaires (build admin/storefront, console, watch).
-- `config/` : configuration Symfony / Shopware.
-- `public/` : point d’entrée web.
-
----
-
-Si vous le souhaitez, je peux ensuite enrichir ce README avec un **runbook d’exploitation** (debug, logs, queue, scheduled tasks, commandes de diagnostic) en version courte ou détaillée.
+- `custom/plugins/` – alle projektspezifischen und mitgelieferten Shopware-Plugins
+- `bin/` – Build-/Watch-/CLI-Helferskripte
+- `config/` – Symfony-/Shopware-Konfiguration
+- `public/` – Web-Root / Entry-Point
