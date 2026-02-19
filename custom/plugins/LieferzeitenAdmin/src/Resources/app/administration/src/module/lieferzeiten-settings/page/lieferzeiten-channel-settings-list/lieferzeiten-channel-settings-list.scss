@@ -1,6 +1,43 @@
 .lieferzeiten-channel-settings-list {
-    .sw-data-grid__cell--header .sw-data-grid__cell-content {
-        white-space: pre-line;
-        line-height: 1.3;
+    .sw-page__content {
+        overflow: auto;
     }
+
+    .lza-settings-layout {
+        width: 100%;
+    }
+
+    .lza-panel {
+        width: 100%;
+        background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+        border: 1px solid #d7e3f2;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 12px 32px rgba(44, 86, 146, 0.08);
+    }
+
+    .lza-panel--compact { margin-bottom: 16px; }
+    .lza-field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+    .lza-field span { display: block; font-weight: 700; margin-bottom: 6px; }
+    .lza-field input,
+    .lza-table input { width: 100%; border: 1px solid #c8d7ea; border-radius: 10px; padding: 10px; }
+    .lza-hint { color: #4f5f75; }
+    .lza-warning { background: #fff4dd; border: 1px solid #f6ce75; padding: 10px 12px; border-radius: 10px; }
+    .lza-channel-group { margin-top: 16px; }
+    .lza-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .lza-chip { border: 1px solid #bdd2ef; background: #edf4ff; color: #1f457a; border-radius: 999px; padding: 8px 12px; cursor: pointer; }
+    .lza-chip.is-active { background: #0a5adb; color: #fff; border-color: #0a5adb; }
+    .lza-channel-header { display: flex; justify-content: space-between; align-items: center; }
+    .lza-badge { background: #ffe8bc; color: #7a5400; border-radius: 999px; padding: 4px 10px; font-size: 12px; }
+    .lza-table-wrap { overflow: auto; }
+    .lza-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+    .lza-table th { text-align: left; font-size: 12px; color: #5b708a; padding: 0 8px; }
+    .lza-table td { background: #f3f8ff; padding: 10px 8px; }
+    .lza-table td:first-child { border-radius: 10px 0 0 10px; font-weight: 600; }
+    .lza-table td:last-child { border-radius: 0 10px 10px 0; }
+
+    .lza-btn { border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 700; cursor: pointer; }
+    .lza-btn--primary { background: #0a5adb; color: #fff; }
+
+    .is-loading { opacity: 0.7; pointer-events: none; }
 }

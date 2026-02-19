@@ -4,40 +4,38 @@
     </template>
 
     <template #smart-bar-actions>
-        <sw-button v-if="hasEditAccess" variant="primary" @click="onCreate">Neu</sw-button>
+        <button v-if="hasEditAccess" class="lza-btn lza-btn--primary" :disabled="isLoading" @click="onCreate">
+            Neu
+        </button>
     </template>
 
     <template #content>
-        <sw-tabs class="sw-mb-16">
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.channelSettings' }" title="Lieferzeiten-Management-System">
-                Lieferzeiten-Management-System
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.syncConfiguration' }" title="Synchronisations-Einstellungen">
-                Synchronisations-Einstellungen
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.taskAssignmentRules' }" :title="$tc('lieferzeiten.lms.navigation.taskAssignmentRules')">
-                {{ $tc('lieferzeiten.lms.navigation.taskAssignmentRules') }}
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.notificationToggles' }" :title="$tc('lieferzeiten.lms.navigation.notificationToggles')">
-                {{ $tc('lieferzeiten.lms.navigation.notificationToggles') }}
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.statistics' }" title="Statistiken">
-                Statistiken
-            </sw-tabs-item>
-        </sw-tabs>
+        <div class="lza-settings-nav">
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.channelSettings' }" :to="{ name: 'lieferzeiten.settings.channelSettings' }">Lieferzeiten-Management-System</router-link>
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.syncConfiguration' }" :to="{ name: 'lieferzeiten.settings.syncConfiguration' }">Synchronisations-Einstellungen</router-link>
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.taskAssignmentRules' }" :to="{ name: 'lieferzeiten.settings.taskAssignmentRules' }">{{ $tc('lieferzeiten.lms.navigation.taskAssignmentRules') }}</router-link>
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.notificationToggles' }" :to="{ name: 'lieferzeiten.settings.notificationToggles' }">{{ $tc('lieferzeiten.lms.navigation.notificationToggles') }}</router-link>
+            <router-link class="lza-settings-nav__item" :class="{ 'is-active': $route.name === 'lieferzeiten.settings.statistics' }" :to="{ name: 'lieferzeiten.settings.statistics' }">Statistiken</router-link>
+        </div>
 
         <div class="lza-task-rule-layout">
-            <sw-alert variant="info" appearance="notification" :showIcon="true">
-                Die Demo-Daten in dieser Tabelle stammen aus dem Backend-Seeder
-                <strong>DemoDataSeederService</strong> via l'endpoint
-                <code>POST /api/_action/lieferzeiten/demo-data</code>.
-                Demo-Regeln verwenden das Präfix <code>demo_</code>.
-            </sw-alert>
+            <section class="lza-intro-panel">
+                <h3>Task assignment rules</h3>
+                <p>
+                    Die Demo-Daten in dieser Tabelle stammen aus dem Backend-Seeder
+                    <strong>DemoDataSeederService</strong> via l'endpoint
+                    <code>POST /api/_action/lieferzeiten/demo-data</code>.
+                    Demo-Regeln verwenden das Präfix <code>demo_</code>.
+                </p>
+            </section>
 
             <section class="lza-rules-panel" :class="{ 'is-loading': isLoading }">
                 <div class="lza-rules-toolbar">
-                    <div>{{ total }} Regel(n)</div>
-                    <sw-button size="small" @click="getList">Aktualisieren</sw-button>
+                    <div class="lza-counter">{{ total }} Regel(n)</div>
+                    <div class="lza-toolbar-actions">
+                        <button class="lza-btn" :disabled="isLoading" @click="getList">Aktualisieren</button>
+                        <button v-if="hasEditAccess" class="lza-btn lza-btn--primary" :disabled="isLoading" @click="onCreate">Neue Regel</button>
+                    </div>
                 </div>
 
                 <div v-if="!rules.length" class="lza-empty-state">
@@ -75,16 +73,16 @@
                             <small>{{ rule.lastChangedBy || '—' }}</small>
                         </div>
                         <div class="lza-actions">
-                            <sw-button size="small" variant="primary" :disabled="!hasEditAccess" @click="onSaveRule(rule)">Speichern</sw-button>
-                            <sw-button size="small" variant="danger" :disabled="!hasEditAccess" @click="onDeleteRule(rule)">Löschen</sw-button>
+                            <button class="lza-btn lza-btn--primary" :disabled="!hasEditAccess || isLoading" @click="onSaveRule(rule)">Speichern</button>
+                            <button class="lza-btn lza-btn--danger" :disabled="!hasEditAccess || isLoading" @click="onDeleteRule(rule)">Löschen</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="lza-pagination">
-                    <sw-button size="small" :disabled="page <= 1 || isLoading" @click="onPageChange({ page: page - 1, limit })">Zurück</sw-button>
+                    <button class="lza-btn" :disabled="page <= 1 || isLoading" @click="onPageChange({ page: page - 1, limit })">Zurück</button>
                     <span>Seite {{ page }}</span>
-                    <sw-button size="small" :disabled="(page * limit) >= total || isLoading" @click="onPageChange({ page: page + 1, limit })">Weiter</sw-button>
+                    <button class="lza-btn" :disabled="(page * limit) >= total || isLoading" @click="onPageChange({ page: page + 1, limit })">Weiter</button>
                 </div>
             </section>
         </div>

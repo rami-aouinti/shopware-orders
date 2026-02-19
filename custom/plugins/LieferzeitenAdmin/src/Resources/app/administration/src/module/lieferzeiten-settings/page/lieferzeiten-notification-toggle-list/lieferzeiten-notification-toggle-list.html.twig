@@ -5,93 +5,57 @@
 
     <template #content>
         <sw-tabs class="sw-mb-16">
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.channelSettings' }" title="Lieferzeiten-Management-System">
-                Lieferzeiten-Management-System
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.syncConfiguration' }" title="Sync settings">
-                Sync settings
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.taskAssignmentRules' }" :title="$t('lieferzeiten.lms.navigation.taskAssignmentRules')">
-                {{ $t('lieferzeiten.lms.navigation.taskAssignmentRules') }}
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.notificationToggles' }" :title="$t('lieferzeiten.lms.navigation.notificationToggles')">
-                {{ $t('lieferzeiten.lms.navigation.notificationToggles') }}
-            </sw-tabs-item>
-            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.statistics' }" title="Statistiken">
-                Statistiken
-            </sw-tabs-item>
+            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.channelSettings' }" title="Lieferzeiten-Management-System">Lieferzeiten-Management-System</sw-tabs-item>
+            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.syncConfiguration' }" title="Sync settings">Sync settings</sw-tabs-item>
+            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.taskAssignmentRules' }" :title="$t('lieferzeiten.lms.navigation.taskAssignmentRules')">{{ $t('lieferzeiten.lms.navigation.taskAssignmentRules') }}</sw-tabs-item>
+            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.notificationToggles' }" :title="$t('lieferzeiten.lms.navigation.notificationToggles')">{{ $t('lieferzeiten.lms.navigation.notificationToggles') }}</sw-tabs-item>
+            <sw-tabs-item :route="{ name: 'lieferzeiten.settings.statistics' }" title="Statistiken">Statistiken</sw-tabs-item>
         </sw-tabs>
 
-        <sw-card :isLoading="isLoading" :title="$t('lieferzeiten.lms.notificationMatrix.title')">
-            <sw-alert variant="info" appearance="default" :showIcon="true">
-                {{ $t('lieferzeiten.lms.notificationMatrix.source') }}
-                <code>(triggerKey, channel, salesChannelId)</code>.
-            </sw-alert>
-
-            <sw-alert variant="info" appearance="default" :showIcon="true">
-                {{ $t('lieferzeiten.lms.notificationMatrix.emailOnlyHint') }}
-            </sw-alert>
-
-            <sw-alert v-if="invalidEntries.length" variant="warning" appearance="default" :showIcon="true">
-                {{ $t('lieferzeiten.lms.notificationMatrix.invalidEntries', { count: invalidEntries.length }) }}
-            </sw-alert>
+        <section class="lza-notify-panel" :class="{ 'is-loading': isLoading }">
+            <h3>{{ $t('lieferzeiten.lms.notificationMatrix.title') }}</h3>
+            <p class="lza-note">{{ $t('lieferzeiten.lms.notificationMatrix.source') }} <code>(triggerKey, channel, salesChannelId)</code>.</p>
+            <p class="lza-note">{{ $t('lieferzeiten.lms.notificationMatrix.emailOnlyHint') }}</p>
+            <p v-if="invalidEntries.length" class="lza-warning">{{ $t('lieferzeiten.lms.notificationMatrix.invalidEntries', { count: invalidEntries.length }) }}</p>
 
             <div class="lieferzeiten-notification-toggle-list__toolbar">
-                <sw-single-select
-                    v-model:value="selectedSalesChannelId"
-                    class="lieferzeiten-notification-toggle-list__filter"
-                    :label="$t('lieferzeiten.lms.notificationMatrix.salesChannelFilterLabel')"
-                    :options="salesChannelFilterOptions"
-                />
+                <label class="lieferzeiten-notification-toggle-list__filter-wrap">
+                    <span>{{ $t('lieferzeiten.lms.notificationMatrix.salesChannelFilterLabel') }}</span>
+                    <select v-model="selectedSalesChannelId" class="lieferzeiten-notification-toggle-list__filter">
+                        <option v-for="option in salesChannelFilterOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                    </select>
+                </label>
 
-                <sw-button size="small" variant="primary" :disabled="isLoading" @click="onReload">
-                    {{ $t('lieferzeiten.lms.notificationMatrix.reload') }}
-                </sw-button>
+                <button class="lza-btn lza-btn--primary" :disabled="isLoading" @click="onReload">{{ $t('lieferzeiten.lms.notificationMatrix.reload') }}</button>
             </div>
 
             <div class="lieferzeiten-notification-toggle-list__scope-grid">
-                <sw-card
-                    v-for="scope in visibleScopes"
-                    :key="scope.id"
-                    class="lieferzeiten-notification-toggle-list__scope-card"
-                    :title="scope.name"
-                >
-                    <template #toolbar>
+                <article v-for="scope in visibleScopes" :key="scope.id" class="lieferzeiten-notification-toggle-list__scope-card">
+                    <div class="lieferzeiten-notification-toggle-list__scope-head">
+                        <h4>{{ scope.name }}</h4>
                         <div class="lieferzeiten-notification-toggle-list__quick-actions">
-                            <sw-button
-                                size="x-small"
-                                variant="primary"
-                                :disabled="isLoading || !hasEditAccess"
-                                @click="setScopeState(scope.id, true)"
-                            >
-                                {{ $t('lieferzeiten.lms.notificationMatrix.enableAll') }}
-                            </sw-button>
-                            <sw-button
-                                size="x-small"
-                                :disabled="isLoading || !hasEditAccess"
-                                @click="setScopeState(scope.id, false)"
-                            >
-                                {{ $t('lieferzeiten.lms.notificationMatrix.disableAll') }}
-                            </sw-button>
+                            <button class="lza-btn lza-btn--primary" :disabled="isLoading || !hasEditAccess" @click="setScopeState(scope.id, true)">{{ $t('lieferzeiten.lms.notificationMatrix.enableAll') }}</button>
+                            <button class="lza-btn" :disabled="isLoading || !hasEditAccess" @click="setScopeState(scope.id, false)">{{ $t('lieferzeiten.lms.notificationMatrix.disableAll') }}</button>
                         </div>
-                    </template>
+                    </div>
 
                     <div class="lieferzeiten-notification-toggle-list__trigger-list">
-                        <div
+                        <label
                             v-for="triggerKey in triggerOptions"
                             :key="`${scope.id}-${triggerKey}`"
                             class="lieferzeiten-notification-toggle-list__trigger-item"
                         >
                             <span class="lieferzeiten-notification-toggle-list__trigger-label">{{ getTriggerLabel(triggerKey) }}</span>
-                            <sw-switch-field
-                                :value="getToggleValue(triggerKey, channelOptions[0], scope.id === 'global' ? null : scope.id)"
+                            <input
+                                type="checkbox"
+                                :checked="getToggleValue(triggerKey, channelOptions[0], scope.id === 'global' ? null : scope.id)"
                                 :disabled="!hasEditAccess || isCellDisabled(triggerKey, channelOptions[0], scope.id === 'global' ? null : scope.id)"
-                                @update:value="onToggleChanged(triggerKey, channelOptions[0], scope.id === 'global' ? null : scope.id, $event)"
-                            />
-                        </div>
+                                @change="onToggleChanged(triggerKey, channelOptions[0], scope.id === 'global' ? null : scope.id, $event.target.checked)"
+                            >
+                        </label>
                     </div>
-                </sw-card>
+                </article>
             </div>
-        </sw-card>
+        </section>
     </template>
 </sw-page>

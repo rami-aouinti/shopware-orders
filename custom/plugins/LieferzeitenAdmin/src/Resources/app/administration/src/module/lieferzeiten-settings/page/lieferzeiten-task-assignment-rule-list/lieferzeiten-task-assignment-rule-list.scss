@@ -1,21 +1,73 @@
 .lieferzeiten-task-assignment-rule-list {
     .sw-page__content {
-        overflow: hidden;
+        overflow: auto;
+        width: 100%;
+    }
+
+    .lza-settings-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .lza-settings-nav__item {
+        text-decoration: none;
+        padding: 9px 14px;
+        border-radius: 999px;
+        border: 1px solid #c3d7f2;
+        background: #eef5ff;
+        color: #1f457a;
+        font-weight: 700;
+        font-size: 13px;
+    }
+
+    .lza-settings-nav__item.is-active {
+        background: #0a5adb;
+        border-color: #0a5adb;
+        color: #fff;
     }
 
     .lza-task-rule-layout {
         display: flex;
         flex-direction: column;
         gap: 16px;
-        padding: 8px;
-        height: 100%;
+        padding: 4px;
         min-height: 0;
     }
 
+    .lza-intro-panel,
     .lza-rules-panel {
-        background: #fff;
-        border: 1px solid #d8dde6;
-        border-radius: 12px;
+        width: 100%;
+        background: linear-gradient(180deg, #fff 0%, #f7fbff 100%);
+        border: 1px solid #d8e5f6;
+        border-radius: 16px;
+        box-shadow: 0 12px 26px rgba(31, 69, 122, 0.08);
+    }
+
+    .lza-intro-panel {
+        padding: 18px 20px;
+
+        h3 {
+            margin: 0 0 6px;
+        }
+
+        p {
+            margin: 0;
+            color: #4f5f75;
+            line-height: 1.5;
+        }
+
+        code {
+            background: #edf3ff;
+            color: #154170;
+            border: 1px solid #d6e3f7;
+            border-radius: 6px;
+            padding: 2px 6px;
+        }
+    }
+
+    .lza-rules-panel {
         padding: 16px;
         display: flex;
         flex-direction: column;
@@ -32,12 +84,23 @@
         gap: 12px;
     }
 
+    .lza-counter {
+        font-weight: 700;
+        color: #2a4360;
+    }
+
+    .lza-toolbar-actions {
+        display: flex;
+        gap: 8px;
+    }
+
     .lza-empty-state {
-        padding: 24px;
-        border: 1px dashed #cfd6e4;
-        border-radius: 8px;
+        padding: 26px;
+        border: 1px dashed #c6d5ea;
+        border-radius: 12px;
         color: #52667a;
         text-align: center;
+        background: #fbfdff;
     }
 
     .lza-rule-table {
@@ -52,37 +115,44 @@
     .lza-rule-header,
     .lza-rule-row {
         display: grid;
-        grid-template-columns: repeat(10, minmax(120px, 1fr));
+        grid-template-columns: repeat(10, minmax(130px, 1fr));
         gap: 8px;
         align-items: center;
     }
 
     .lza-rule-header {
         font-size: 12px;
-        font-weight: 700;
-        color: #52667a;
-        padding: 8px 4px;
+        font-weight: 800;
+        color: #4b617a;
+        padding: 9px 6px;
         position: sticky;
         top: 0;
-        z-index: 1;
-        background: #fff;
-        border-bottom: 1px solid #d8dde6;
+        z-index: 2;
+        background: #f4f8ff;
+        border: 1px solid #dce8f7;
+        border-radius: 10px;
     }
 
     .lza-rule-row {
-        background: #f8fafc;
-        border: 1px solid #d8dde6;
-        border-radius: 10px;
+        background: #f8fbff;
+        border: 1px solid #dbe7f6;
+        border-radius: 12px;
         padding: 10px;
 
         input[type='text'],
         input[type='number'] {
             width: 100%;
-            border: 1px solid #cfd6e4;
-            border-radius: 6px;
-            padding: 6px 8px;
+            border: 1px solid #c8d8ec;
+            border-radius: 8px;
+            padding: 8px;
             font-size: 13px;
             background: #fff;
+        }
+
+        input:disabled {
+            background: #f2f6fc;
+            color: #6a7f95;
+            cursor: not-allowed;
         }
     }
 
@@ -105,6 +175,35 @@
         display: flex;
         gap: 6px;
         justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .lza-btn {
+        border: 1px solid #b7cdec;
+        border-radius: 10px;
+        padding: 8px 12px;
+        background: #edf5ff;
+        color: #1f457a;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .lza-btn--primary {
+        background: #0a5adb;
+        color: #fff;
+        border-color: #0a5adb;
+    }
+
+    .lza-btn--danger {
+        background: #ffe9e9;
+        color: #a82424;
+        border-color: #ffc4c4;
+    }
+
+    .lza-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
     }
 
     .is-loading {
