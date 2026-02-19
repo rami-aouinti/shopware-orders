@@ -182,7 +182,7 @@
                 <table class="external-orders-lieferzeit-empty__table">
                     <thead>
                         <tr>
-                            <th v-for="column in tableColumns" :key="column.key" class="external-orders-lieferzeit-empty__cell">
+                            <th v-for="column in visibleTableColumns" :key="column.key" class="external-orders-lieferzeit-empty__cell">
                                 <div class="external-orders-lieferzeit-empty__column-header">
                                     <button class="external-orders-lieferzeit-empty__column-sort" type="button" @click="onSortColumn(column.key)">
                                         {{ column.label }}
@@ -229,10 +229,22 @@
                             <th class="external-orders-lieferzeit-empty__cell external-orders-lieferzeit-empty__cell--task">Aufgaben</th>
                             <th class="external-orders-lieferzeit-empty__cell external-orders-lieferzeit-empty__cell--actions">Aktion</th>
                         </tr>
+                        <tr v-if="collapsedTableColumns.length" class="external-orders-lieferzeit-empty__collapse-row">
+                            <th :colspan="totalVisibleTableColumnCount">
+                                <button
+                                    class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small"
+                                    type="button"
+                                    @click="toggleCollapsedColumns"
+                                >
+                                    {{ showCollapsedColumns ? 'Weniger Spalten' : 'Weitere Spalten anzeigen' }}
+                                </button>
+                            </th>
+                        </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="order in paginatedOrders" :key="getRowKey(order)">
-                            <td v-for="column in tableColumns" :key="`${getRowKey(order)}-${column.key}`">
+                        <template v-for="order in paginatedOrders">
+                        <tr :key="getRowKey(order)">
+                            <td v-for="column in visibleTableColumns" :key="`${getRowKey(order)}-${column.key}`">
                                 <template v-if="column.key === 'lieferterminLieferant'">
                                     <div>{{ formatDate(getColumnValue(order, column.key)) }}</div>
                                     <button
@@ -302,6 +314,25 @@
                                 </button>
                             </td>
                         </tr>
+                        <tr
+                            v-if="showCollapsedColumns"
+                            :key="`${getRowKey(order)}-collapsed`"
+                            class="external-orders-lieferzeit-empty__collapsed-details-row"
+                        >
+                            <td :colspan="totalVisibleTableColumnCount">
+                                <div class="external-orders-lieferzeit-empty__collapsed-grid">
+                                    <div
+                                        v-for="column in collapsedTableColumns"
+                                        :key="`${getRowKey(order)}-collapsed-${column.key}`"
+                                        class="external-orders-lieferzeit-empty__collapsed-item"
+                                    >
+                                        <strong>{{ column.label }}</strong>
+                                        <span>{{ isDateColumn(column.key) ? formatDate(getColumnValue(order, column.key)) : displayOrDash(getColumnValue(order, column.key)) }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        </template>
                     </tbody>
                 </table>
             </div>
