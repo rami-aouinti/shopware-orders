@@ -41,6 +41,92 @@ class TopmSan6Client
         return ['orders' => $this->mapXmlOrders($rawXml)];
     }
 
+
+    /**
+     * @return array{url: string, rawXml: string, orders: array<int, array<string, mixed>>, error: ?string, resultCode: ?string, resultText: ?string}
+     */
+    public function fetchReadProbe(string $apiUrl, string $apiToken, float $timeout, ?string $readFunction = null): array
+    {
+        $url = $this->buildTopmUrl($apiUrl, $readFunction ?? self::DEFAULT_READ_FUNCTION, $apiToken);
+        $options = $this->buildTimeoutOptions($timeout);
+
+        try {
+            $response = $this->httpClient->request('GET', $url, $options);
+            $rawXml = $response->getContent(false);
+
+            $result = $this->extractResultInfo($rawXml);
+            $error = null;
+
+            if (($result['code'] ?? null) !== null && ($result['code'] ?? null) !== '00') {
+                $error = sprintf(
+                    'SAN6 returned code %s%s',
+                    (string) $result['code'],
+                    ($result['text'] ?? '') !== '' ? ': ' . (string) $result['text'] : ''
+                );
+            }
+
+            return [
+                'url' => $this->sanitizeUrl($url),
+                'rawXml' => $rawXml,
+                'orders' => $this->mapXmlOrders($rawXml),
+                'error' => $error,
+                'resultCode' => $result['code'],
+                'resultText' => $result['text'],
+            ];
+        } catch (ExceptionInterface $exception) {
+            $this->logger->error('TopM san6 probe request failed.', [
+                'url' => $this->sanitizeUrl($url),
+                'error' => $exception->getMessage(),
+            ]);
+
+            return [
+                'url' => $this->sanitizeUrl($url),
+                'rawXml' => '',
+                'orders' => [],
+                'error' => $exception->getMessage(),
+                'resultCode' => null,
+                'resultText' => null,
+            ];
+        }
+    }
+
+    /**
+     * @return array{code: ?string, text: ?string}
+     */
+    private function extractResultInfo(string $xmlContent): array
+    {
+        if (trim($xmlContent) === '') {
+            return ['code' => null, 'text' => null];
+        }
+
+        $previousInternalErrors = libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($xmlContent, \SimpleXMLElement::class, LIBXML_NOCDATA);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previousInternalErrors);
+
+        if ($xml === false) {
+            return ['code' => null, 'text' => null];
+        }
+
+        $data = $this->xmlNodeToArray($xml);
+        if (!is_array($data)) {
+            return ['code' => null, 'text' => null];
+        }
+
+        $result = $data['Result'] ?? $data['result'] ?? null;
+        if (!is_array($result)) {
+            return ['code' => null, 'text' => null];
+        }
+
+        $code = isset($result['Code']) ? trim((string) $result['Code']) : (isset($result['code']) ? trim((string) $result['code']) : '');
+        $text = isset($result['Text']) ? trim((string) $result['Text']) : (isset($result['text']) ? trim((string) $result['text']) : '');
+
+        return [
+            'code' => $code !== '' ? $code : null,
+            'text' => $text !== '' ? $text : null,
+        ];
+    }
+
     public function sendByFileTransferUrl(string $apiUrl, string $apiToken, string $fileTransferUrl, float $timeout, ?string $writeFunction = null): string
     {
         $url = $this->buildTopmUrl($apiUrl, $writeFunction ?? self::DEFAULT_WRITE_FUNCTION, $apiToken, [

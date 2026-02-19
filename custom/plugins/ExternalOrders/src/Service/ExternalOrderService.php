@@ -51,6 +51,41 @@ readonly class ExternalOrderService
         'bestellung_abgeschlossen' => 'Bestellung abgeschlossen',
     ];
 
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function fetchSan6RawPayloadPreview(int $limit = 20): array
+    {
+        $limit = max(1, min(100, $limit));
+
+        $rows = $this->connection->fetchAllAssociative(
+            sprintf(
+                'SELECT LOWER(HEX(id)) as id, LOWER(HEX(order_id)) as order_id, external_id, channel, raw_payload, created_at, updated_at '
+                . 'FROM external_order_data '
+                . 'WHERE channel = :channel '
+                . 'ORDER BY created_at DESC '
+                . 'LIMIT %d',
+                $limit
+            ),
+            ['channel' => 'san6']
+        );
+
+        return array_map(static function (array $row): array {
+            $rawPayload = json_decode((string) ($row['raw_payload'] ?? '{}'), true);
+
+            return [
+                'id' => (string) ($row['id'] ?? ''),
+                'internalOrderId' => (string) ($row['order_id'] ?? ''),
+                'externalId' => (string) ($row['external_id'] ?? ''),
+                'channel' => (string) ($row['channel'] ?? ''),
+                'createdAt' => (string) ($row['created_at'] ?? ''),
+                'updatedAt' => (string) ($row['updated_at'] ?? ''),
+                'rawPayload' => is_array($rawPayload) ? $rawPayload : [],
+            ];
+        }, $rows);
+    }
+
     public function fetchOrders(
         Context $context,
         ?string $channel = null,
