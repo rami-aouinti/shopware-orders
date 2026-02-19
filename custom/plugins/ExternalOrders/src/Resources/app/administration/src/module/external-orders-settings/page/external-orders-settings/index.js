@@ -5,7 +5,7 @@ const { Component, Mixin } = Shopware;
 Component.register('external-orders-settings', {
     template,
 
-    inject: ['systemConfigApiService'],
+    inject: ['systemConfigApiService', 'externalOrderService'],
 
     mixins: [
         Mixin.getByName('notification'),
@@ -15,6 +15,8 @@ Component.register('external-orders-settings', {
         return {
             isLoading: false,
             isSaving: false,
+            isTestingSan6: false,
+            san6TestResult: null,
             config: {
                 externalOrdersTimeout: 2.5,
                 externalOrdersSan6BaseUrl: '',
@@ -65,6 +67,44 @@ Component.register('external-orders-settings', {
                 });
             } finally {
                 this.isLoading = false;
+            }
+        },
+
+
+        async onTestSan6Api() {
+            this.isTestingSan6 = true;
+
+            try {
+                const syncResponse = await this.externalOrderService.runSyncNow();
+                const previewResponse = await this.externalOrderService.getSan6RawPreview(5);
+                const rows = Array.isArray(previewResponse?.rows) ? previewResponse.rows : [];
+
+                this.san6TestResult = {
+                    executedAt: syncResponse?.executedAt || new Date().toISOString(),
+                    success: Boolean(syncResponse?.success),
+                    rowCount: rows.length,
+                    rows,
+                };
+
+                this.createNotificationSuccess({
+                    title: 'SAN6 Test erfolgreich',
+                    message: `Sync ausgeführt. ${rows.length} SAN6 Datensätze gefunden.`,
+                });
+            } catch (error) {
+                this.san6TestResult = {
+                    executedAt: new Date().toISOString(),
+                    success: false,
+                    rowCount: 0,
+                    rows: [],
+                    message: error?.message || 'Der SAN6 Testaufruf ist fehlgeschlagen.',
+                };
+
+                this.createNotificationError({
+                    title: 'SAN6 Test fehlgeschlagen',
+                    message: error?.message || 'Der SAN6 Testaufruf konnte nicht ausgeführt werden.',
+                });
+            } finally {
+                this.isTestingSan6 = false;
             }
         },
 
