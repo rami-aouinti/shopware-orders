@@ -190,6 +190,48 @@ class ExternalOrderControllerTest extends TestCase
         static::assertSame([], $arguments['defaults']['_acl'] ?? ['unexpected']);
     }
 
+
+    public function testSan6TestReadRouteReturnsProbeData(): void
+    {
+        $syncService = $this->createMock(ExternalOrderSyncService::class);
+        $syncService
+            ->expects($this->once())
+            ->method('probeSan6Read')
+            ->willReturn([
+                'url' => 'https://example.test/san6?funktion=API-AUFTRAEGE',
+                'function' => 'API-AUFTRAEGE',
+                'ordersCount' => 2,
+                'sampleExternalIds' => ['A-1', 'A-2'],
+                'rawPreview' => '<Daten/>',
+                'error' => null,
+            ]);
+
+        $controller = new ExternalOrderController(
+            $this->createMock(ExternalOrderService::class),
+            $this->createMock(ExternalOrderTestDataService::class),
+            $syncService,
+            $this->createMock(TopmSan6OrderExportService::class),
+            $this->createMock(SupplierRequestTaskService::class),
+            $this->createMock(DeliveryDateEditorService::class),
+            $this->createMock(Connection::class),
+        );
+
+        $response = $controller->san6TestRead();
+
+        static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        static::assertJsonStringEqualsJsonString(
+            json_encode([
+                'url' => 'https://example.test/san6?funktion=API-AUFTRAEGE',
+                'function' => 'API-AUFTRAEGE',
+                'ordersCount' => 2,
+                'sampleExternalIds' => ['A-1', 'A-2'],
+                'rawPreview' => '<Daten/>',
+                'error' => null,
+            ], JSON_THROW_ON_ERROR),
+            (string) $response->getContent()
+        );
+    }
+
     public function testSan6RawPreviewRouteReturnsRowsWithLimit(): void
     {
         $externalOrderService = $this->createMock(ExternalOrderService::class);

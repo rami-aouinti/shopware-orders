@@ -75,27 +75,46 @@ Component.register('external-orders-settings', {
             this.isTestingSan6 = true;
 
             try {
+                const san6Probe = await this.externalOrderService.testSan6Read();
                 const syncResponse = await this.externalOrderService.runSyncNow();
                 const previewResponse = await this.externalOrderService.getSan6RawPreview(5);
                 const rows = Array.isArray(previewResponse?.rows) ? previewResponse.rows : [];
 
                 this.san6TestResult = {
                     executedAt: syncResponse?.executedAt || new Date().toISOString(),
-                    success: Boolean(syncResponse?.success),
+                    success: Boolean(syncResponse?.success) && !san6Probe?.error,
                     rowCount: rows.length,
                     rows,
+                    ordersCountFromSan6: Number(san6Probe?.ordersCount || 0),
+                    san6Function: san6Probe?.function || '',
+                    san6Url: san6Probe?.url || '',
+                    sampleExternalIds: Array.isArray(san6Probe?.sampleExternalIds) ? san6Probe.sampleExternalIds : [],
+                    rawPreview: san6Probe?.rawPreview || '',
+                    message: san6Probe?.error || null,
                 };
 
-                this.createNotificationSuccess({
-                    title: 'SAN6 Test erfolgreich',
-                    message: `Sync ausgeführt. ${rows.length} SAN6 Datensätze gefunden.`,
-                });
+                if (san6Probe?.error) {
+                    this.createNotificationError({
+                        title: 'SAN6 Test fehlgeschlagen',
+                        message: san6Probe.error,
+                    });
+                } else {
+                    this.createNotificationSuccess({
+                        title: 'SAN6 Test erfolgreich',
+                        message: `SAN6 geliefert: ${Number(san6Probe?.ordersCount || 0)} | In Shopware sichtbar: ${rows.length}`,
+                    });
+                }
             } catch (error) {
                 this.san6TestResult = {
                     executedAt: new Date().toISOString(),
                     success: false,
                     rowCount: 0,
                     rows: [],
+                    ordersCountFromSan6: 0,
+                    san6Function: '',
+                    san6Url: '',
+                    sampleExternalIds: [],
+                    rawPreview: '',
                     message: error?.message || 'Der SAN6 Testaufruf ist fehlgeschlagen.',
                 };
 

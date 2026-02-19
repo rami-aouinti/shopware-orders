@@ -41,6 +41,40 @@ class TopmSan6Client
         return ['orders' => $this->mapXmlOrders($rawXml)];
     }
 
+
+    /**
+     * @return array{url: string, rawXml: string, orders: array<int, array<string, mixed>>, error: ?string}
+     */
+    public function fetchReadProbe(string $apiUrl, string $apiToken, float $timeout, ?string $readFunction = null): array
+    {
+        $url = $this->buildTopmUrl($apiUrl, $readFunction ?? self::DEFAULT_READ_FUNCTION, $apiToken);
+        $options = $this->buildTimeoutOptions($timeout);
+
+        try {
+            $response = $this->httpClient->request('GET', $url, $options);
+            $rawXml = $response->getContent(false);
+
+            return [
+                'url' => $this->sanitizeUrl($url),
+                'rawXml' => $rawXml,
+                'orders' => $this->mapXmlOrders($rawXml),
+                'error' => null,
+            ];
+        } catch (ExceptionInterface $exception) {
+            $this->logger->error('TopM san6 probe request failed.', [
+                'url' => $this->sanitizeUrl($url),
+                'error' => $exception->getMessage(),
+            ]);
+
+            return [
+                'url' => $this->sanitizeUrl($url),
+                'rawXml' => '',
+                'orders' => [],
+                'error' => $exception->getMessage(),
+            ];
+        }
+    }
+
     public function sendByFileTransferUrl(string $apiUrl, string $apiToken, string $fileTransferUrl, float $timeout, ?string $writeFunction = null): string
     {
         $url = $this->buildTopmUrl($apiUrl, $writeFunction ?? self::DEFAULT_WRITE_FUNCTION, $apiToken, [

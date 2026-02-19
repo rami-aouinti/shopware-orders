@@ -108,6 +108,29 @@ class ExternalOrderController extends AbstractController
 
 
 
+
+    #[Route(
+        path: '/api/_action/external-orders/san6/test-read',
+        name: 'api.admin.external-orders.san6-test-read',
+        defaults: ['_acl' => ['admin']],
+        methods: [Request::METHOD_GET]
+    )]
+    public function san6TestRead(): Response
+    {
+        try {
+            return new JsonResponse($this->syncService->probeSan6Read());
+        } catch (\Throwable $exception) {
+            return new JsonResponse([
+                'url' => null,
+                'function' => null,
+                'ordersCount' => 0,
+                'sampleExternalIds' => [],
+                'rawPreview' => '',
+                'error' => $exception->getMessage(),
+            ], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
     #[Route(
         path: '/api/_action/external-orders/san6/raw-preview',
         name: 'api.admin.external-orders.san6-raw-preview',
