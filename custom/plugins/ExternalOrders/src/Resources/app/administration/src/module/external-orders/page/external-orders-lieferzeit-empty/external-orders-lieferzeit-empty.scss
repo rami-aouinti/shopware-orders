@@ -102,19 +102,19 @@
     &__entry-card {
         width: 100%;
         max-width: none;
+        margin-bottom: 16px;
+        padding: 16px;
+        border: 1px solid #dce4eb;
+        border-radius: 10px;
+        background: #fff;
+    }
 
-        :global(.sw-card),
-        :global(.sw-card__content) {
-            width: 100%;
-            max-width: none;
-        }
-
-        :global(.sw-card__content) {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(240px, 1fr));
-            gap: 16px;
-            align-items: end;
-        }
+    &__entry-grid {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(220px, 1fr));
+        gap: 16px;
+        align-items: end;
     }
 
     &__entry-step,
@@ -133,16 +133,24 @@
             margin-top: 0;
         }
     }
+
+    &__native-select {
+        width: 100%;
+        min-height: 44px;
+        padding: 0 12px;
+        border: 1px solid #d1d9e0;
+        border-radius: 6px;
+        background: #fff;
+        color: #1f2d3d;
+        font-size: 15px;
+    }
     &__channels {
         border-radius: 10px;
         width: 100%;
         max-width: none;
-
-        :global(.sw-card),
-        :global(.sw-card__content) {
-            width: 100%;
-            max-width: none;
-        }
+        padding: 16px;
+        border: 1px solid #dce4eb;
+        background: #fff;
     }
 
     &__summary {
@@ -427,6 +435,8 @@
     }
 
     &__table-wrapper {
+        width: 100%;
+        max-width: 100%;
         overflow: auto;
         border: 1px solid #dce4eb;
         border-radius: 8px;
@@ -436,7 +446,7 @@
 
     &__table {
         width: 100%;
-        min-width: 1100px;
+        min-width: 100%;
         border-collapse: separate;
         border-spacing: 0;
 
@@ -755,10 +765,8 @@
 
 
 
-        &__entry-card {
-            :global(.sw-card__content) {
-                grid-template-columns: repeat(2, minmax(200px, 1fr));
-            }
+        &__entry-grid {
+            grid-template-columns: repeat(2, minmax(200px, 1fr));
         }
 
         &__filters-row {
