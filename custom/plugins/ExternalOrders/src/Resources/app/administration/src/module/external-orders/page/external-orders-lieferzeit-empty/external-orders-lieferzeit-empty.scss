@@ -10,6 +10,19 @@
         max-width: none;
     }
 
+
+    :global(.sw-page) {
+        width: 100%;
+        max-width: none;
+    }
+
+    :global(.sw-page__content) {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
     &__header {
         display: flex;
         justify-content: space-between;
@@ -84,6 +97,42 @@
         padding-right: 2px;
     }
 
+
+
+    &__entry-card {
+        width: 100%;
+        max-width: none;
+
+        :global(.sw-card),
+        :global(.sw-card__content) {
+            width: 100%;
+            max-width: none;
+        }
+
+        :global(.sw-card__content) {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(240px, 1fr));
+            gap: 16px;
+            align-items: end;
+        }
+    }
+
+    &__entry-step,
+    &__entry-actions {
+        min-width: 0;
+    }
+
+    &__entry-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: end;
+    }
+
+    &__entry-step {
+        h3 {
+            margin-top: 0;
+        }
+    }
     &__channels {
         border-radius: 10px;
         width: 100%;
@@ -93,21 +142,6 @@
         :global(.sw-card__content) {
             width: 100%;
             max-width: none;
-        }
-    }
-
-    &__entry-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(220px, 1fr));
-        gap: 16px;
-        align-items: end;
-    }
-
-    &__entry-step {
-        min-width: 0;
-
-        h3 {
-            margin: 0 0 8px;
         }
     }
 
@@ -719,6 +753,14 @@
             text-align: left;
         }
 
+
+
+        &__entry-card {
+            :global(.sw-card__content) {
+                grid-template-columns: repeat(2, minmax(200px, 1fr));
+            }
+        }
+
         &__filters-row {
             &--primary {
                 grid-template-columns: repeat(3, minmax(180px, 1fr));
@@ -762,6 +804,10 @@
         &__filters-actions {
             margin-left: 0;
             width: 100%;
+            justify-content: flex-start;
+        }
+
+        &__entry-actions {
             justify-content: flex-start;
         }
 
