@@ -94,6 +94,7 @@
                     <p><strong>Datensätze im raw-preview:</strong> {{ san6TestResult.rowCount }}</p>
                     <p v-if="san6TestResult.sampleExternalIds?.length"><strong>Beispiel IDs:</strong> {{ san6TestResult.sampleExternalIds.join(', ') }}</p>
                     <p v-if="san6TestResult.message"><strong>Fehler:</strong> {{ san6TestResult.message }}</p>
+                    <p v-if="san6TestResult.hint"><strong>Hinweis:</strong> {{ san6TestResult.hint }}</p>
                     <sw-textarea-field
                         v-if="san6TestResult.rawPreview"
                         :value="san6TestResult.rawPreview"

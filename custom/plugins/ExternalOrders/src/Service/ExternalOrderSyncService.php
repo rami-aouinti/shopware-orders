@@ -29,7 +29,10 @@ class ExternalOrderSyncService
     /**
      * @return array{url: string, function: string, ordersCount: int, sampleExternalIds: array<int, string>, rawPreview: string, error: ?string, resultCode: ?string, resultText: ?string}
      */
-    public function probeSan6Read(): array
+    /**
+     * @param array<string,string> $overrides
+     */
+    public function probeSan6Read(array $overrides = []): array
     {
         $timeout = (float) $this->systemConfigService->get('ExternalOrders.config.externalOrdersTimeout');
         $san6ReadFunction = trim((string) ($this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6ReadFunction') ?? ''));
@@ -37,9 +40,24 @@ class ExternalOrderSyncService
             $san6ReadFunction = TopmSan6Client::DEFAULT_READ_FUNCTION;
         }
 
+        $overrideFunction = trim((string) ($overrides['funktion'] ?? ''));
+        if ($overrideFunction !== '') {
+            $san6ReadFunction = $overrideFunction;
+        }
+
         $apiUrl = (string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6BaseUrl');
         if ($apiUrl !== '') {
             $apiUrl = $this->buildSan6ApiUrl($apiUrl);
+        }
+
+        $overrideParams = array_filter([
+            'Kopf' => trim((string) ($overrides['Kopf'] ?? '')),
+            'Kundennummer' => trim((string) ($overrides['Kundennummer'] ?? '')),
+            'Von' => trim((string) ($overrides['Von'] ?? '')),
+        ], static fn (string $value): bool => $value !== '');
+        if ($overrideParams !== [] && $apiUrl !== '') {
+            $separator = str_contains($apiUrl, '?') ? '&' : '?';
+            $apiUrl .= $separator . http_build_query($overrideParams);
         }
 
         $apiToken = (string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6Authentifizierung');
@@ -68,6 +86,9 @@ class ExternalOrderSyncService
             'error' => $probe['error'],
             'resultCode' => $probe['resultCode'],
             'resultText' => $probe['resultText'],
+            'hint' => ($probe['resultCode'] ?? null) === '12' && $san6ReadFunction === TopmSan6Client::DEFAULT_READ_FUNCTION
+                ? 'Für API-AUFTRAEGE fehlen Auswahlparameter. Setze Kopf, Kundennummer und/oder Von.'
+                : null,
         ];
     }
 

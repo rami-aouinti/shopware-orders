@@ -206,6 +206,7 @@ class ExternalOrderControllerTest extends TestCase
                 'error' => null,
                 'resultCode' => '00',
                 'resultText' => 'OK',
+                'hint' => null,
             ]);
 
         $controller = new ExternalOrderController(
@@ -218,7 +219,7 @@ class ExternalOrderControllerTest extends TestCase
             $this->createMock(Connection::class),
         );
 
-        $response = $controller->san6TestRead();
+        $response = $controller->san6TestRead(new Request());
 
         static::assertSame(Response::HTTP_OK, $response->getStatusCode());
         static::assertJsonStringEqualsJsonString(
@@ -231,6 +232,7 @@ class ExternalOrderControllerTest extends TestCase
                 'error' => null,
                 'resultCode' => '00',
                 'resultText' => 'OK',
+                'hint' => null,
             ], JSON_THROW_ON_ERROR),
             (string) $response->getContent()
         );

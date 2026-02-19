@@ -101,9 +101,20 @@ class ExternalOrderService extends ApiService {
 
 
 
-    async testSan6Read() {
+    async testSan6Read(params = {}) {
+        const normalizedParams = Object.entries(params).reduce((accumulator, [key, value]) => {
+            if (value === null || value === undefined || value === '') {
+                return accumulator;
+            }
+
+            accumulator[key] = value;
+
+            return accumulator;
+        }, {});
+
         const response = await this.httpClient.get(`_action/${this.getApiBasePath()}/san6/test-read`, {
             headers: this.getBasicHeaders(),
+            params: normalizedParams,
         });
 
         const data = ApiService.handleResponse(response) ?? response?.data;
