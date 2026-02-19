@@ -229,6 +229,17 @@
                             <th class="external-orders-lieferzeit-empty__cell external-orders-lieferzeit-empty__cell--task">Aufgaben</th>
                             <th class="external-orders-lieferzeit-empty__cell external-orders-lieferzeit-empty__cell--actions">Aktion</th>
                         </tr>
+                        <tr v-if="collapsedTableColumns.length" class="external-orders-lieferzeit-empty__collapse-row">
+                            <th :colspan="totalVisibleTableColumnCount">
+                                <button
+                                    class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small"
+                                    type="button"
+                                    @click="toggleCollapsedColumns"
+                                >
+                                    {{ showCollapsedColumns ? 'Weniger Spalten' : 'Weitere Spalten anzeigen' }}
+                                </button>
+                            </th>
+                        </tr>
                     </thead>
                     <tbody>
                         <template v-for="order in paginatedOrders">
