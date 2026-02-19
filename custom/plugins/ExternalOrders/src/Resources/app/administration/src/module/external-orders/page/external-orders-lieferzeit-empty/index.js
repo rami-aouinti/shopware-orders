@@ -1242,17 +1242,24 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 return;
             }
 
-            if (this.expandedRows[rowKey]) {
-                this.$delete(this.expandedRows, rowKey);
+            const normalizedRowKey = String(rowKey);
+
+            if (this.expandedRows[normalizedRowKey]) {
+                const nextExpandedRows = { ...this.expandedRows };
+                delete nextExpandedRows[normalizedRowKey];
+                this.expandedRows = nextExpandedRows;
                 return;
             }
 
-            this.$set(this.expandedRows, rowKey, true);
+            this.expandedRows = {
+                ...this.expandedRows,
+                [normalizedRowKey]: true,
+            };
         },
 
         isRowCollapsedExpanded(order) {
             const rowKey = this.getRowKey(order);
-            return Boolean(rowKey && this.expandedRows[rowKey]);
+            return Boolean(rowKey && this.expandedRows[String(rowKey)]);
         },
 
         isColumnFilterActive(columnKey) {
