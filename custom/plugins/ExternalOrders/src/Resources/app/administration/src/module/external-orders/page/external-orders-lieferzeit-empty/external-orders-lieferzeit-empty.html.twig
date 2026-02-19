@@ -323,11 +323,18 @@
                                     <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small" type="button" @click="openDetail(order)">
                                         Details
                                     </button>
+                                    <button
+                                        class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small"
+                                        type="button"
+                                        @click="toggleRowCollapsed(order)"
+                                    >
+                                        {{ isRowCollapsedExpanded(order) ? 'Weniger Spalten' : 'Weitere Spalten' }}
+                                    </button>
                                 </div>
                             </td>
                         </tr>
                         <tr
-                            v-if="showCollapsedColumns"
+                            v-if="isRowCollapsedExpanded(order)"
                             :key="`${getRowKey(order)}-collapsed`"
                             class="external-orders-lieferzeit-empty__collapsed-details-row"
                         >

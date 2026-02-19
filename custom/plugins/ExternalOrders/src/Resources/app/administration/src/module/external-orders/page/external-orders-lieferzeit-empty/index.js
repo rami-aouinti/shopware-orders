@@ -322,7 +322,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             notifiedSupplierTaskIds: {},
             lieferzeitTasksByRowKey: {},
             taskActionInProgressById: {},
-            showCollapsedColumns: false,
+            expandedRows: {},
         };
     },
 
@@ -1138,7 +1138,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
 
                 const normalizedOrders = this.extractOrders(result).map((order) => this.normalizeOrder(order));
                 this.orders = this.applyRowMode(normalizedOrders);
-                this.showCollapsedColumns = false;
+                this.expandedRows = {};
                 await this.loadLieferzeitTasks();
 
                 if (!this.channels.some((channel) => channel.id === this.activeChannel)) {
@@ -1148,7 +1148,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
                 this.page = 1;
             } catch (error) {
                 this.orders = [];
-                this.showCollapsedColumns = false;
+                this.expandedRows = {};
                 this.lieferzeitTasksByRowKey = {};
                 this.loadError = error;
             } finally {
@@ -1236,8 +1236,30 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             this.page = 1;
         },
 
-        toggleCollapsedColumns() {
-            this.showCollapsedColumns = !this.showCollapsedColumns;
+        toggleRowCollapsed(order) {
+            const rowKey = this.getRowKey(order);
+            if (!rowKey) {
+                return;
+            }
+
+            const normalizedRowKey = String(rowKey);
+
+            if (this.expandedRows[normalizedRowKey]) {
+                const nextExpandedRows = { ...this.expandedRows };
+                delete nextExpandedRows[normalizedRowKey];
+                this.expandedRows = nextExpandedRows;
+                return;
+            }
+
+            this.expandedRows = {
+                ...this.expandedRows,
+                [normalizedRowKey]: true,
+            };
+        },
+
+        isRowCollapsedExpanded(order) {
+            const rowKey = this.getRowKey(order);
+            return Boolean(rowKey && this.expandedRows[String(rowKey)]);
         },
 
         isColumnFilterActive(columnKey) {
