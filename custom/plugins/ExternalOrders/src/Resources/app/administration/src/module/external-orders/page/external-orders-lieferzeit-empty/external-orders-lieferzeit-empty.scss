@@ -240,7 +240,7 @@
 
         &--secondary {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(3, minmax(220px, 1fr));
             gap: 10px;
             align-items: stretch;
         }
@@ -334,7 +334,7 @@
             }
 
             &--secondary {
-                grid-template-columns: repeat(2, minmax(260px, 1fr));
+                grid-template-columns: repeat(3, minmax(220px, 1fr));
             }
         }
     }
@@ -593,9 +593,12 @@
     }
 
 
-    &__collapse-row th {
-        background: #f7f9fb;
-        border-bottom: 1px solid #eef2f6;
+
+    &__row-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-items: flex-start;
     }
 
     &__collapsed-details-row td {
