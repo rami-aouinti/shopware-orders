@@ -1,6 +1,14 @@
 .external-orders-lieferzeit-empty {
+    width: 100%;
     padding: 24px;
     color: #1f2d3d;
+
+    :global(.sw-page__main-content) {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        max-width: none;
+    }
 
     &__header {
         display: flex;
@@ -80,6 +88,12 @@
         border-radius: 10px;
         width: 100%;
         max-width: none;
+
+        :global(.sw-card),
+        :global(.sw-card__content) {
+            width: 100%;
+            max-width: none;
+        }
     }
 
     &__summary {
