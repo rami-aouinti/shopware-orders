@@ -210,6 +210,63 @@ class ExternalOrderSyncServiceTest extends TestCase
     }
 
 
+    public function testSyncNewOrdersPassesOptionalSan6ReadFilters(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->never())->method('upsert');
+
+        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient->expects($this->never())->method('request');
+
+        $configService = $this->createMock(SystemConfigService::class);
+        $configService->method('get')->willReturnCallback(static function (string $key) {
+            $map = [
+                'ExternalOrders.config.externalOrdersApiUrlB2b' => '',
+                'ExternalOrders.config.externalOrdersApiTokenB2b' => '',
+                'ExternalOrders.config.externalOrdersApiUrlEbayDe' => '',
+                'ExternalOrders.config.externalOrdersApiTokenEbayDe' => '',
+                'ExternalOrders.config.externalOrdersApiUrlKaufland' => '',
+                'ExternalOrders.config.externalOrdersApiTokenKaufland' => '',
+                'ExternalOrders.config.externalOrdersApiUrlEbayAt' => '',
+                'ExternalOrders.config.externalOrdersApiTokenEbayAt' => '',
+                'ExternalOrders.config.externalOrdersApiUrlZonami' => '',
+                'ExternalOrders.config.externalOrdersApiTokenZonami' => '',
+                'ExternalOrders.config.externalOrdersApiUrlPeg' => '',
+                'ExternalOrders.config.externalOrdersApiTokenPeg' => '',
+                'ExternalOrders.config.externalOrdersApiUrlBezb' => '',
+                'ExternalOrders.config.externalOrdersApiTokenBezb' => '',
+                'ExternalOrders.config.externalOrdersSan6BaseUrl' => 'https://example.test/san6/api?ssid=abc&company=fms&product=sw&mandant=Schule&sys=017',
+                'ExternalOrders.config.externalOrdersSan6Authentifizierung' => 'secret',
+                'ExternalOrders.config.externalOrdersSan6ReadFunction' => TopmSan6Client::DEFAULT_READ_FUNCTION,
+                'ExternalOrders.config.externalOrdersSan6ReadKopf' => '2',
+                'ExternalOrders.config.externalOrdersSan6ReadKundennummer' => '3801182',
+                'ExternalOrders.config.externalOrdersSan6ReadFromDate' => '16.06.2025',
+                'ExternalOrders.config.externalOrdersTimeout' => 2.5,
+            ];
+
+            return $map[$key] ?? null;
+        });
+
+        $logger = new InMemoryLogger();
+
+        $topmClient = $this->createMock(TopmSan6Client::class);
+        $topmClient->expects($this->once())
+            ->method('fetchOrders')
+            ->with(
+                'https://example.test/san6/api?ssid=abc&company=fms&product=sw&mandant=Schule&sys=017&authentifizierung=secret&Kopf=2&Kundennummer=3801182&Von=16.06.2025',
+                'secret',
+                2.5,
+                TopmSan6Client::DEFAULT_READ_FUNCTION
+            )
+            ->willReturn(['orders' => []]);
+
+        $service = new ExternalOrderSyncService($repository, $httpClient, $configService, $logger, $topmClient);
+
+        $service->syncNewOrders($context);
+    }
+
     public function testSyncNewOrdersLogsAndSkipsWhenSan6ConfigIsInvalid(): void
     {
         $context = Context::createDefaultContext();
