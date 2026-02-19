@@ -56,44 +56,44 @@
             </sw-card>
         </sw-container>
 
-        <sw-card :title="$t('lieferzeiten.statistics.chartTitle')" class="lieferzeiten-statistics__chart-card">
-            <div v-if="channelChartData.length" class="lieferzeiten-statistics__chart">
-                <div v-for="item in channelChartData" :key="item.channel" class="lieferzeiten-statistics__chart-row">
-                    <span>{{ item.channel }}</span>
-                    <div class="lieferzeiten-statistics__bar-wrap">
-                        <div class="lieferzeiten-statistics__bar" :style="{ width: getChartBarWidth(item.value) }"></div>
+        <div class="lieferzeiten-statistics__insight-grid">
+            <section class="lieferzeiten-statistics__panel">
+                <header class="lieferzeiten-statistics__panel-header">
+                    <h3>{{ $t('lieferzeiten.statistics.chartTitle') }}</h3>
+                </header>
+                <div v-if="channelChartData.length" class="lieferzeiten-statistics__chart">
+                    <div v-for="item in channelChartData" :key="item.channel" class="lieferzeiten-statistics__chart-row">
+                        <span>{{ item.channel }}</span>
+                        <div class="lieferzeiten-statistics__bar-wrap">
+                            <div class="lieferzeiten-statistics__bar" :style="{ width: getChartBarWidth(item.value) }"></div>
+                        </div>
+                        <strong>{{ item.value }}</strong>
                     </div>
-                    <strong>{{ item.value }}</strong>
                 </div>
-            </div>
-            <sw-empty-state
-                v-else
-                :title="$t('lieferzeiten.emptyState.title')"
-                :description="$t('lieferzeiten.emptyState.description')"
-            />
-        </sw-card>
+                <div v-else class="lieferzeiten-statistics__empty">{{ $t('lieferzeiten.emptyState.description') }}</div>
+            </section>
 
-        <sw-card :title="$t('lieferzeiten.statistics.timelineTitle')" class="lieferzeiten-statistics__timeline-card">
-            <div v-if="timelineSeries.length > 1" class="lieferzeiten-statistics__timeline-chart">
-                <svg viewBox="0 0 100 60" preserveAspectRatio="none" class="lieferzeiten-statistics__timeline-svg">
-                    <path :d="timelineChartPaths.areaPath" class="lieferzeiten-statistics__timeline-area" />
-                    <path :d="timelineChartPaths.linePath" class="lieferzeiten-statistics__timeline-line" />
-                </svg>
-                <div class="lieferzeiten-statistics__timeline-axis">
-                    <span>{{ formatTimelineLabel(timelineSeries[0].date) }}</span>
-                    <span>{{ formatTimelineLabel(timelineSeries[timelineSeries.length - 1].date) }}</span>
+            <section class="lieferzeiten-statistics__panel">
+                <header class="lieferzeiten-statistics__panel-header">
+                    <h3>{{ $t('lieferzeiten.statistics.timelineTitle') }}</h3>
+                </header>
+                <div v-if="timelineSeries.length > 1" class="lieferzeiten-statistics__timeline-chart">
+                    <svg viewBox="0 0 100 60" preserveAspectRatio="none" class="lieferzeiten-statistics__timeline-svg">
+                        <path :d="timelineChartPaths.areaPath" class="lieferzeiten-statistics__timeline-area" />
+                        <path :d="timelineChartPaths.linePath" class="lieferzeiten-statistics__timeline-line" />
+                    </svg>
+                    <div class="lieferzeiten-statistics__timeline-axis">
+                        <span>{{ formatTimelineLabel(timelineSeries[0].date) }}</span>
+                        <span>{{ formatTimelineLabel(timelineSeries[timelineSeries.length - 1].date) }}</span>
+                    </div>
                 </div>
-            </div>
-            <div v-else-if="timelineSeries.length === 1" class="lieferzeiten-statistics__timeline-fallback">
-                <strong>{{ timelineSeries[0].value }}</strong>
-                <span>{{ formatTimelineLabel(timelineSeries[0].date) }}</span>
-            </div>
-            <sw-empty-state
-                v-else
-                :title="$t('lieferzeiten.statistics.timelineEmptyTitle')"
-                :description="$t('lieferzeiten.statistics.timelineEmptyDescription')"
-            />
-        </sw-card>
+                <div v-else-if="timelineSeries.length === 1" class="lieferzeiten-statistics__timeline-fallback">
+                    <strong>{{ timelineSeries[0].value }}</strong>
+                    <span>{{ formatTimelineLabel(timelineSeries[0].date) }}</span>
+                </div>
+                <div v-else class="lieferzeiten-statistics__empty">{{ $t('lieferzeiten.statistics.timelineEmptyDescription') }}</div>
+            </section>
+        </div>
 
         <sw-container columns="repeat(3, minmax(0, 1fr))" gap="16px" class="lieferzeiten-statistics__breakdowns">
             <sw-card :title="$t('lieferzeiten.statistics.eventTypeBreakdownTitle')">
@@ -152,68 +152,59 @@
         </sw-container>
 
 
-        <sw-card :title="$t('lieferzeiten.statistics.tableTitle')">
+        <section class="lieferzeiten-statistics__panel lieferzeiten-statistics__activity-panel">
+            <header class="lieferzeiten-statistics__panel-header">
+                <h3>{{ $t('lieferzeiten.statistics.tableTitle') }}</h3>
+            </header>
             <div class="lieferzeiten-statistics__table-scroll">
-                <sw-data-grid
-                    :data-source="filteredOrders"
-                    :columns="tableColumns"
-                    :show-selection="false"
-                    :sort-by="sortBy"
-                    :sort-direction="sortDirection"
-                    @column-sort="onSortChange"
-                >
-                <template #column-status="{ item }">
-                    <sw-label :appearance="item.status === $t('lieferzeiten.statistics.status.overdue') ? 'error' : 'info'">
-                        {{ item.status }}
-                    </sw-label>
-                </template>
-
-                <template #column-eventAt="{ item }">
-                    {{ formatDate(item.eventAt) }}
-                </template>
-
-                <template #column-promisedAt="{ item }">
-                    {{ formatDate(item.promisedAt) }}
-                </template>
-
-                <template #column-actions="{ item }">
-                    <div class="lieferzeiten-statistics__actions">
-                        <sw-button
-                            v-for="action in resolveActivityActions(item)"
-                            :key="`${item.id}-${action.id}`"
-                            size="x-small"
-                            :variant="action.disabled ? 'ghost' : 'secondary'"
-                            :disabled="action.disabled || action.isLoading"
-                            :is-loading="action.isLoading"
-                            v-tooltip="actionTooltip(action)"
-                            @click="action.onClick && action.onClick()"
-                        >
-                            <sw-icon v-if="action.icon" :name="action.icon" size="12px" />
-                            {{ action.label }}
-                        </sw-button>
-                    </div>
-                </template>
-
-                <template #actions="{ item }">
-                    <sw-context-menu-item @click="onDrilldown(item)">
-                        {{ $t('lieferzeiten.statistics.drilldown') }}
-                    </sw-context-menu-item>
-                </template>
-                </sw-data-grid>
+                <table class="lieferzeiten-statistics__table">
+                    <thead>
+                        <tr>
+                            <th>{{ $t('lieferzeiten.table.orderNumber') }}</th>
+                            <th>{{ $t('lieferzeiten.table.domain') }}</th>
+                            <th>{{ $t('lieferzeiten.table.status') }}</th>
+                            <th>{{ $t('lieferzeiten.statistics.activityDate') }}</th>
+                            <th>{{ $t('lieferzeiten.statistics.promisedDate') }}</th>
+                            <th>{{ $t('lieferzeiten.statistics.actionsColumn') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="item in filteredOrders" :key="item.id">
+                            <td>{{ item.orderNumber }}</td>
+                            <td>{{ item.domain }}</td>
+                            <td>
+                                <span class="lieferzeiten-statistics__status" :class="{ 'is-overdue': item.status === $t('lieferzeiten.statistics.status.overdue') }">{{ item.status }}</span>
+                            </td>
+                            <td>{{ formatDate(item.eventAt) }}</td>
+                            <td>{{ formatDate(item.promisedAt) }}</td>
+                            <td>
+                                <div class="lieferzeiten-statistics__actions">
+                                    <button
+                                        v-for="action in resolveActivityActions(item)"
+                                        :key="`${item.id}-${action.id}`"
+                                        class="lieferzeiten-statistics__action-btn"
+                                        :class="{ 'is-disabled': action.disabled || action.isLoading }"
+                                        :disabled="action.disabled || action.isLoading"
+                                        @click="action.onClick && action.onClick()"
+                                    >
+                                        {{ action.isLoading ? '...' : action.label }}
+                                    </button>
+                                    <button class="lieferzeiten-statistics__action-btn lieferzeiten-statistics__action-btn--ghost" @click="onDrilldown(item)">
+                                        {{ $t('lieferzeiten.statistics.drilldown') }}
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             <div class="lieferzeiten-statistics__table-pagination">
-                <sw-button size="small" variant="tertiary" :disabled="activitiesPage <= 1" @click="onPageChange(activitiesPage - 1)">
-                    {{ $t('global.default.previous') }}
-                </sw-button>
+                <button class="lieferzeiten-statistics__pager-btn" :disabled="activitiesPage <= 1" @click="onPageChange(activitiesPage - 1)">{{ $t('global.default.previous') }}</button>
                 <span>{{ activitiesPage }} / {{ totalPages }} ({{ activitiesTotal }})</span>
-                <sw-button size="small" variant="tertiary" :disabled="activitiesPage >= totalPages" @click="onPageChange(activitiesPage + 1)">
-                    {{ $t('global.default.next') }}
-                </sw-button>
-                <sw-button size="small" variant="ghost" @click="reloadActivityPage">
-                    {{ $t('global.default.refresh') }}
-                </sw-button>
+                <button class="lieferzeiten-statistics__pager-btn" :disabled="activitiesPage >= totalPages" @click="onPageChange(activitiesPage + 1)">{{ $t('global.default.next') }}</button>
+                <button class="lieferzeiten-statistics__pager-btn lieferzeiten-statistics__pager-btn--ghost" @click="reloadActivityPage">{{ $t('global.default.refresh') }}</button>
             </div>
-        </sw-card>
+        </section>
 
         <sw-modal
             v-if="selectedActivity"
