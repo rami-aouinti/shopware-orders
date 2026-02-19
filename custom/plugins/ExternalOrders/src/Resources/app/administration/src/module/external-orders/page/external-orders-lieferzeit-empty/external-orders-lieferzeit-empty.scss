@@ -332,6 +332,10 @@
     }
 
     @media (max-width: 1240px) {
+        &__entry-grid {
+            grid-template-columns: 1fr;
+        }
+
         &__filters-row {
             &--primary {
                 grid-template-columns: repeat(2, minmax(180px, 1fr));

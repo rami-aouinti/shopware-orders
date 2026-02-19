@@ -270,7 +270,7 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         return {
             pageTitle: 'Lieferzeiten',
             selectedArea: null,
-            selectedMainView: null,
+            selectedMainView: 'allOrders',
             selectedRowMode: 'position',
             areaOptions: AREA_OPTIONS,
             mainViewOptions: MAIN_VIEW_OPTIONS,
@@ -457,6 +457,18 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
             if (value > this.totalPages) {
                 this.page = this.totalPages;
             }
+        },
+
+        selectedArea() {
+            this.applyEntrySelection();
+        },
+
+        selectedMainView() {
+            this.applyEntrySelection();
+        },
+
+        selectedRowMode() {
+            this.applyEntrySelection();
         },
     },
 
@@ -1128,6 +1140,10 @@ Shopware.Component.register('external-orders-lieferzeit-empty', {
         },
 
         applyEntrySelection() {
+            if (!this.hasRequiredSelections) {
+                return;
+            }
+
             this.page = 1;
             this.loadOrders();
             this.loadStatistics();
