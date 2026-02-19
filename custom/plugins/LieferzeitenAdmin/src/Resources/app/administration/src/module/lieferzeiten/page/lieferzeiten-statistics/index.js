@@ -60,14 +60,6 @@ Shopware.Component.register('lieferzeiten-statistics', {
                     limit: 25,
                 },
             },
-            tableColumns: [
-                { property: 'orderNumber', label: this.$t('lieferzeiten.table.orderNumber'), primary: true },
-                { property: 'domain', label: this.$t('lieferzeiten.table.domain') },
-                { property: 'status', label: this.$t('lieferzeiten.table.status') },
-                { property: 'eventAt', label: this.$t('lieferzeiten.statistics.activityDate') },
-                { property: 'promisedAt', label: this.$t('lieferzeiten.statistics.promisedDate') },
-                { property: 'actions', label: this.$t('lieferzeiten.statistics.actionsColumn') },
-            ],
             actionLoadingByActivity: {},
         };
     },
@@ -556,17 +548,6 @@ Shopware.Component.register('lieferzeiten-statistics', {
         onPageChange(page) {
             const nextPage = Number(page) || 1;
             this.activitiesPage = Math.max(1, Math.min(nextPage, this.totalPages));
-            this.loadStatistics();
-        },
-
-        onSortChange({ dataIndex, direction }) {
-            if (!dataIndex) {
-                return;
-            }
-
-            this.sortBy = dataIndex;
-            this.sortDirection = direction === 'ASC' ? 'ASC' : 'DESC';
-            this.activitiesPage = 1;
             this.loadStatistics();
         },
 

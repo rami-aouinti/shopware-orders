@@ -1,4 +1,8 @@
 .lieferzeiten-sync-settings {
+    .sw-page__content {
+        width: 100%;
+    }
+
     .lza-sync-layout { width: 100%; display: grid; gap: 16px; }
     .lza-sync-card { width: 100%; background: #fff; border: 1px solid #d8e2f0; border-radius: 16px; padding: 20px; box-shadow: 0 10px 24px rgba(31, 69, 122, 0.08); }
     .lza-sync-card h3 { margin-top: 0; }

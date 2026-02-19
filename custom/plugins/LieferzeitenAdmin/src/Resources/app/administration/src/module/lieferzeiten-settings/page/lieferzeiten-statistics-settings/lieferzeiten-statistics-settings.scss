@@ -1,4 +1,8 @@
 .lieferzeiten-statistics-settings {
+    .sw-page__content {
+        width: 100%;
+    }
+
     &__panel {
         width: 100%;
         background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
