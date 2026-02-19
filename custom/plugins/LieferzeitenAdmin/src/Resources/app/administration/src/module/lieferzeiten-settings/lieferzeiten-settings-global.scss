@@ -12,7 +12,8 @@ body.lza-settings-no-search {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 16px;
+    margin: 16px;
+    justify-content: center;
 }
 
 .lza-settings-nav__item {

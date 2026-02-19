@@ -3,11 +3,11 @@
   "entryPoints": {
     "lieferzeiten-admin": {
       "css": [
-        "/bundles/lieferzeitenadmin/administration/assets/lieferzeiten-admin-947FVXOt.css"
+        "/bundles/lieferzeitenadmin/administration/assets/lieferzeiten-admin-CqVxMQ8e.css"
       ],
       "dynamic": [],
       "js": [
-        "/bundles/lieferzeitenadmin/administration/assets/lieferzeiten-admin-Dvvbhwdc.js"
+        "/bundles/lieferzeitenadmin/administration/assets/lieferzeiten-admin-C4Iaohf0.js"
       ],
       "legacy": false,
       "preload": []
