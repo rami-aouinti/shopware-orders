@@ -27,37 +27,35 @@
     </header>
 
     <main id="main" class="sw-page__main-content external-orders-lieferzeit-empty__main" tabindex="-1">
-        <sw-card class="external-orders-lieferzeit-empty__entry-card">
+        <section class="external-orders-lieferzeit-empty__entry-card">
             <div class="external-orders-lieferzeit-empty__entry-grid">
                 <div class="external-orders-lieferzeit-empty__entry-step">
                     <h3>Schritt 1: Bereichsauswahl</h3>
-                    <sw-single-select
-                        v-model:value="selectedArea"
-                        placeholder="Bereich auswählen"
-                        :options="areaOptions"
-                        value-property="value"
-                        label-property="label"></sw-single-select>
+                    <select v-model="selectedArea" class="external-orders-lieferzeit-empty__native-select">
+                        <option :value="null" disabled>Bereich auswählen</option>
+                        <option v-for="option in areaOptions" :key="`area-${option.value}`" :value="option.value">
+                            {{ option.label }}
+                        </option>
+                    </select>
                 </div>
                 <div class="external-orders-lieferzeit-empty__entry-step">
                     <h3>Schritt 2: Hauptansichtsauswahl</h3>
-                    <sw-single-select
-                        v-model:value="selectedMainView"
-                        placeholder="Hauptansicht auswählen"
-                        :options="mainViewOptions"
-                        value-property="value"
-                        label-property="label"></sw-single-select>
+                    <select v-model="selectedMainView" class="external-orders-lieferzeit-empty__native-select">
+                        <option v-for="option in mainViewOptions" :key="`main-${option.value}`" :value="option.value">
+                            {{ option.label }}
+                        </option>
+                    </select>
                 </div>
                 <div class="external-orders-lieferzeit-empty__entry-step">
                     <h3>Schritt 3: Granularität</h3>
-                    <sw-single-select
-                        v-model:value="selectedRowMode"
-                        placeholder="Granularität auswählen"
-                        :options="rowModeOptions"
-                        value-property="value"
-                        label-property="label"></sw-single-select>
+                    <select v-model="selectedRowMode" class="external-orders-lieferzeit-empty__native-select">
+                        <option v-for="option in rowModeOptions" :key="`row-${option.value}`" :value="option.value">
+                            {{ option.label }}
+                        </option>
+                    </select>
                 </div>
             </div>
-        </sw-card>
+        </section>
 
         <template v-if="hasRequiredSelections">
         <div class="external-orders-lieferzeit-empty__summary">
@@ -79,7 +77,7 @@
             </div>
         </div>
 
-        <sw-card class="external-orders-lieferzeit-empty__channels">
+        <section class="external-orders-lieferzeit-empty__channels">
         <div class="external-orders-lieferzeit-empty__channel-tabs">
             <button
                 v-for="channel in channels"
@@ -184,7 +182,7 @@
                 <table class="external-orders-lieferzeit-empty__table">
                     <thead>
                         <tr>
-                            <th v-for="column in tableColumns" :key="column.key" class="external-orders-lieferzeit-empty__cell">
+                            <th v-for="column in visibleTableColumns" :key="column.key" class="external-orders-lieferzeit-empty__cell">
                                 <div class="external-orders-lieferzeit-empty__column-header">
                                     <button class="external-orders-lieferzeit-empty__column-sort" type="button" @click="onSortColumn(column.key)">
                                         {{ column.label }}
@@ -233,8 +231,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="order in paginatedOrders" :key="getRowKey(order)">
-                            <td v-for="column in tableColumns" :key="`${getRowKey(order)}-${column.key}`">
+                        <template v-for="order in paginatedOrders">
+                        <tr :key="getRowKey(order)">
+                            <td v-for="column in visibleTableColumns" :key="`${getRowKey(order)}-${column.key}`">
                                 <template v-if="column.key === 'lieferterminLieferant'">
                                     <div>{{ formatDate(getColumnValue(order, column.key)) }}</div>
                                     <button
@@ -299,11 +298,39 @@
                                 <span v-else>-</span>
                             </td>
                             <td>
-                                <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small" type="button" @click="openDetail(order)">
-                                    Details
-                                </button>
+                                <div class="external-orders-lieferzeit-empty__row-actions">
+                                    <button class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small" type="button" @click="openDetail(order)">
+                                        Details
+                                    </button>
+                                    <button
+                                        class="external-orders-lieferzeit-empty__button external-orders-lieferzeit-empty__button--secondary external-orders-lieferzeit-empty__button--small"
+                                        type="button"
+                                        @click="toggleRowCollapsed(order)"
+                                    >
+                                        {{ isRowCollapsedExpanded(order) ? 'Weniger Spalten' : 'Weitere Spalten' }}
+                                    </button>
+                                </div>
                             </td>
                         </tr>
+                        <tr
+                            v-if="isRowCollapsedExpanded(order)"
+                            :key="`${getRowKey(order)}-collapsed`"
+                            class="external-orders-lieferzeit-empty__collapsed-details-row"
+                        >
+                            <td :colspan="totalVisibleTableColumnCount">
+                                <div class="external-orders-lieferzeit-empty__collapsed-grid">
+                                    <div
+                                        v-for="column in collapsedTableColumns"
+                                        :key="`${getRowKey(order)}-collapsed-${column.key}`"
+                                        class="external-orders-lieferzeit-empty__collapsed-item"
+                                    >
+                                        <strong>{{ column.label }}</strong>
+                                        <span>{{ isDateColumn(column.key) ? formatDate(getColumnValue(order, column.key)) : displayOrDash(getColumnValue(order, column.key)) }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        </template>
                     </tbody>
                 </table>
             </div>
@@ -348,7 +375,7 @@
             @close="closeTrackingModal"
         />
 
-        </sw-card>
+        </section>
         </template>
     </main>
 
