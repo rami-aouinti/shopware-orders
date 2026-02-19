@@ -154,6 +154,9 @@ class ExternalOrderSyncService
             'mandant' => (string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6Mandant'),
             'sys' => (string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6Sys'),
             'authentifizierung' => (string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6Authentifizierung'),
+            'Kopf' => trim((string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6ReadKopf')),
+            'Kundennummer' => trim((string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6ReadKundennummer')),
+            'Von' => trim((string) $this->systemConfigService->get('ExternalOrders.config.externalOrdersSan6ReadFromDate')),
         ], static fn (string $value): bool => $value !== '');
 
         if ($query === []) {

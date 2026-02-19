@@ -33,6 +33,9 @@ class ExternalOrdersConfigSubscriber implements EventSubscriberInterface
         'ExternalOrders.config.externalOrdersSan6ReadFunction',
         'ExternalOrders.config.externalOrdersSan6WriteFunction',
         'ExternalOrders.config.externalOrdersSan6SendStrategy',
+        'ExternalOrders.config.externalOrdersSan6ReadKopf',
+        'ExternalOrders.config.externalOrdersSan6ReadKundennummer',
+        'ExternalOrders.config.externalOrdersSan6ReadFromDate',
     ];
 
     public function __construct(private readonly ExternalOrderSyncService $syncService)
