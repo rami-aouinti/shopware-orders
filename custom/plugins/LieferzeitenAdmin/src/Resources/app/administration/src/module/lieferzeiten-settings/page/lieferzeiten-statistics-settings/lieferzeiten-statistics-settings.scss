@@ -1,7 +1,15 @@
 .lieferzeiten-statistics-settings {
-    &__content {
-        .sw-card__content {
-            padding-top: 0;
-        }
+    &__panel {
+        width: 100%;
+        background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
+        border: 1px solid #d8e2f0;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 10px 24px rgba(31, 69, 122, 0.08);
+    }
+
+    &__panel h3 {
+        margin-top: 0;
+        margin-bottom: 16px;
     }
 }
