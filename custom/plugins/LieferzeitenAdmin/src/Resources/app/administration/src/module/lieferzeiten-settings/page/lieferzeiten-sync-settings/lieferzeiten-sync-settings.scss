@@ -1,0 +1,13 @@
+.lieferzeiten-sync-settings {
+    .lza-sync-layout { width: 100%; display: grid; gap: 16px; }
+    .lza-sync-card { width: 100%; background: #fff; border: 1px solid #d8e2f0; border-radius: 16px; padding: 20px; box-shadow: 0 10px 24px rgba(31, 69, 122, 0.08); }
+    .lza-sync-card h3 { margin-top: 0; }
+    .lza-sync-field { display: block; margin-bottom: 14px; }
+    .lza-sync-field span { display: block; font-weight: 700; margin-bottom: 4px; }
+    .lza-sync-field small { display: block; color: #69809b; margin-bottom: 6px; }
+    .lza-sync-field input,
+    .lza-sync-field textarea { width: 100%; border: 1px solid #c8d7ea; border-radius: 10px; padding: 10px; }
+    .lza-btn { border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 700; cursor: pointer; }
+    .lza-btn--primary { background: #0a5adb; color: #fff; }
+    .is-loading { opacity: .7; pointer-events: none; }
+}

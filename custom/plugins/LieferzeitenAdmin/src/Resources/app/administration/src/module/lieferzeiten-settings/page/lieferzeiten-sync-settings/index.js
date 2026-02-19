@@ -1,4 +1,5 @@
 import template from './lieferzeiten-sync-settings.html.twig';
+import './lieferzeiten-sync-settings.scss';
 
 const { Component } = Shopware;
 

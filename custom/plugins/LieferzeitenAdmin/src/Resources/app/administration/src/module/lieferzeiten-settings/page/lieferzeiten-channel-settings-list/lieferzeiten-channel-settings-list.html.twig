@@ -4,7 +4,9 @@
     </template>
 
     <template #smart-bar-actions>
-        <sw-button-process v-if="hasEditAccess" variant="primary" :isLoading="isSaving" @click="onSave">{{ $tc('global.default.save') }}</sw-button-process>
+        <button v-if="hasEditAccess" class="lza-btn lza-btn--primary" :disabled="isSaving" @click="onSave">
+            {{ isSaving ? 'Saving…' : $tc('global.default.save') }}
+        </button>
     </template>
 
     <template #content>
@@ -25,100 +27,86 @@
                 Statistiken
             </sw-tabs-item>
         </sw-tabs>
-        <sw-card v-if="isIndexRoute" :isLoading="isLoading" title="API / Token / SAN6" class="sw-mb-16">
-            <template v-for="field in apiConfigFields">
-                <sw-password-field
-                    v-if="field.type === 'password'"
-                    :key="field.key"
-                    v-model:value="apiConfigValues[field.key]"
-                    :label="field.label"
-                    class="sw-mb-16"
-                />
-                <sw-text-field
-                    v-else
-                    :key="field.key"
-                    v-model:value="apiConfigValues[field.key]"
-                    :label="field.label"
-                    class="sw-mb-16"
-                />
-            </template>
-        </sw-card>
 
-        <sw-card v-if="isChannelSettingsRoute" :isLoading="isLoading" :title="$tc('lieferzeiten.lms.dashboard.cardTitle')">
-            <sw-alert variant="info" appearance="default" :showIcon="true">
-                {{ $tc('lieferzeiten.lms.dashboard.introText') }}
-            </sw-alert>
-
-            <sw-alert v-if="hasValidationErrors" variant="error" appearance="default" :showIcon="true" class="sw-mt-16">
-                {{ $tc('lieferzeiten.lms.dashboard.validationError') }}
-            </sw-alert>
-
-            <section v-for="group in groupedChannels" :key="group.id" class="sw-mt-24">
-                <h3 class="sw-mb-8">{{ group.title }}</h3>
-
-                <div class="sw-flex sw-flex--wrap sw-gap-8 sw-mb-12">
-                    <sw-button
-                        v-for="channel in group.channels"
-                        :key="`${group.id}-${channel.id}`"
-                        size="small"
-                        :variant="getSelectedChannelId(group.id) === channel.id ? 'primary' : 'ghost'"
-                        @click="onSelectChannel(group.id, channel.id)"
-                    >
-                        {{ channel.name || channel.id }}
-                    </sw-button>
+        <div class="lza-settings-layout" :class="{ 'is-loading': isLoading }">
+            <section v-if="isIndexRoute" class="lza-panel lza-panel--compact">
+                <h3>API / Token / SAN6</h3>
+                <div class="lza-field-grid">
+                    <label v-for="field in apiConfigFields" :key="field.key" class="lza-field">
+                        <span>{{ field.label }}</span>
+                        <input v-model="apiConfigValues[field.key]" :type="field.type === 'password' ? 'password' : 'text'" />
+                    </label>
                 </div>
+            </section>
 
-                <template v-if="getActiveChannel(group)">
-                    <div class="sw-flex sw-flex--align-center sw-flex--justify-space-between">
-                        <h4 class="sw-m-0">{{ getActiveChannel(group).name || getActiveChannel(group).id }}</h4>
-                        <sw-label v-if="hasIncompletePdmsMapping(getActiveChannel(group).id)" appearance="pill" variant="warning" size="small">
-                            {{ $tc('lieferzeiten.lms.dashboard.incompleteMappingBadge') }}
-                        </sw-label>
+            <section v-if="isChannelSettingsRoute" class="lza-panel">
+                <h3>{{ $tc('lieferzeiten.lms.dashboard.cardTitle') }}</h3>
+                <p class="lza-hint">{{ $tc('lieferzeiten.lms.dashboard.introText') }}</p>
+
+                <p v-if="hasValidationErrors" class="lza-warning">{{ $tc('lieferzeiten.lms.dashboard.validationError') }}</p>
+
+                <section v-for="group in groupedChannels" :key="group.id" class="lza-channel-group">
+                    <h4>{{ group.title }}</h4>
+
+                    <div class="lza-chip-row">
+                        <button
+                            v-for="channel in group.channels"
+                            :key="`${group.id}-${channel.id}`"
+                            class="lza-chip"
+                            :class="{ 'is-active': getSelectedChannelId(group.id) === channel.id }"
+                            @click="onSelectChannel(group.id, channel.id)"
+                        >
+                            {{ channel.name || channel.id }}
+                        </button>
                     </div>
 
-                    <sw-alert v-if="hasIncompletePdmsMapping(getActiveChannel(group).id)" variant="warning" appearance="default" :showIcon="true" class="sw-mt-8 sw-mb-8">
-                        {{ $t('lieferzeiten.lms.dashboard.incompleteMappingWarning', { channelName: getActiveChannel(group).name || getActiveChannel(group).id }) }}
-                    </sw-alert>
+                    <template v-if="getActiveChannel(group)">
+                        <div class="lza-channel-header">
+                            <h5>{{ getActiveChannel(group).name || getActiveChannel(group).id }}</h5>
+                            <span v-if="hasIncompletePdmsMapping(getActiveChannel(group).id)" class="lza-badge">{{ $tc('lieferzeiten.lms.dashboard.incompleteMappingBadge') }}</span>
+                        </div>
 
-                    <sw-data-grid
-                        :dataSource="getChannelPdmsLieferzeiten(getActiveChannel(group).id)"
-                        :columns="[
-                            { property: 'label', label: $tc('lieferzeiten.lms.dashboard.columns.pdmsLieferzeit'), width: '160px' },
-                            { property: 'shippingOverdueWorkingDays', label: $tc('lieferzeiten.lms.dashboard.columns.shippingOverdueWorkingDays') },
-                            { property: 'deliveryOverdueWorkingDays', label: $tc('lieferzeiten.lms.dashboard.columns.deliveryOverdueWorkingDays') }
-                        ]"
-                        :showSelection="false"
-                        :showActions="false"
-                        :allowColumnEdit="false"
-                    >
-                        <template #column-label="{ item }">
-                            {{ item.label }}
-                        </template>
+                        <p v-if="hasIncompletePdmsMapping(getActiveChannel(group).id)" class="lza-warning">
+                            {{ $t('lieferzeiten.lms.dashboard.incompleteMappingWarning', { channelName: getActiveChannel(group).name || getActiveChannel(group).id }) }}
+                        </p>
 
-                        <template #column-shippingOverdueWorkingDays="{ item }">
-                            <sw-number-field
-                                numberType="int"
-                                :min="0"
-                                :disabled="!hasEditAccess"
-                                :value="getMatrixValue(getActiveChannel(group).id, item.key, 'shippingOverdueWorkingDays')"
-                                :error="getFieldError(getActiveChannel(group).id, item.key, 'shippingOverdueWorkingDays')"
-                                @update:value="onChangeNumberField(getActiveChannel(group).id, item.key, 'shippingOverdueWorkingDays', $event)"
-                            />
-                        </template>
-
-                        <template #column-deliveryOverdueWorkingDays="{ item }">
-                            <sw-number-field
-                                numberType="int"
-                                :min="0"
-                                :disabled="!hasEditAccess"
-                                :value="getMatrixValue(getActiveChannel(group).id, item.key, 'deliveryOverdueWorkingDays')"
-                                :error="getFieldError(getActiveChannel(group).id, item.key, 'deliveryOverdueWorkingDays')"
-                                @update:value="onChangeNumberField(getActiveChannel(group).id, item.key, 'deliveryOverdueWorkingDays', $event)"
-                            />
-                        </template>
-                    </sw-data-grid>
-                </template>
+                        <div class="lza-table-wrap">
+                            <table class="lza-table">
+                                <thead>
+                                    <tr>
+                                        <th>{{ $tc('lieferzeiten.lms.dashboard.columns.pdmsLieferzeit') }}</th>
+                                        <th>{{ $tc('lieferzeiten.lms.dashboard.columns.shippingOverdueWorkingDays') }}</th>
+                                        <th>{{ $tc('lieferzeiten.lms.dashboard.columns.deliveryOverdueWorkingDays') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="item in getChannelPdmsLieferzeiten(getActiveChannel(group).id)" :key="item.key">
+                                        <td>{{ item.label }}</td>
+                                        <td>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                :disabled="!hasEditAccess"
+                                                :value="getMatrixValue(getActiveChannel(group).id, item.key, 'shippingOverdueWorkingDays')"
+                                                @input="onChangeNumberField(getActiveChannel(group).id, item.key, 'shippingOverdueWorkingDays', Number($event.target.value))"
+                                            >
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                :disabled="!hasEditAccess"
+                                                :value="getMatrixValue(getActiveChannel(group).id, item.key, 'deliveryOverdueWorkingDays')"
+                                                @input="onChangeNumberField(getActiveChannel(group).id, item.key, 'deliveryOverdueWorkingDays', Number($event.target.value))"
+                                            >
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                </section>
             </section>
-        </sw-card>
+        </div>
     </template>
 </sw-page>
