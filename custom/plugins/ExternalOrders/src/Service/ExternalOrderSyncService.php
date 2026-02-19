@@ -27,7 +27,7 @@ class ExternalOrderSyncService
 
 
     /**
-     * @return array{url: string, function: string, ordersCount: int, sampleExternalIds: array<int, string>, rawPreview: string, error: ?string}
+     * @return array{url: string, function: string, ordersCount: int, sampleExternalIds: array<int, string>, rawPreview: string, error: ?string, resultCode: ?string, resultText: ?string}
      */
     public function probeSan6Read(): array
     {
@@ -66,6 +66,8 @@ class ExternalOrderSyncService
             'sampleExternalIds' => $sampleExternalIds,
             'rawPreview' => mb_substr($probe['rawXml'], 0, 4000),
             'error' => $probe['error'],
+            'resultCode' => $probe['resultCode'],
+            'resultText' => $probe['resultText'],
         ];
     }
 

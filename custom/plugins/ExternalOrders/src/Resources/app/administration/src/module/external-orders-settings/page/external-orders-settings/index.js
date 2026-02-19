@@ -82,7 +82,7 @@ Component.register('external-orders-settings', {
 
                 this.san6TestResult = {
                     executedAt: syncResponse?.executedAt || new Date().toISOString(),
-                    success: Boolean(syncResponse?.success) && !san6Probe?.error,
+                    success: Boolean(syncResponse?.success) && !san6Probe?.error && String(san6Probe?.resultCode || '00') === '00',
                     rowCount: rows.length,
                     rows,
                     ordersCountFromSan6: Number(san6Probe?.ordersCount || 0),
@@ -90,13 +90,15 @@ Component.register('external-orders-settings', {
                     san6Url: san6Probe?.url || '',
                     sampleExternalIds: Array.isArray(san6Probe?.sampleExternalIds) ? san6Probe.sampleExternalIds : [],
                     rawPreview: san6Probe?.rawPreview || '',
+                    resultCode: san6Probe?.resultCode || null,
+                    resultText: san6Probe?.resultText || null,
                     message: san6Probe?.error || null,
                 };
 
-                if (san6Probe?.error) {
+                if (san6Probe?.error || String(san6Probe?.resultCode || '00') !== '00') {
                     this.createNotificationError({
                         title: 'SAN6 Test fehlgeschlagen',
-                        message: san6Probe.error,
+                        message: san6Probe?.error || `SAN6 Code ${san6Probe?.resultCode || '??'}: ${san6Probe?.resultText || 'Unbekannter Fehler'}`,
                     });
                 } else {
                     this.createNotificationSuccess({
@@ -115,6 +117,8 @@ Component.register('external-orders-settings', {
                     san6Url: '',
                     sampleExternalIds: [],
                     rawPreview: '',
+                    resultCode: null,
+                    resultText: null,
                     message: error?.message || 'Der SAN6 Testaufruf ist fehlgeschlagen.',
                 };
 

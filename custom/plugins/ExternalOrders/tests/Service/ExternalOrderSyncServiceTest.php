@@ -310,6 +310,8 @@ class ExternalOrderSyncServiceTest extends TestCase
                     ['orderNumber' => 'A-2'],
                 ],
                 'error' => null,
+                'resultCode' => '00',
+                'resultText' => 'OK',
             ]);
 
         $service = new ExternalOrderSyncService($repository, $httpClient, $configService, $logger, $topmClient);
@@ -320,6 +322,8 @@ class ExternalOrderSyncServiceTest extends TestCase
         static::assertSame(['A-1', 'A-2'], $result['sampleExternalIds']);
         static::assertStringContainsString('<Result>', $result['rawPreview']);
         static::assertNull($result['error']);
+        static::assertSame('00', $result['resultCode']);
+        static::assertSame('OK', $result['resultText']);
     }
 
     public function testSyncNewOrdersLogsAndSkipsWhenSan6ConfigIsInvalid(): void

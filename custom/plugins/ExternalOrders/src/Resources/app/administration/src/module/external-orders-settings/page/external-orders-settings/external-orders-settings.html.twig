@@ -89,6 +89,7 @@
                     <p><strong>Zeitpunkt:</strong> {{ san6TestResult.executedAt }}</p>
                     <p><strong>SAN6 Funktion:</strong> {{ san6TestResult.san6Function || 'n/a' }}</p>
                     <p><strong>SAN6 URL:</strong> {{ san6TestResult.san6Url || 'n/a' }}</p>
+                    <p><strong>SAN6 Result:</strong> {{ san6TestResult.resultCode || 'n/a' }} - {{ san6TestResult.resultText || 'n/a' }}</p>
                     <p><strong>Datensätze direkt von SAN6:</strong> {{ san6TestResult.ordersCountFromSan6 }}</p>
                     <p><strong>Datensätze im raw-preview:</strong> {{ san6TestResult.rowCount }}</p>
                     <p v-if="san6TestResult.sampleExternalIds?.length"><strong>Beispiel IDs:</strong> {{ san6TestResult.sampleExternalIds.join(', ') }}</p>

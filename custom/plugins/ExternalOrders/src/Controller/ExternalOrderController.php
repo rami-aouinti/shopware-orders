@@ -127,6 +127,8 @@ class ExternalOrderController extends AbstractController
                 'sampleExternalIds' => [],
                 'rawPreview' => '',
                 'error' => $exception->getMessage(),
+                'resultCode' => null,
+                'resultText' => null,
             ], Response::HTTP_BAD_REQUEST);
         }
     }

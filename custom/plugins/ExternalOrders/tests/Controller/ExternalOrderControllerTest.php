@@ -204,6 +204,8 @@ class ExternalOrderControllerTest extends TestCase
                 'sampleExternalIds' => ['A-1', 'A-2'],
                 'rawPreview' => '<Daten/>',
                 'error' => null,
+                'resultCode' => '00',
+                'resultText' => 'OK',
             ]);
 
         $controller = new ExternalOrderController(
@@ -227,6 +229,8 @@ class ExternalOrderControllerTest extends TestCase
                 'sampleExternalIds' => ['A-1', 'A-2'],
                 'rawPreview' => '<Daten/>',
                 'error' => null,
+                'resultCode' => '00',
+                'resultText' => 'OK',
             ], JSON_THROW_ON_ERROR),
             (string) $response->getContent()
         );
