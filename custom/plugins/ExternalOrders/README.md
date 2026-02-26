@@ -52,70 +52,68 @@ Nach der Aktivierung erscheint in der Administration unter **Bestellungen** ein 
 - Gültiger Token: Rückgabe `200` mit `Content-Type: application/xml` und Export-XML.
 - Ungültiger oder abgelaufener Token: Rückgabe `404`.
 
-## Validation en intégration / préprod (SAN6 `filetransferurl`)
+## Validierung in Integration / Preprod (SAN6 `filetransferurl`)
 
-Cette procédure permet de valider le comportement de l’URL signée en dehors du réseau interne Shopware.
+Diese Vorgehensweise validiert das Verhalten der signierten URL außerhalb des internen Shopware-Netzwerks.
 
-### 1) Générer une URL signée via `TopmSan6OrderExportService`
+### 1) Signierte URL über `TopmSan6OrderExportService` erzeugen
 
-1. Vérifier que la stratégie d’envoi est bien `filetransferurl` dans la configuration du plugin.
-2. Déclencher un export depuis l’API admin (cela appelle `TopmSan6OrderExportService::exportOrder()` qui génère l’URL signée et la transmet à SAN6) :
+1. Sicherstellen, dass in der Plugin-Konfiguration die Versandstrategie `filetransferurl` gesetzt ist.
+2. Export über die Admin-API auslösen (ruft `TopmSan6OrderExportService::exportOrder()` auf, erzeugt signierte URL und übermittelt sie an SAN6):
    ```bash
-   curl -sS -X POST "https://<shop-domain>/api/_action/external-orders/export/<orderId>" \
-     -H "Authorization: Bearer <admin-api-token>" \
-     -H "Content-Type: application/json"
+   curl -sS -X POST "https://<shop-domain>/api/_action/external-orders/export/<orderId>"      -H "Authorization: Bearer <admin-api-token>"      -H "Content-Type: application/json"
    ```
-3. Récupérer l’URL signée depuis la trace de la requête sortante vers SAN6 (proxy sortant/WAF/log applicatif SAN6).
-   - Le format attendu est : `https://<shop-domain>/topm-export/<token>`.
+3. Signierte URL aus dem Trace der ausgehenden Anfrage an SAN6 entnehmen (Outbound-Proxy/WAF/SAN6-Applikationslog).
+   - Erwartetes Format: `https://<shop-domain>/topm-export/<token>`.
 
-Alternative CLI (génération directe par `exportId`) :
+CLI-Alternative (direkt über `exportId`):
 
 ```bash
 bin/console external-orders:export:generate-signed-url <exportId> --validate-exists
 ```
 
-Optionnel, TTL personnalisé pour test d’expiration :
+Optional: benutzerdefinierte TTL für Expiration-Tests:
 
 ```bash
 bin/console external-orders:export:generate-signed-url <exportId> --expires-in=30 --validate-exists
 ```
 
-### 2) Tester l’URL depuis l’extérieur (hors réseau interne Shopware)
+### 2) URL von außen testen (außerhalb internes Shopware-Netz)
 
-Depuis une machine externe (ex: poste hors VPN, runner public, etc.) :
+Von einem externen Host (z. B. ohne VPN, öffentlicher Runner usw.):
 
 ```bash
 curl -i "https://<shop-domain>/topm-export/<token>"
 ```
 
-Résultat attendu :
+Erwartetes Ergebnis:
 - HTTP `200 OK`
 - Header `Content-Type: application/xml; charset=utf-8`
-- Body XML non vide (payload exporté)
+- Nicht-leerer XML-Body (exportierter Payload)
 
-### 3) Tester token invalide / expiré
+### 3) Ungültigen / abgelaufenen Token testen
 
-#### Token invalide
+#### Ungültiger Token
 ```bash
 curl -i "https://<shop-domain>/topm-export/<token_invalide>"
 ```
 
-Attendu : HTTP `404 Not Found`.
+Erwartet: HTTP `404 Not Found`.
 
-#### Token expiré
-Le token signé expire après ~10 minutes (TTL 600 s). Rejouer exactement la même URL après expiration :
+#### Abgelaufener Token
+Der signierte Token läuft nach ca. 10 Minuten (TTL 600 s) ab. Exakt dieselbe URL nach Ablauf erneut aufrufen:
 
 ```bash
 curl -i "https://<shop-domain>/topm-export/<token_expire>"
 ```
 
-Attendu : HTTP `404 Not Found`.
+Erwartet: HTTP `404 Not Found`.
 
-### 4) Vérifier reverse proxy et base URL (`core.basicInformation.shopwareUrl`)
+### 4) Reverse Proxy und Base URL prüfen (`core.basicInformation.shopwareUrl`)
 
-Le service construit l’URL signée à partir de `core.basicInformation.shopwareUrl` (fallback: `APP_URL`). Cette valeur doit être publiquement routable.
+Der Service baut die signierte URL auf Basis von `core.basicInformation.shopwareUrl` (Fallback: `APP_URL`). Dieser Wert muss öffentlich routbar sein.
 
-Vérifier la valeur configurée :
+Konfigurierten Wert prüfen:
 
 ```sql
 SELECT configuration_value
@@ -123,30 +121,30 @@ FROM system_config
 WHERE configuration_key = 'core.basicInformation.shopwareUrl';
 ```
 
-Critères de conformité infra :
-- domaine public résolvable (DNS externe) ;
-- terminaison TLS valide sur le reverse proxy (`https`) ;
-- routage vers Shopware pour `GET /topm-export/{token}` ;
-- conservation du host/proto (`X-Forwarded-Host`, `X-Forwarded-Proto`) cohérente avec l’URL publique ;
-- pas de blocage WAF/CDN sur cette route de type machine-to-machine.
+Infra-Konformitätskriterien:
+- öffentlich auflösbare Domain (externes DNS),
+- gültige TLS-Terminierung am Reverse Proxy (`https`),
+- Routing zu Shopware für `GET /topm-export/{token}`,
+- konsistente Host/Proto-Weitergabe (`X-Forwarded-Host`, `X-Forwarded-Proto`) passend zur öffentlichen URL,
+- keine WAF/CDN-Blockade für diese Machine-to-Machine-Route.
 
-Vérification TLS depuis un hôte externe :
+TLS-Prüfung von externem Host:
 
 ```bash
 openssl s_client -connect <shop-domain>:443 -servername <shop-domain> </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -dates
 ```
 
-### 5) Prérequis d’infrastructure (checklist)
+### 5) Infrastruktur-Voraussetzungen (Checkliste)
 
-- `core.basicInformation.shopwareUrl` pointe sur l’URL publique finale.
-- Le reverse proxy publie `/topm-export/*` sans authentification additionnelle.
-- Les sorties réseau vers SAN6 sont autorisées (DNS/443).
-- Horloge serveur synchronisée (NTP), sinon faux positifs “token expiré”.
-- La valeur `APP_SECRET` est stable entre nœuds (si multi-instance), sinon validation HMAC incohérente.
-- Monitoring conseillé : taux HTTP 404 sur la route signée + alertes sur erreurs SAN6.
+- `core.basicInformation.shopwareUrl` zeigt auf die finale öffentliche URL.
+- Reverse Proxy veröffentlicht `/topm-export/*` ohne zusätzliche Authentifizierung.
+- Ausgehende Verbindungen zu SAN6 sind erlaubt (DNS/443).
+- Serverzeit ist per NTP synchronisiert (vermeidet falsche „Token abgelaufen“-Meldungen).
+- `APP_SECRET` ist über alle Knoten stabil (bei Multi-Instance), sonst inkonsistente HMAC-Validierung.
+- Empfohlenes Monitoring: HTTP-404-Rate auf signierter Route + Alerts für SAN6-Fehler.
 
 ## Runbooks
-- Exploitation export SAN6: `docs/runbook-export-san6.md`
+- SAN6-Export-Betrieb: `docs/runbook-export-san6.md`
 
 ## Version
 - **1.0.0**

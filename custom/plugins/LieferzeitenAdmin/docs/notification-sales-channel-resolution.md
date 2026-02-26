@@ -1,28 +1,28 @@
-# Résolution `salesChannelId` pour les notifications
+# Auflösung von `salesChannelId` für Benachrichtigungen
 
-## Sources par flux
+## Quellen je Prozessfluss
 
-- **Import commandes (`LieferzeitenImportService`)**
-  - Priorité: `payload.salesChannelId` entrant -> résolution `order.order_number` -> fallback custom field `externalOrderId` -> mapping config `sourceSystem -> salesChannelId`.
-  - Le résultat est persisté dans `lieferzeiten_paket.sales_channel_id`.
-- **Reminders Vorkasse (`VorkassePaymentReminderService`)**
-  - Priorité: `paket.salesChannelId` persistant -> même stratégie de résolution que ci-dessus.
-  - Si résolu et manquant en base, la valeur est réécrite sur le paquet.
-- **Événements task (`LieferzeitenPositionWriteService` / `LieferzeitenTaskService`)**
-  - Le contexte task reçoit `salesChannelId` depuis le paquet lié à la position.
-  - Lors des transitions de task, la valeur est revalidée via le resolver avant `dispatch`.
+- **Import von Bestellungen (`LieferzeitenImportService`)**
+  - Priorität: eingehendes `payload.salesChannelId` -> Auflösung über `order.order_number` -> Fallback über Custom Field `externalOrderId` -> Konfigurationsmapping `sourceSystem -> salesChannelId`.
+  - Das Ergebnis wird in `lieferzeiten_paket.sales_channel_id` persistiert.
+- **Vorkasse-Reminders (`VorkassePaymentReminderService`)**
+  - Priorität: persistiertes `paket.salesChannelId` -> identische Auflösungsstrategie wie oben.
+  - Falls aufgelöst und in der DB fehlend, wird der Wert am Paket nachgeschrieben.
+- **Task-Ereignisse (`LieferzeitenPositionWriteService` / `LieferzeitenTaskService`)**
+  - Der Task-Kontext erhält `salesChannelId` vom zur Position gehörenden Paket.
+  - Bei Task-Übergängen wird der Wert vor `dispatch` nochmals über den Resolver validiert.
 
-## Fallback global explicite
+## Expliziter globaler Fallback
 
-Si aucun canal n'est déterminable:
+Wenn kein Kanal bestimmt werden kann:
 
-1. `NotificationToggleResolver::isEnabled(...)` est appelé avec `salesChannelId = null`.
-2. Le resolver de toggle applique alors la configuration globale (`sales_channel_id IS NULL`).
-3. Si aucune ligne globale n'existe, le comportement reste **enabled par défaut**.
+1. `NotificationToggleResolver::isEnabled(...)` wird mit `salesChannelId = null` aufgerufen.
+2. Der Toggle-Resolver wendet dann die globale Konfiguration an (`sales_channel_id IS NULL`).
+3. Falls keine globale Zeile existiert, bleibt das Verhalten **standardmäßig aktiviert**.
 
-## Mapping de secours
+## Fallback-Mapping
 
-Configurer `LieferzeitenAdmin.config.notificationSalesChannelMapping` avec un objet JSON:
+`LieferzeitenAdmin.config.notificationSalesChannelMapping` als JSON-Objekt konfigurieren:
 
 ```json
 {
@@ -31,4 +31,4 @@ Configurer `LieferzeitenAdmin.config.notificationSalesChannelMapping` avec un ob
 }
 ```
 
-La clé est normalisée en lowercase (`sourceSystem/domain`).
+Der Schlüssel wird auf lowercase normalisiert (`sourceSystem/domain`).
