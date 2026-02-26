@@ -1,60 +1,60 @@
-# Checklist finale — Bascule SAN6 (`ExternalOrders`)
+# Finale Checkliste — SAN6-Go-live (`ExternalOrders`)
 
-## 1) Ordre exact de déploiement
+## 1) Exakte Reihenfolge beim Deployment
 
-1. **Migration DB**
-   - Déployer le code et exécuter les migrations plugin (non destructives puis destructives si prévues dans la fenêtre).
-   - Vérifier l’absence d’erreurs SQL dans les logs et la disponibilité des tables/champs attendus.
-2. **Configuration SAN6**
-   - Renseigner/valider les clés :
+1. **DB-Migration**
+   - Code ausrollen und Plugin-Migrationen ausführen (zuerst nicht-destruktiv, anschließend destruktiv innerhalb des Wartungsfensters).
+   - Logs auf SQL-Fehler prüfen und Verfügbarkeit der erwarteten Tabellen/Felder verifizieren.
+2. **SAN6-Konfiguration**
+   - Schlüssel setzen/prüfen:
      - `ExternalOrders.config.externalOrdersSan6BaseUrl`
      - `ExternalOrders.config.externalOrdersSan6Authentifizierung`
      - `ExternalOrders.config.externalOrdersSan6WriteFunction`
      - `ExternalOrders.config.externalOrdersSan6SendStrategy`
-   - Contrôler que la configuration est cohérente avec l’environnement cible (URL, auth, stratégie d’envoi).
-3. **Activation des tâches planifiées**
-   - Vérifier que `external_orders.export_retry` est `scheduled`.
-   - Confirmer que le worker/cron Shopware exécute bien `scheduled-task:run`.
-4. **Smoke test post-déploiement**
-   - Déclencher un export manuel sur une commande de test.
-   - Confirmer la création d’une tentative dans `external_order_export`.
-   - Valider le statut final `sent` et `response_code = 0`.
+   - Sicherstellen, dass die Zielumgebung korrekt abgebildet ist (URL, Authentifizierung, Versandstrategie).
+3. **Geplante Aufgaben aktivieren**
+   - Prüfen, dass `external_orders.export_retry` auf `scheduled` steht.
+   - Sicherstellen, dass Worker/Cron `scheduled-task:run` tatsächlich ausführt.
+4. **Smoke-Test nach Deployment**
+   - Manuellen Export für eine Testbestellung starten.
+   - Prüfen, dass ein Versuch in `external_order_export` erzeugt wurde.
+   - Erwarteter Endstatus: `sent` und `response_code = 0`.
 
 ---
 
-## 2) Fenêtre de bascule (go-live)
+## 2) Go-live-Fenster
 
-- **Préparer une fenêtre dédiée** (Ops + Dev + métier), avec gel des changements non essentiels.
-- **Go/No-Go d’entrée de fenêtre** :
-  - migrations prêtes,
-  - configuration SAN6 validée,
-  - supervision/logs accessibles.
-- **Validation immédiate obligatoire** :
-  - exécuter un **export test** dans les 5 minutes suivant l’activation,
-  - succès attendu : `sent` + `response_code = 0`,
-  - en cas d’échec : enclencher le rollback opérationnel ci-dessous.
-
----
-
-## 3) Rollback opérationnel (ordre strict)
-
-1. **Désactivation de l’export**
-   - Basculer la stratégie d’envoi vers une valeur neutralisée (ou désactiver la fonctionnalité via config/feature flag opérationnel).
-   - Objectif : stopper immédiatement tout nouvel envoi SAN6.
-2. **Purge / suspension des retries**
-   - Suspendre la tâche planifiée `external_orders.export_retry` (ou stopper le worker scheduler).
-   - Mettre en file d’attente contrôlée ou purger les retries selon la politique incident validée.
-3. **Restauration de la configuration précédente**
-   - Restaurer les valeurs SAN6 connues stables (snapshot/config sauvegardée avant bascule).
-   - Vérifier la cohérence des clés critiques puis relancer un export test avant reprise.
+- **Dediziertes Go-live-Fenster planen** (Ops + Dev + Fachbereich), mit Freeze für nicht-kritische Änderungen.
+- **Go/No-Go vor Start**:
+  - Migrationen sind vorbereitet,
+  - SAN6-Konfiguration ist validiert,
+  - Monitoring/Logs sind verfügbar.
+- **Pflichtvalidierung direkt nach Aktivierung**:
+  - innerhalb von 5 Minuten einen **Testexport** ausführen,
+  - erwarteter Erfolg: `sent` + `response_code = 0`,
+  - bei Fehler: sofort operativen Rollback starten.
 
 ---
 
-## 4) Checklist de clôture
+## 3) Operativer Rollback (strikte Reihenfolge)
 
-- [ ] Migrations DB exécutées sans erreur.
-- [ ] Clés SAN6 configurées et vérifiées.
-- [ ] Tâche `external_orders.export_retry` active et planifiée.
-- [ ] Export test post-bascule validé (`sent`, `response_code = 0`).
-- [ ] Rollback prêt et partagé (Ops/Dev/Support).
-- [ ] Journal de bascule complété (heure, intervenants, résultat, anomalies).
+1. **Export deaktivieren**
+   - Versandstrategie auf neutralen Wert umstellen (oder Funktion per Config/Feature-Flag deaktivieren).
+   - Ziel: sofort alle neuen SAN6-Sendungen stoppen.
+2. **Retries pausieren/stoppen**
+   - Geplante Aufgabe `external_orders.export_retry` pausieren (oder Scheduler-Worker stoppen).
+   - Retries kontrolliert puffern oder gemäß Incident-Policy bereinigen.
+3. **Vorherige Konfiguration wiederherstellen**
+   - Vorher gesicherte, stabile SAN6-Werte zurücksetzen.
+   - Kritische Schlüssel validieren und vor Wiederaufnahme erneut einen Testexport ausführen.
+
+---
+
+## 4) Abschluss-Checkliste
+
+- [ ] DB-Migrationen wurden fehlerfrei ausgeführt.
+- [ ] SAN6-Schlüssel sind korrekt gesetzt und geprüft.
+- [ ] Task `external_orders.export_retry` ist aktiv und geplant.
+- [ ] Testexport nach Umschaltung erfolgreich (`sent`, `response_code = 0`).
+- [ ] Rollback-Plan ist vorbereitet und mit Ops/Dev/Support geteilt.
+- [ ] Go-live-Protokoll ist vollständig (Zeit, Beteiligte, Ergebnis, Abweichungen).

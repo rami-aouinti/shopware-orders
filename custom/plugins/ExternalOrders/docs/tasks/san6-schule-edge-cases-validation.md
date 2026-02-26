@@ -1,28 +1,28 @@
-# SAN6 Schule – Validation des cas limites import/export
+# SAN6 Schule – Validierung von Import-/Export-Grenzfällen
 
-## Cas couverts
-- Variantes `Gr` testées: `01`, `1`, vide.
-- Références article testées: `ART.01` et `ART      01`.
-- Pièces jointes testées: payload texte court et payload volumineux.
-- Caractères spéciaux: accents, apostrophes et `&`.
+## Abgedeckte Fälle
+- Varianten `Gr`: `01`, `1`, leer.
+- Artikelreferenzen: `ART.01` und `ART      01`.
+- Anhänge: kurzer Text-Payload und großer Payload.
+- Sonderzeichen: Umlaute/Akzente, Apostrophe und `&`.
 
-## Retours TopM et persistance plugin
-- Réponse XML TopM simulée validée: `response_code=0`, `response_message=OK Schule Edge Cases`.
-- Vérification de persistance validée dans `external_order_export`:
-  - `request_xml` stocké intégralement,
-  - `response_xml` stocké,
-  - `response_code` mappé en entier,
-  - `response_message` mappé en texte.
+## TopM-Response und Plugin-Persistenz
+- Simulierte TopM-XML-Antwort erfolgreich validiert: `response_code=0`, `response_message=OK Schule Edge Cases`.
+- Persistenz in `external_order_export` geprüft:
+  - `request_xml` vollständig gespeichert,
+  - `response_xml` gespeichert,
+  - `response_code` als Integer gemappt,
+  - `response_message` als Text gemappt.
 
-## Écarts observés
-- Aucun écart bloquant détecté sur ces cas.
-- Mapping actuel confirmé:
-  - `ART.01` et `ART      01` ⇒ `Referenz=ART`, `Gr=01`.
-  - `Gr=1` ⇒ normalisé en `01`.
-  - `Gr` vide ⇒ fallback `00`.
-  - Caractères spéciaux conservés correctement dans l'XML via échappement natif XML.
-  - Pièce jointe volumineuse acceptée et encodée en base64.
+## Beobachtete Abweichungen
+- Keine blockierenden Abweichungen festgestellt.
+- Bestätigtes Mapping:
+  - `ART.01` und `ART      01` ⇒ `Referenz=ART`, `Gr=01`.
+  - `Gr=1` ⇒ Normalisierung auf `01`.
+  - `Gr` leer ⇒ Fallback `00`.
+  - Sonderzeichen bleiben im XML durch korrektes Escaping erhalten.
+  - Großer Anhang wird akzeptiert und als Base64 kodiert.
 
-## Action corrective
-- Pas de correction de mapping nécessaire après validation de ces scénarios.
-- Des tests de non-régression dédiés ont été ajoutés pour figer ce comportement.
+## Korrekturmaßnahme
+- Keine Mapping-Korrektur notwendig.
+- Dedizierte Nicht-Regressionstests wurden ergänzt, um dieses Verhalten zu fixieren.
